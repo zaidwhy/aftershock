@@ -6,7 +6,7 @@ async function getJson(url) {
   let res;
   try { res = await fetch(url, { headers: { Accept: "application/json" } }); }
   catch { throw new Error(`Could not reach ${url}. Check your connection and try again.`); }
-  if (res.status === 429) throw new Error("Rate limit reached (10 live scorings per hour). Try again later.");
+  if (res.status === 429) throw new Error("Rate limit reached (10 live scorings per hour per visitor, 300 per day overall). Try again later.");
   if (!res.ok) {
     let detail = "";
     try { const j = await res.json(); detail = j.detail || j.error || ""; } catch { /* body not JSON */ }

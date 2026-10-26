@@ -84,6 +84,12 @@ export function ripplePanel(ripple) {
   const resolved = ripple.songs.filter((x) => x.resolved !== false);
   const maxScore = Math.max(0.01, ...resolved.map((x) => x.score ?? 0));
   const items = ripple.songs.map((x) => {
+    if (x.resolved !== false && x.score == null) {
+      return h("li", { class: "song song-bad" },
+        h("div", { class: "song-head" }, h("strong", null, x.song), x.artist ? h("span", { class: "muted" }, ` - ${x.artist}`) : null),
+        h("p", { class: "not-found" }, "Qloo has no audience profile for this artist, so there is no age gap and no score.",
+          x.prior_daily_views != null ? ` Prior Wikipedia views ${Math.round(x.prior_daily_views)}/day (context).` : ""));
+    }
     if (x.resolved === false) {
       return h("li", { class: "song song-bad" },
         h("div", { class: "song-head" }, h("strong", null, x.song), x.artist ? h("span", { class: "muted" }, ` - ${x.artist}`) : null),
@@ -99,8 +105,8 @@ export function ripplePanel(ripple) {
         h("div", { class: "bar", role: "img", "aria-label": `Score ${x.score.toFixed(2)} out of a panel maximum of ${maxScore.toFixed(2)}` },
           h("span", { style: `width:${Math.max(2, (x.score / maxScore) * 100)}%` }))),
       h("p", { class: "song-math mono" }, [
-          x.age_gap != null ? `age gap ${x.age_gap.toFixed(2)}` : "age gap n/a",
-          x.prior_daily_views != null ? `prior Wikipedia views ${x.prior_daily_views.toFixed(0)}/day` : "no Wikipedia page",
+          x.age_gap != null ? `age gap ${x.age_gap.toFixed(2)} (score)` : "age gap n/a",
+          x.prior_daily_views != null ? `prior Wikipedia views ${Math.round(x.prior_daily_views)}/day (context)` : "no Wikipedia page (context)",
           x.fit != null ? `taste fit ${x.fit.toFixed(2)} (context)` : null].filter(Boolean).join(" | "),
         graded && x.observed_ratio != null ? ` | observed views ratio ${x.observed_ratio.toFixed(1)}x` : ""),
       generationGap(ripple.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`));

@@ -22,11 +22,13 @@ ROOT = Path(__file__).resolve().parent.parent
 PRIVATE = ROOT / "data" / "private"
 PUBLIC_DATA = ROOT / "data" / "public"
 RIPPLE_PER_HOUR = 10
+RIPPLE_PER_DAY = 300  # live scorings per server process per day, all visitors
 MAX_FIELD = 120
 WIKI_FIRST_DAY = date(2015, 8, 1)  # Wikimedia per-article pageviews start in July 2015
 
 app = FastAPI(title="AFTERSHOCK", docs_url=None, redoc_url=None)
 _ripple_hits = defaultdict(deque)
+_daily = {"day": None, "count": 0}
 
 
 def _load(path):
@@ -62,7 +64,8 @@ def ripples():
     data = _load(PRIVATE / "storms.json")
     return {"ripples": [{k: r[k] for k in ("id", "show", "show_type", "platform", "release_date")} |
                         {"songs": len(r["songs"]), "top_song": r["songs"][0] if r["songs"] else None,
-                         "locked_at": r.get("locked_at")} for r in data.get("ripples", [])]}
+                         "locked_at": r.get("locked_at"), "lockable": r.get("lockable"),
+                         "not_locked_reason": r.get("not_locked_reason")} for r in data.get("ripples", [])]}
 
 
 @app.get("/api/ripples/{ripple_id}")
@@ -81,6 +84,14 @@ def scorecard():
 @app.get("/api/replays")
 def replays():
     return _load(PUBLIC_DATA / "replays.json")
+
+
+def _visitor(request):
+    """First address in X-Forwarded-For (the client, behind a proxy), else the socket peer."""
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    return request.client.host if request.client else "unknown"
 
 
 def _parse_songs(songs):
@@ -104,14 +115,20 @@ def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX
     placements = _parse_songs(songs)
     if as_of and not (WIKI_FIRST_DAY <= as_of <= date.today()):
         raise HTTPException(422, f"as_of must be between {WIKI_FIRST_DAY} and today; got {as_of}")
-    visitor = request.client.host if request.client else "unknown"
+    visitor = _visitor(request)
     hits = _ripple_hits[visitor]
     now = time.time()
     while hits and now - hits[0] > 3600:
         hits.popleft()
     if len(hits) >= RIPPLE_PER_HOUR:
         raise HTTPException(429, f"limit is {RIPPLE_PER_HOUR} live scorings per hour per visitor")
+    today = date.today()
+    if _daily["day"] != today:
+        _daily.update(day=today, count=0)
+    if _daily["count"] >= RIPPLE_PER_DAY:
+        raise HTTPException(429, f"daily limit of {RIPPLE_PER_DAY} live scorings across all visitors is used up; try again tomorrow")
     hits.append(now)
+    _daily["count"] += 1
     try:
         return score_placements(Qloo(call_budget=40), show, placements, as_of=as_of)
     except QlooError as err:

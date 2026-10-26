@@ -1,156 +1,121 @@
 {
-  "_comment": "MOCK DATA for UI development. Everything here is invented except where a note says otherwise. Not Qloo output, not a forecast. Probabilities, ledger id and dates are mock.",
-  "id": "the-glory-s1",
-  "title": "The Glory",
-  "season": "Season 1",
-  "category": "TV (Non-English)",
-  "origin_week": "2026-10-25",
-  "origin_countries": [
-    {
-      "code": "KR",
-      "name": "South Korea"
-    }
+ "_comment": "MOCK DATA for UI development. Every number is synthetic (invented, not Qloo output, not a forecast or a result). Probabilities, ledger id and dates are mock.",
+ "id": "the-glory-s1",
+ "title": "The Glory",
+ "season": "Season 1",
+ "category": "TV (Non-English)",
+ "origin_week": "2026-10-25",
+ "origin_countries": [
+  {
+   "code": "KR",
+   "name": "South Korea"
+  }
+ ],
+ "spillover": {
+  "horizon_weeks": 4,
+  "forecasts": [
+   {
+    "code": "JP",
+    "name": "Japan",
+    "probability": 0.62,
+    "why": "Japan joined 16 of 44 past breakouts that started in South Korea"
+   },
+   {
+    "code": "TH",
+    "name": "Thailand",
+    "probability": 0.5,
+    "why": "Thailand joined 21 of 47 past breakouts that started in South Korea"
+   },
+   {
+    "code": "ID",
+    "name": "Indonesia",
+    "probability": 0.42,
+    "why": "Indonesia joined 26 of 50 past breakouts that started in South Korea"
+   },
+   {
+    "code": "PH",
+    "name": "Philippines",
+    "probability": 0.33,
+    "why": "Philippines joined 31 of 53 past breakouts that started in South Korea"
+   },
+   {
+    "code": "VN",
+    "name": "Vietnam",
+    "probability": 0.26,
+    "why": "Vietnam joined 36 of 56 past breakouts that started in South Korea"
+   },
+   {
+    "code": "MY",
+    "name": "Malaysia",
+    "probability": 0.23,
+    "why": "Malaysia joined 41 of 59 past breakouts that started in South Korea"
+   },
+   {
+    "code": "BR",
+    "name": "Brazil",
+    "probability": 0.18,
+    "why": "Brazil joined 46 of 62 past breakouts that started in South Korea"
+   },
+   {
+    "code": "MX",
+    "name": "Mexico",
+    "probability": 0.15,
+    "why": "Mexico joined 51 of 65 past breakouts that started in South Korea"
+   },
+   {
+    "code": "TR",
+    "name": "Turkey",
+    "probability": 0.12,
+    "why": "Turkey joined 16 of 68 past breakouts that started in South Korea"
+   },
+   {
+    "code": "SG",
+    "name": "Singapore",
+    "probability": 0.09,
+    "why": "Singapore joined 21 of 41 past breakouts that started in South Korea"
+   },
+   {
+    "code": "TW",
+    "name": "Taiwan",
+    "probability": 0.08,
+    "why": "Taiwan joined 26 of 44 past breakouts that started in South Korea"
+   },
+   {
+    "code": "US",
+    "name": "United States",
+    "probability": 0.06,
+    "why": "United States joined 31 of 47 past breakouts that started in South Korea"
+   },
+   {
+    "code": "IN",
+    "name": "India",
+    "probability": 0.06,
+    "why": "India joined 36 of 50 past breakouts that started in South Korea"
+   },
+   {
+    "code": "DE",
+    "name": "Germany",
+    "probability": 0.04,
+    "why": "Germany joined 41 of 53 past breakouts that started in South Korea"
+   }
   ],
-  "spillover": {
-    "horizon_weeks": 4,
-    "forecasts": [
-      {
-        "code": "JP",
-        "name": "Japan",
-        "probability": 0.62,
-        "history_probability": 0.61,
-        "qloo_relative": 0.01,
-        "why": "Japan joined 16 of 44 past breakouts that started in South Korea; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "TH",
-        "name": "Thailand",
-        "probability": 0.5,
-        "history_probability": 0.45,
-        "qloo_relative": 0.05,
-        "why": "Thailand joined 21 of 47 past breakouts that started in South Korea; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "ID",
-        "name": "Indonesia",
-        "probability": 0.42,
-        "history_probability": 0.39,
-        "qloo_relative": 0.03,
-        "why": "Indonesia joined 26 of 50 past breakouts that started in South Korea; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "PH",
-        "name": "Philippines",
-        "probability": 0.33,
-        "history_probability": 0.32,
-        "qloo_relative": 0.01,
-        "why": "Philippines joined 31 of 53 past breakouts that started in South Korea; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "VN",
-        "name": "Vietnam",
-        "probability": 0.26,
-        "history_probability": 0.21,
-        "qloo_relative": 0.05,
-        "why": "Vietnam joined 36 of 56 past breakouts that started in South Korea; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "MY",
-        "name": "Malaysia",
-        "probability": 0.23,
-        "history_probability": 0.2,
-        "qloo_relative": 0.03,
-        "why": "Malaysia joined 41 of 59 past breakouts that started in South Korea; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "BR",
-        "name": "Brazil",
-        "probability": 0.18,
-        "history_probability": 0.17,
-        "qloo_relative": 0.01,
-        "why": "Brazil joined 46 of 62 past breakouts that started in South Korea; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "MX",
-        "name": "Mexico",
-        "probability": 0.15,
-        "history_probability": 0.1,
-        "qloo_relative": 0.05,
-        "why": "Mexico joined 51 of 65 past breakouts that started in South Korea; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "TR",
-        "name": "Turkey",
-        "probability": 0.12,
-        "history_probability": 0.09,
-        "qloo_relative": 0.03,
-        "why": "Turkey joined 16 of 68 past breakouts that started in South Korea; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "SG",
-        "name": "Singapore",
-        "probability": 0.09,
-        "history_probability": 0.08,
-        "qloo_relative": 0.01,
-        "why": "Singapore joined 21 of 41 past breakouts that started in South Korea; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "TW",
-        "name": "Taiwan",
-        "probability": 0.08,
-        "history_probability": 0.03,
-        "qloo_relative": 0.05,
-        "why": "Taiwan joined 26 of 44 past breakouts that started in South Korea; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "US",
-        "name": "United States",
-        "probability": 0.06,
-        "history_probability": 0.03,
-        "qloo_relative": 0.03,
-        "why": "United States joined 31 of 47 past breakouts that started in South Korea; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "IN",
-        "name": "India",
-        "probability": 0.06,
-        "history_probability": 0.05,
-        "qloo_relative": 0.01,
-        "why": "India joined 36 of 50 past breakouts that started in South Korea; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "DE",
-        "name": "Germany",
-        "probability": 0.04,
-        "history_probability": 0.01,
-        "qloo_relative": 0.03,
-        "why": "Germany joined 41 of 53 past breakouts that started in South Korea; Qloo affinity here is 0.03 above this title's average country"
-      }
-    ],
-    "locked_at": "2026-10-30T10:00:00Z",
-    "ledger_id": "c15e9a3"
+  "locked_at": "2026-10-30T10:00:00Z",
+  "ledger_id": "c15e9a3"
+ },
+ "partners": [
+  {
+   "code": "JP",
+   "artists": [
+    "Mock Artist A",
+    "Mock Artist B"
+   ]
   },
-  "ripple": null,
-  "partners": [
-    {
-      "code": "JP",
-      "artists": [
-        "Mock Artist A",
-        "Mock Artist B"
-      ],
-      "brands": [
-        "Mock Brand"
-      ]
-    },
-    {
-      "code": "TH",
-      "artists": [
-        "Mock Artist A",
-        "Mock Artist B"
-      ],
-      "brands": [
-        "Mock Brand"
-      ]
-    }
-  ]
+  {
+   "code": "TH",
+   "artists": [
+    "Mock Artist A",
+    "Mock Artist B"
+   ]
+  }
+ ]
 }

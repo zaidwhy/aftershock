@@ -39,6 +39,34 @@ def test_ripple_rate_limit_per_visitor(monkeypatch):
     assert codes[-1] == 429
 
 
+def _stub_scoring(monkeypatch):
+    monkeypatch.setattr(api, "score_placements", lambda *a, **k: {"resolved": True, "songs": []})
+    monkeypatch.setattr(api, "Qloo", lambda **k: None)
+    api._ripple_hits.clear()
+    api._daily.update(day=None, count=0)
+
+
+def test_ripple_limit_keys_on_first_forwarded_address(monkeypatch):
+    _stub_scoring(monkeypatch)
+    params = {"show": "X", "songs": "A|B"}
+    for _ in range(api.RIPPLE_PER_HOUR):
+        assert client.get("/api/ripple", params=params, headers={"X-Forwarded-For": "203.0.113.7, 10.0.0.1"}).status_code == 200
+    assert client.get("/api/ripple", params=params, headers={"X-Forwarded-For": "203.0.113.7"}).status_code == 429
+    assert client.get("/api/ripple", params=params, headers={"X-Forwarded-For": "203.0.113.8"}).status_code == 200
+
+
+def test_ripple_daily_cap_across_visitors(monkeypatch):
+    _stub_scoring(monkeypatch)
+    monkeypatch.setattr(api, "RIPPLE_PER_DAY", 3)
+    params = {"show": "X", "songs": "A|B"}
+    codes = [client.get("/api/ripple", params=params, headers={"X-Forwarded-For": f"198.51.100.{i}"}).status_code
+             for i in range(4)]
+    assert codes == [200, 200, 200, 429]
+    resp = client.get("/api/ripple", params=params, headers={"X-Forwarded-For": "198.51.100.99"})
+    assert resp.status_code == 429
+    assert "daily limit of 3" in resp.json()["detail"]
+
+
 def test_unknown_storm_is_404_with_reason(tmp_path, monkeypatch):
     (tmp_path / "storms.json").write_text('{"week": "2026-10-18", "storms": [], "ripples": []}', encoding="utf-8")
     monkeypatch.setattr(api, "PRIVATE", tmp_path)

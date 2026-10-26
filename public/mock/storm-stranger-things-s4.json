@@ -1,244 +1,137 @@
 {
-  "_comment": "MOCK DATA for UI development. Everything here is invented except where a note says otherwise. Not Qloo output, not a forecast. Probabilities, ledger id and dates are mock.",
-  "id": "stranger-things-s4",
-  "title": "Stranger Things",
-  "season": "Season 4",
-  "category": "TV (English)",
-  "origin_week": "2026-10-25",
-  "origin_countries": [
-    {
-      "code": "US",
-      "name": "United States"
-    },
-    {
-      "code": "GB",
-      "name": "United Kingdom"
-    }
+ "_comment": "MOCK DATA for UI development. Every number is synthetic (invented, not Qloo output, not a forecast or a result). Probabilities, ledger id and dates are mock.",
+ "id": "stranger-things-s4",
+ "title": "Stranger Things",
+ "season": "Season 4",
+ "category": "TV (English)",
+ "origin_week": "2026-10-25",
+ "origin_countries": [
+  {
+   "code": "US",
+   "name": "United States"
+  },
+  {
+   "code": "GB",
+   "name": "United Kingdom"
+  }
+ ],
+ "spillover": {
+  "horizon_weeks": 4,
+  "forecasts": [
+   {
+    "code": "BR",
+    "name": "Brazil",
+    "probability": 0.62,
+    "why": "Brazil joined 14 of 40 past breakouts that started in United States"
+   },
+   {
+    "code": "MX",
+    "name": "Mexico",
+    "probability": 0.5,
+    "why": "Mexico joined 19 of 43 past breakouts that started in United States"
+   },
+   {
+    "code": "DE",
+    "name": "Germany",
+    "probability": 0.4,
+    "why": "Germany joined 24 of 46 past breakouts that started in United States"
+   },
+   {
+    "code": "FR",
+    "name": "France",
+    "probability": 0.34,
+    "why": "France joined 29 of 49 past breakouts that started in United States"
+   },
+   {
+    "code": "ES",
+    "name": "Spain",
+    "probability": 0.27,
+    "why": "Spain joined 34 of 52 past breakouts that started in United States"
+   },
+   {
+    "code": "IT",
+    "name": "Italy",
+    "probability": 0.23,
+    "why": "Italy joined 39 of 55 past breakouts that started in United States"
+   },
+   {
+    "code": "CA",
+    "name": "Canada",
+    "probability": 0.18,
+    "why": "Canada joined 44 of 58 past breakouts that started in United States"
+   },
+   {
+    "code": "AU",
+    "name": "Australia",
+    "probability": 0.14,
+    "why": "Australia joined 49 of 61 past breakouts that started in United States"
+   },
+   {
+    "code": "PH",
+    "name": "Philippines",
+    "probability": 0.12,
+    "why": "Philippines joined 14 of 64 past breakouts that started in United States"
+   },
+   {
+    "code": "IN",
+    "name": "India",
+    "probability": 0.09,
+    "why": "India joined 19 of 67 past breakouts that started in United States"
+   },
+   {
+    "code": "NL",
+    "name": "Netherlands",
+    "probability": 0.09,
+    "why": "Netherlands joined 24 of 40 past breakouts that started in United States"
+   },
+   {
+    "code": "SE",
+    "name": "Sweden",
+    "probability": 0.06,
+    "why": "Sweden joined 29 of 43 past breakouts that started in United States"
+   },
+   {
+    "code": "PL",
+    "name": "Poland",
+    "probability": 0.04,
+    "why": "Poland joined 34 of 46 past breakouts that started in United States"
+   },
+   {
+    "code": "TR",
+    "name": "Turkey",
+    "probability": 0.04,
+    "why": "Turkey joined 39 of 49 past breakouts that started in United States"
+   },
+   {
+    "code": "ZA",
+    "name": "South Africa",
+    "probability": 0.03,
+    "why": "South Africa joined 44 of 52 past breakouts that started in United States"
+   },
+   {
+    "code": "AR",
+    "name": "Argentina",
+    "probability": 0.03,
+    "why": "Argentina joined 49 of 55 past breakouts that started in United States"
+   }
   ],
-  "spillover": {
-    "horizon_weeks": 4,
-    "forecasts": [
-      {
-        "code": "BR",
-        "name": "Brazil",
-        "probability": 0.62,
-        "history_probability": 0.57,
-        "qloo_relative": 0.05,
-        "why": "Brazil joined 14 of 40 past breakouts that started in United States; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "MX",
-        "name": "Mexico",
-        "probability": 0.5,
-        "history_probability": 0.47,
-        "qloo_relative": 0.03,
-        "why": "Mexico joined 19 of 43 past breakouts that started in United States; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "DE",
-        "name": "Germany",
-        "probability": 0.4,
-        "history_probability": 0.39,
-        "qloo_relative": 0.01,
-        "why": "Germany joined 24 of 46 past breakouts that started in United States; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "FR",
-        "name": "France",
-        "probability": 0.34,
-        "history_probability": 0.29,
-        "qloo_relative": 0.05,
-        "why": "France joined 29 of 49 past breakouts that started in United States; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "ES",
-        "name": "Spain",
-        "probability": 0.27,
-        "history_probability": 0.24,
-        "qloo_relative": 0.03,
-        "why": "Spain joined 34 of 52 past breakouts that started in United States; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "IT",
-        "name": "Italy",
-        "probability": 0.23,
-        "history_probability": 0.22,
-        "qloo_relative": 0.01,
-        "why": "Italy joined 39 of 55 past breakouts that started in United States; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "CA",
-        "name": "Canada",
-        "probability": 0.18,
-        "history_probability": 0.13,
-        "qloo_relative": 0.05,
-        "why": "Canada joined 44 of 58 past breakouts that started in United States; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "AU",
-        "name": "Australia",
-        "probability": 0.14,
-        "history_probability": 0.11,
-        "qloo_relative": 0.03,
-        "why": "Australia joined 49 of 61 past breakouts that started in United States; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "PH",
-        "name": "Philippines",
-        "probability": 0.12,
-        "history_probability": 0.11,
-        "qloo_relative": 0.01,
-        "why": "Philippines joined 14 of 64 past breakouts that started in United States; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "IN",
-        "name": "India",
-        "probability": 0.09,
-        "history_probability": 0.04,
-        "qloo_relative": 0.05,
-        "why": "India joined 19 of 67 past breakouts that started in United States; Qloo affinity here is 0.05 above this title's average country"
-      },
-      {
-        "code": "NL",
-        "name": "Netherlands",
-        "probability": 0.09,
-        "history_probability": 0.06,
-        "qloo_relative": 0.03,
-        "why": "Netherlands joined 24 of 40 past breakouts that started in United States; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "SE",
-        "name": "Sweden",
-        "probability": 0.06,
-        "history_probability": 0.05,
-        "qloo_relative": 0.01,
-        "why": "Sweden joined 29 of 43 past breakouts that started in United States; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "PL",
-        "name": "Poland",
-        "probability": 0.04,
-        "history_probability": 0.01,
-        "qloo_relative": 0.03,
-        "why": "Poland joined 34 of 46 past breakouts that started in United States; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "TR",
-        "name": "Turkey",
-        "probability": 0.04,
-        "history_probability": 0.01,
-        "qloo_relative": 0.03,
-        "why": "Turkey joined 39 of 49 past breakouts that started in United States; Qloo affinity here is 0.03 above this title's average country"
-      },
-      {
-        "code": "ZA",
-        "name": "South Africa",
-        "probability": 0.03,
-        "history_probability": 0.02,
-        "qloo_relative": 0.01,
-        "why": "South Africa joined 44 of 52 past breakouts that started in United States; Qloo affinity here is 0.01 above this title's average country"
-      },
-      {
-        "code": "AR",
-        "name": "Argentina",
-        "probability": 0.03,
-        "history_probability": 0.01,
-        "qloo_relative": 0.02,
-        "why": "Argentina joined 49 of 55 past breakouts that started in United States; Qloo affinity here is 0.02 above this title's average country"
-      }
-    ],
-    "locked_at": "2026-10-30T10:00:00Z",
-    "ledger_id": "a3f9c21"
+  "locked_at": "2026-10-30T10:00:00Z",
+  "ledger_id": "a3f9c21"
+ },
+ "partners": [
+  {
+   "code": "BR",
+   "artists": [
+    "Mock Artist A",
+    "Mock Artist B"
+   ]
   },
-  "ripple": {
-    "show_age": {
-      "24_and_younger": 0.71,
-      "25_to_29": 0.45,
-      "30_to_34": 0.16,
-      "35_to_44": -0.62,
-      "45_to_54": -0.32,
-      "55_and_older": -0.49
-    },
-    "songs": [
-      {
-        "song": "Running Up That Hill",
-        "artist": "Kate Bush",
-        "resolved": true,
-        "score": 0.63,
-        "fit": 0.925,
-        "age_gap": 0.68,
-        "artist_age": {
-          "24_and_younger": 0.03,
-          "25_to_29": 0.12,
-          "30_to_34": 0.2,
-          "35_to_44": 0.22,
-          "45_to_54": 0.34,
-          "55_and_older": 0.1
-        },
-        "wiki_article": "Running_Up_That_Hill",
-        "status": "graded",
-        "observed_ratio": 90.9
-      },
-      {
-        "song": "Master of Puppets",
-        "artist": "Metallica",
-        "resolved": true,
-        "score": 0.41,
-        "fit": 0.74,
-        "age_gap": 0.55,
-        "artist_age": {
-          "24_and_younger": 0.16,
-          "25_to_29": 0.1,
-          "30_to_34": 0.18,
-          "35_to_44": 0.3,
-          "45_to_54": 0.28,
-          "55_and_older": -0.05
-        },
-        "wiki_article": "Master_of_Puppets",
-        "status": "graded",
-        "observed_ratio": 14.8
-      },
-      {
-        "song": "Separate Ways (Worlds Apart)",
-        "artist": "Journey",
-        "resolved": true,
-        "score": 0.29,
-        "fit": 0.66,
-        "age_gap": 0.44,
-        "artist_age": {
-          "24_and_younger": 0.27,
-          "25_to_29": 0.2,
-          "30_to_34": 0.1,
-          "35_to_44": 0,
-          "45_to_54": 0.15,
-          "55_and_older": 0.2
-        },
-        "wiki_article": "Separate_Ways_(Worlds_Apart)",
-        "status": "pending",
-        "observed_ratio": null
-      }
-    ]
-  },
-  "partners": [
-    {
-      "code": "BR",
-      "artists": [
-        "Mock Artist A",
-        "Mock Artist B"
-      ],
-      "brands": [
-        "Mock Brand"
-      ]
-    },
-    {
-      "code": "MX",
-      "artists": [
-        "Mock Artist A",
-        "Mock Artist B"
-      ],
-      "brands": [
-        "Mock Brand"
-      ]
-    }
-  ]
+  {
+   "code": "MX",
+   "artists": [
+    "Mock Artist A",
+    "Mock Artist B"
+   ]
+  }
+ ]
 }

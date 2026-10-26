@@ -1,5 +1,5 @@
 {
- "_comment": "MOCK DATA for UI development. Every show, song, score and view count here is invented and is not a live scoring.",
+ "_comment": "MOCK DATA for UI development. Every number is synthetic (invented, not Qloo output, not a forecast or a result).",
  "id": "mock-film-two-2026-10-16",
  "show": "Mock Film Two",
  "show_type": "film",
@@ -14,19 +14,17 @@
   "45_to_54": -0.3,
   "55_and_older": -0.5
  },
- "locked_at": "2026-10-20T01:00:00Z",
- "ledger_id": "mock-ledger-0002",
+ "locked_at": null,
  "songs": [
   {
    "song": "Mock Song Echo",
    "artist": "Artist E",
    "resolved": true,
-   "score": 0.9,
+   "score": 0.6,
    "age_gap": 0.6,
-   "fit": 0.77,
+   "fit": 0.2,
    "prior_daily_views": 35.2,
    "wiki_article": "Mock_Song_Echo",
-   "obscurity": -4.2,
    "artist_age": {
     "24_and_younger": -0.4,
     "25_to_29": -0.3,
@@ -43,12 +41,11 @@
    "song": "Mock Song Foxtrot",
    "artist": "Artist F",
    "resolved": true,
-   "score": 0.35,
+   "score": 0.18,
    "age_gap": 0.18,
-   "fit": 0.4,
+   "fit": 0.31,
    "prior_daily_views": 1500.0,
    "wiki_article": "Mock_Song_Foxtrot",
-   "obscurity": -4.2,
    "artist_age": {
     "24_and_younger": 0.1,
     "25_to_29": 0.2,
@@ -61,5 +58,7 @@
    "early_ratio": 1.2,
    "early_after_mean": 1800.0
   }
- ]
+ ],
+ "lockable": false,
+ "not_locked_reason": "released before tracking began; its outcome window was already open"
 }

@@ -24,23 +24,28 @@ See the end of this file for the latest results; everything below is committed l
 
 ## Decisions taken overnight (and why)
 
-- SPILLOVER decision test: Qloo location affinity adds no AUC (0.8188 history vs 0.8182 with Qloo; Qloo had a value for 1.8% of title-country pairs). Per the pre-set rule, the country forecast is history-only and Qloo is used for local partners instead.
-- RIPPLE: the first formula (taste fit x age gap) did not beat a no-Qloo obscurity baseline. On the larger artist-level test, fit predicted nothing while the age gap matched obscurity on 2024+ releases, so the shipped score is obscurity + Qloo age gap and fit is context only. Past data is contaminated (Qloo's snapshot postdates the spikes), so the forward ledger is the real test.
-- Stayed with AFTERSHOCK rather than switching to READ THE ROOM: the product, data pipeline and ledger exist, the honesty of the measurement is itself the differentiator, and a rebuild in 3 days was the bigger risk.
-- No paid LLM. The agentic parts: an autonomous weekly job (detect, resolve, forecast, lock, grade) and an MCP server so Claude and other agents can call the tools.
+- SPILLOVER: Qloo in-country affinity added no AUC (0.8188 history vs 0.8182 with Qloo on 200 breakouts; Qloo had a value for 1.8% of pairs). The country forecast is history-only; Qloo supplies the partners list.
+- RIPPLE went through three models, each tested before shipping:
+  1. taste fit x age gap: did not beat a no-Qloo baseline;
+  2. obscurity + age gap: looked best, until an independent review pointed out that obscurity is the spike's own denominator;
+  3. a placebo control (spike measured entirely before release) showed obscurity is mostly regression to the mean, while the Qloo age gap tracks the real spike and not the placebo (real minus placebo p 0.03 on 2024+, 0.04 overall). Shipped: score = Qloo age gap. Fit and obscurity are context only.
+- Ledger rebuilt twice before any publication (scoring bug fix, then stricter locking rules: every country locked; RIPPLE locks only before release + 7 days with 4+ scorable songs). None of the 12 live releases qualified: all were found after their windows opened, and new 2026 titles mostly lack Qloo audience profiles.
+- Stayed with AFTERSHOCK rather than switching to READ THE ROOM: the build exists and the measured honesty is the differentiator.
+- No paid LLM. Agentic parts: the weekly job (detect, resolve, forecast, lock, grade) as a GitHub Action, and the MCP server.
 
-## Results log
+## Results (all in data/results/)
 
-- SPILLOVER backtest (history only): AUC 0.817 on 829 test breakouts (Mar-Oct 2026). Qloo in-country affinity: no lift (0.8188 vs 0.8182 on 200), coverage 1.8%.
-- RIPPLE backtest (artist-page outcome, 195 artists, 24 shows): obscurity 0.27 (p .001); on 2024+ releases age gap 0.28 (p .02), obscurity + gap 0.31 (p .007), top pick 56% vs 33%; Qloo fit 0.00. Shipped score = obscurity + age gap.
-- Ledger: 350 spillover forecasts (35 breakouts, week ending 2026-10-18) + 10 ripple forecasts (12 new releases, 63 placements; most songs lack Qloo demographics or a Wikipedia page). Ripple locks were made 4-18 days after those releases, from pre-release data only; say so if asked. Clean forward ripple tests are releases after the lock date.
-- Rebuilt the ledger once overnight, before any publication, after fixing a bug that scored artists without Qloo demographics as average.
-- Live site pieces verified locally (uvicorn on 127.0.0.1:8791): landing, storm, ripple, try, scorecard; 19 tests pass; craft-guard clean.
+- spillover_backtest.json: history AUC 0.817 on 829 test breakouts.
+- spillover_qloo_test.json: 0.8188 vs 0.8182 (no Qloo lift).
+- ripple_test_artist.json, ripple_controls.json: see README section 3.
+- example_wednesday.json: the README's worked example.
+- Ledger: 3,240 spillover forecasts (35 breakouts x every candidate country), 0 ripple; chain verifies.
 
 ## Known gaps
 
-- Not deployed and not on GitHub (classifier). Steps 1-2 above.
+- Not on GitHub, not deployed (classifier). Steps 1-2 above. Branch is `main`.
 - Demo video not recorded.
-- Song matching on Wikipedia sometimes falls back to the artist page (Goo Goo Muck resolves to The Cramps).
-- Partners can be odd for small territories (empty lists for some countries).
-- Teammates have spare keys if the monthly quota runs low (`X-RateLimit-Remaining-Month` was about 47,900 after the backtests).
+- Early SPILLOVER grades appear once Netflix publishes the week ending 25 Oct; rerun `scripts/run_forecasts.py` then (no new locks are created for already-locked titles).
+- The weekly Action commits the ledger but does not refresh the deployed site; redeploy by hand before judging.
+- Partners are unvalidated, and odd for some small territories.
+- Quota: about 47,900 calls left this month after the backtests; teammates' keys are spares.

@@ -1,5 +1,5 @@
 {
- "_comment": "MOCK DATA for UI development. Every show, song, score and view count here is invented and is not a live scoring.",
+ "_comment": "MOCK DATA for UI development. Every number is synthetic (invented, not Qloo output, not a forecast or a result).",
  "id": "mock-series-one-2026-10-23",
  "show": "Mock Series One",
  "show_type": "tv_show",
@@ -21,12 +21,11 @@
    "song": "Mock Song Alpha",
    "artist": "Artist A",
    "resolved": true,
-   "score": 1.0,
-   "age_gap": 0.71,
-   "fit": 0.83,
+   "score": 0.72,
+   "age_gap": 0.72,
+   "fit": 0.2,
    "prior_daily_views": 66.3,
    "wiki_article": "Mock_Song_Alpha",
-   "obscurity": -4.2,
    "artist_age": {
     "24_and_younger": -0.2,
     "25_to_29": -0.1,
@@ -43,12 +42,11 @@
    "song": "Mock Song Bravo",
    "artist": "Artist B",
    "resolved": true,
-   "score": 0.82,
+   "score": 0.55,
    "age_gap": 0.55,
-   "fit": 0.61,
+   "fit": 0.31,
    "prior_daily_views": 210.0,
    "wiki_article": "Mock_Song_Bravo",
-   "obscurity": -4.2,
    "artist_age": {
     "24_and_younger": 0.0,
     "25_to_29": 0.1,
@@ -65,12 +63,11 @@
    "song": "Mock Song Charlie",
    "artist": "Artist C",
    "resolved": true,
-   "score": 0.64,
+   "score": 0.4,
    "age_gap": 0.4,
-   "fit": 0.7,
+   "fit": 0.42,
    "prior_daily_views": null,
    "wiki_article": null,
-   "obscurity": null,
    "artist_age": {
     "24_and_younger": 0.1,
     "25_to_29": 0.2,
@@ -87,12 +84,11 @@
    "song": "Mock Song Delta",
    "artist": "Artist D",
    "resolved": true,
-   "score": 0.31,
+   "score": 0.22,
    "age_gap": 0.22,
-   "fit": 0.5,
+   "fit": 0.53,
    "prior_daily_views": 4800.0,
    "wiki_article": "Mock_Song_Delta",
-   "obscurity": -4.2,
    "artist_age": {
     "24_and_younger": 0.3,
     "25_to_29": 0.2,
@@ -105,5 +101,7 @@
    "early_ratio": 1.0,
    "early_after_mean": 4810.0
   }
- ]
+ ],
+ "lockable": true,
+ "not_locked_reason": null
 }

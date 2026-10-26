@@ -5,6 +5,9 @@ import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
 import { seismograph, ripplePanel, generationGap, forecastMap } from "./charts.js";
 import { ISO } from "./iso.js";
 
+// AUCs that differ in the third decimal must not round to the same label.
+const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
+
 const countryName = (code) => ISO[code]?.[1] ?? code;
 
 const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - forecast where a breakout show spreads"; };
@@ -37,7 +40,7 @@ export function renderHome(root, isCurrent) {
     h("section", { class: "hero" },
       h("p", { class: "eyebrow" }, "Breakout forecasting"),
       h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next?")),
-      h("p", { class: "pitch" }, "AFTERSHOCK uses Qloo's taste graph to forecast which countries a breakout show charts in next, and which songs placed in it will spike. Every forecast is locked in a public ledger before the outcome is known."),
+      h("p", { class: "pitch" }, "SPILLOVER: for a title that broke out in 1 to 3 countries, the probability each other country charts it within 4 weeks, from Netflix history. RIPPLE: for songs placed in a show, a ranking by the age gap between the artist's audience and the show's, from Qloo. Every forecast is locked in a public ledger before the outcome is known."),
       chartBox),
     mockNote(),
     h("section", { "aria-labelledby": "watch-h" },
@@ -68,11 +71,11 @@ export function renderHome(root, isCurrent) {
   load(watchBox, "new releases", isCurrent, getRipples, ({ ripples }) => {
     if (!ripples?.length) { add(watchBox, h("p", { class: "status" }, "No new releases with known song placements yet.")); return; }
     add(watchBox,
-      h("p", { class: "muted" }, "New releases whose placed songs were scored on release day, before any spike."),
+      h("p", { class: "muted" }, "New releases with known song placements. Songs are locked only if that happens before the outcome window opens; older releases are an early read only."),
       h("ul", { class: "storm-list" }, ripples.map((r) => h("li", null,
         h("a", { href: `#/ripple/${encodeURIComponent(r.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, r.show),
-          h("span", { class: "storm-meta" }, `${r.platform} | released ${r.release_date} | ${r.songs} ${r.songs === 1 ? "song" : "songs"}`),
+          h("span", { class: "storm-meta" }, `${r.platform} | released ${r.release_date} | ${r.songs} ${r.songs === 1 ? "song" : "songs"}`, r.lockable === false ? h("span", { class: "tag tag-pending" }, "early read only") : null),
           h("span", { class: "storm-next" }, r.top_song ? h("span", null, "Top: ", h("strong", null, r.top_song.song), ` by ${r.top_song.artist} `, h("span", { class: "mono" }, plain2(r.top_song.score))) : "No ranked song"))))));
   });
 
@@ -84,8 +87,7 @@ export function renderHome(root, isCurrent) {
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
           h("span", { class: "storm-meta" }, `Origin: ${origins(s.origin_countries)}`),
-          h("span", { class: "storm-next" }, s.top_forecast ? h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))) : "No forecast yet",
-            s.has_ripple ? h("span", { class: "tag tag-pending" }, "songs") : null))))));
+          h("span", { class: "storm-next" }, s.top_forecast ? h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))) : "No forecast yet"))))));
   });
 }
 
@@ -108,11 +110,9 @@ export function renderStorm(root, id, isCurrent) {
         fc.length ? forecastTable(fc) : h("p", { class: "status" }, "No forecast rows for this title.")),
       st.partners?.some((p) => p.artists?.length) ? h("section", { "aria-labelledby": "par-h" },
         h("h2", { id: "par-h" }, "Who this audience already loves there"),
-        h("p", { class: "muted" }, "From Qloo: artists the title's audience over-indexes on in each forecast country, as partners for a local launch."),
+        h("p", { class: "muted" }, "From Qloo: artists the title's audience over-indexes on in each forecast country, as partners for a local launch. This list does not change the probabilities."),
         h("ul", { class: "partners" }, st.partners.filter((p) => p.artists?.length).map((p) => h("li", null,
           h("strong", null, countryName(p.code)), " ", h("span", null, p.artists.join(", ")))))) : null,
-      st.ripple ? h("section", { "aria-labelledby": "rip-h" }, h("h2", { id: "rip-h" }, "Song ripple"),
-        h("p", { class: "muted" }, "Songs placed in the show whose Wikipedia pageviews may spike. Score = within-show rank of how unknown the song was before release, averaged with the rank of the age gap between the show's audience and the artist's (Qloo)."), ripplePanel(st.ripple)) : null,
       h("p", { class: "locked mono" }, st.spillover?.locked_at ? `Locked at ${dateLabel(st.spillover.locked_at)} | ledger id ${st.spillover.ledger_id}` : "Not locked yet."));
     forecastMap(fc, st.origin_countries).then((svg) => {
       if (isCurrent()) mapBox.replaceChildren(svg);
@@ -135,31 +135,30 @@ export function renderRipple(root, id, isCurrent) {
       h("h1", null, r.show),
       h("p", { class: "meta" }, `${r.platform} | released ${r.release_date} | scored as of release day`),
       mockNote(),
-      h("p", null, "Each song is ranked within this release by how unknown it was on Wikipedia before release and how far its audience sits from the show's audience by age (Qloo). The early read is Wikipedia views since release over the 60 days before; it keeps accumulating for 35 days."),
+      h("p", null, "The score is the Qloo age gap, from 0 to 1: how far the artist's audience sits from the show's audience by age band. Prior Wikipedia views are shown as context only: songs with few views tend to spike more, but they also tend to rise on their own, so this is mostly regression to the mean and is not scored. The early read is the mean daily Wikipedia views on days +7 to +35 after release over days -60 to -8; it is still accumulating while pending."),
       songs.length ? h("section", { "aria-labelledby": "rs-h" },
         h("h2", { id: "rs-h" }, "Ranked songs"),
         h("p", { class: "legend" }, h("span", { class: "key key-show" }), "Show audience", h("span", { class: "key key-artist" }), "Artist audience", h("span", { class: "muted" }, " (over-index by age band)")),
         songTable(r, songs)) : h("p", { class: "status" }, "No songs were scored for this release."),
-      h("p", { class: "locked mono" }, r.locked_at ? `Locked at ${dateLabel(r.locked_at)} | ledger id ${r.ledger_id}` : "Not locked yet."));
+      h("p", { class: "locked mono" }, r.locked_at ? `Locked at ${dateLabel(r.locked_at)} | ledger id ${r.ledger_id}` : (r.not_locked_reason ? `Not locked: ${r.not_locked_reason}` : "Not locked yet.")));
   });
 }
 
 function songTable(r, songs) {
-  const heads = ["#", "Song", "Artist", "Score", "Age gap", "Prior views/day", "Early read", "Generation gap"];
-  const numCols = [3, 4, 5, 6];
+  const heads = ["#", "Song", "Artist", "Score (age gap)", "Prior views/day (context)", "Early read", "Generation gap"];
+  const numCols = [3, 4, 5];
   return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Ranked songs table, scrolls sideways on narrow screens" },
     h("table", { class: "fc rt" },
-      h("caption", null, "Score runs 0 to 1 within this release. Early read above 1x means views since release are above the pre-release average."),
+      h("caption", null, "Score is the Qloo age gap, 0 to 1. Early read above 1x means mean daily views on days +7 to +35 after release are above the days -60 to -8 average."),
       h("thead", null, h("tr", null, heads.map((t, i) => h("th", { scope: "col", class: numCols.includes(i) ? "num" : null }, t)))),
       h("tbody", null, songs.map((x, i) => h("tr", null,
         h("td", { class: "mono" }, i + 1),
         h("th", { scope: "row" }, x.song),
         h("td", null, x.artist),
         h("td", { class: "num mono prob" }, plain2(x.score)),
-        h("td", { class: "num mono" }, x.age_gap == null ? "not in Qloo" : x.age_gap.toFixed(2)),
         h("td", { class: "num mono" }, x.prior_daily_views == null ? "n/a" : Math.round(x.prior_daily_views).toLocaleString("en-US")),
         h("td", { class: "num mono" }, earlyRead(x)),
-        h("td", null, x.artist_age ? generationGap(r.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`) : h("span", { class: "muted" }, "artist not in Qloo; scored on obscurity only")))))));
+        h("td", null, x.artist_age ? generationGap(r.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`) : h("span", { class: "muted" }, "artist not in Qloo")))))));
 }
 
 function forecastTable(fc) {
@@ -205,12 +204,12 @@ export function renderTry(root, isCurrent) {
     } },
     h("div", { class: "field" }, h("label", { for: "show" }, "Show or film"), show),
     h("div", { class: "field" }, h("label", { for: "songs" }, "Songs, one per line"), songs,
-      h("p", { id: "songs-help", class: "help" }, "Format: song | artist. Up to 8 lines. Limited to 10 live scorings per hour.")),
+      h("p", { id: "songs-help", class: "help" }, "Format: song | artist. Up to 8 lines. Limited to 10 live scorings per hour per visitor.")),
     h("div", { class: "field" }, h("label", { for: "asof" }, "Score as of (optional)"), asOf,
-      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show: obscurity is read from Wikipedia before this date. Try Wednesday as of 2022-11-23 with Space Song | Beach House, Physical | Dua Lipa, Dream Weaver | Gary Wright, Dancing In the Dark | Bruce Springsteen. Qloo's audience data is today's, so past replays carry its later knowledge.")),
+      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show. It changes only the Wikipedia context (prior views are read before this date); the Qloo audiences, and so the score, are today's, so a past replay carries Qloo's later knowledge. Try Wednesday as of 2022-11-23 with Space Song | Beach House, Physical | Dua Lipa, Dream Weaver | Gary Wright, Dancing In the Dark | Bruce Springsteen.")),
     btn);
   add(root, h("h1", null, "Try it on any show"),
-    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each one in Qloo and Wikipedia and ranks them by how unknown each song is and how far its audience sits from the show's."),
+    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each artist in Qloo and scores it by the age gap: how far the artist's audience sits from the show's, from 0 to 1. Prior Wikipedia views and Qloo taste fit are shown as context and are not scored."),
     mockNote(), form, out);
 }
 
@@ -221,23 +220,45 @@ export function renderScorecard(root, isCurrent) {
   add(root, h("h1", null, "Scorecard"), h("p", { class: "pitch" }, "Forecasts are locked first and graded later. Nothing here is edited after the fact."), mockNote(), box);
   load(box, "the scorecard", isCurrent, getScorecard, (sc) => {
     const sp = sc.spillover || {}, rp = sc.ripple || {}, bt = sc.backtest || {};
-    add(box, 
+    const bs = bt.spillover || {}, br = bt.ripple || {};
+    const pl = br.placebo || {};
+    const row = (label, value) => h("tr", null, h("th", { scope: "row" }, label), h("td", { class: "mono" }, value));
+    const gapCell = br.gap_2024_plus == null ? "n/a" : `${plain2(br.gap_2024_plus)}${br.gap_2024_plus_p == null ? "" : ` (permutation p = ${br.gap_2024_plus_p.toFixed(2)})`}`;
+    const placeboRow = (label, key, a, b) => h("tr", null, h("th", { scope: "row" }, label),
+      [pl["2024_plus"]?.[a], pl["2024_plus"]?.[b], pl.all?.[a], pl.all?.[b]].map((v) => h("td", { class: "num mono" }, plain2(v))));
+    add(box,
       h("div", { class: "grid2" },
-        scoreBlock("Spillover", "graded weekly by Netflix Top 10", sp.locked, sp.graded,
-          [["Hits (locked top 10 per title)", sp.hits], ["Pending", sp.pending], ["AUC", plain2(sp.auc)]]),
-        scoreBlock("Ripple", "graded daily by Wikipedia pageviews", rp.locked, rp.graded,
-          [["Spearman", plain2(rp.spearman)], ["Baseline Spearman", plain2(rp.baseline_spearman)]])),
+        scoreBlock("Spillover", "graded weekly by Netflix Top 10, once a title's 4-week horizon has passed", sp.locked, sp.graded,
+          [["Hits", sp.hits], ["Pending", sp.pending], ["AUC", plain2(sp.auc)],
+           ["So far: hits, horizon still open", sp.so_far ? `${sp.so_far.hits} of ${sp.so_far.forecasts}` : "n/a"],
+           ["So far: partial AUC (misses can still turn into hits)", plain2(sp.so_far?.auc)]]),
+        scoreBlock("Ripple", "graded by Wikipedia pageviews, per release", rp.locked, undefined,
+          [["Graded releases", rp.graded_releases], ["Pending releases", rp.pending_releases], ["Mean Spearman", plain2(rp.mean_spearman)]])),
       h("h2", null, "Backtests on past events"),
       h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Backtest results"),
-        h("thead", null, h("tr", null, ["Model", "Measure", "Value"].map((t) => h("th", { scope: "col" }, t)))),
+        h("thead", null, h("tr", null, ["Measure", "Value"].map((t) => h("th", { scope: "col" }, t)))),
         h("tbody", null,
-          h("tr", null, h("th", { scope: "row" }, "Spillover"), h("td", null, "History-only AUC"), h("td", { class: "mono" }, plain2(bt.spillover?.history_auc))),
-          h("tr", null, h("th", { scope: "row" }, "Spillover"), h("td", null, "With Qloo AUC"), h("td", { class: "mono" }, plain2(bt.spillover?.qloo_auc))),
-          h("tr", null, h("th", { scope: "row" }, "Ripple"), h("td", null, `Spearman (n = ${bt.ripple?.n ?? 0})`), h("td", { class: "mono" }, plain2(bt.ripple?.spearman))))),
-      h("p", null, h("a", { class: "btn", href: sc.ledger_url, rel: "noopener" }, "Open the public ledger")),
+          row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)),
+          row(`Spillover: same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
+          row(`Spillover: same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc)),
+          row("Ripple: Qloo age gap, 2024+ releases (Spearman)", gapCell),
+          row("Ripple: Qloo taste fit, 2024+", plain2(br.fit_2024_plus)),
+          row("Ripple: obscurity, 2024+ (mostly regression to the mean, see placebo)", plain2(br.obscurity_2024_plus)))),
+      h("p", { class: "muted" }, `Ripple backtest: ${br.n_artists ?? "n/a"} artists placed in ${br.n_shows ?? "n/a"} shows (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
+      h("h2", null, "Placebo check"),
+      h("p", { class: "muted" }, "Mean within-show Spearman against the real spike and against a placebo spike measured entirely before release. A score that predicts the placebo is picking up regression to the mean, not the show."),
+      h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),
+        h("thead", null, h("tr", null, ["Score", `Real, 2024+ (${pl["2024_plus"]?.n_shows ?? "n/a"} shows)`, "Placebo, 2024+", `Real, all (${pl.all?.n_shows ?? "n/a"} shows)`, "Placebo, all"].map((t, i) => h("th", { scope: "col", class: i ? "num" : null }, t)))),
+        h("tbody", null,
+          placeboRow("Obscurity", "obscurity", "real: obscurity", "placebo: obscurity (its own pre-window)"),
+          placeboRow("Age gap", "gap", "real: gap", "placebo: gap"))),
+      h("p", { class: "muted" }, `Real minus placebo for the age gap: permutation p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])} on 2024+ releases, ${plain2(pl.all?.["p: gap real minus gap placebo"])} on all.`),
+      h("p", null, sc.ledger_url ? h("a", { class: "btn", href: sc.ledger_url, rel: "noopener" }, "Open the public ledger") : null,
+        sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? " Ledger hash chain verified." : " Ledger hash chain FAILED verification."),
+        sc.data_week ? h("span", { class: "muted" }, ` Netflix data through the week of ${sc.data_week}.`) : null),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
-        h("p", null, "Qloo describes the taste of groups, not of any individual: a high score says an audience tends to like something, not that a given person will. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. Backtests on past events are biased in both directions, because today's Qloo data postdates those events: a song that already spiked now has a younger audience, so its age gap looks smaller than it was before release. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+        h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The ripple backtest is 9 shows from 2024 on and 195 artists, with an outcome (Wikipedia page spike) that is a proxy for attention, and Qloo audiences are today's, which postdate those releases. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
   });
 }
 
@@ -246,7 +267,7 @@ function scoreBlock(name, graded_by, locked, graded, extra) {
     h("h2", null, name), h("p", { class: "muted" }, graded_by),
     h("dl", null,
       h("div", null, h("dt", null, "Locked"), h("dd", { class: "mono" }, locked ?? "n/a")),
-      h("div", null, h("dt", null, "Graded"), h("dd", { class: "mono" }, graded ?? "n/a")),
+      graded === undefined ? null : h("div", null, h("dt", null, "Graded"), h("dd", { class: "mono" }, graded ?? "n/a")),
       extra.map(([k, v]) => h("div", null, h("dt", null, k), h("dd", { class: "mono" }, v ?? "n/a")))));
 }
 
@@ -257,16 +278,20 @@ export function renderMethod(root) {
     h("h1", null, "Method"),
     h("p", { class: "pitch" }, "Two models, one rule: lock the forecast before the outcome."),
     h("section", null, h("h2", null, "SPILLOVER: which countries next"),
-      h("p", null, "Start with a title that entered Netflix's Top 10 in 1 to 3 countries. From past breakouts that began in the same countries, count how often each other country followed; that is the history probability. Then adjust it with Qloo: how strongly the title's audience taste matches each country, relative to the title's average country. The output is a probability per country over a four-week horizon, graded against the next weekly Top 10."),
-      h("p", null, "The history column in the forecast table is the baseline. The Qloo column is how far the taste signal moved the forecast away from it.")),
-    h("section", null, h("h2", null, "RIPPLE: which songs spike"),
-      h("p", null, "For each song placed in a show, compare two audiences from Qloo, the show's and the artist's, by age band: the age gap is how far the artist's audience sits from the bands the show's audience over-indexes on. Add obscurity: the song's mean daily Wikipedia views in the 60 days before release (its artist's page when the song has none). Score = the average of the two within-show percentiles. We also tested Qloo taste fit (how much the show's audience likes the artist); it did not predict spikes, so it is shown as context only. It has a known blind spot: it would not have picked Running Up That Hill. That song already had about 350 Wikipedia views a day before Stranger Things 4, and its spike came from how the show used it, which neither Qloo nor Wikipedia can see."),
-      h("p", null, "Stranger Things 4 is the case: its audience over-indexes on 24-and-younger (+0.71) while Kate Bush's is flat there (+0.03) and peaks at 45-54 (+0.34), yet fit is very high (0.925). Her English Wikipedia views went from about 10k a month to 909k in June 2022. Graded daily against Wikimedia pageviews.")),
+      h("p", null, "Start with a title that entered Netflix's Top 10 in 1 to 3 countries. The probability that each other country charts it within 4 weeks comes from Netflix history only: how often that country followed past breakouts from the same origin countries, smoothed toward the same-category rate for that country, which is smoothed toward the country's base rate."),
+      h("p", null, "Backtest: ROC AUC 0.817 on 829 test breakouts (Mar-Oct 2026). We also tested Qloo as an extra feature on a 200-breakout subset: AUC 0.8188 with history only against 0.8182 with Qloo, so no lift. Qloo had an in-country value for only 1.8% of title-country pairs. So Qloo's role in SPILLOVER is the partners list: artists the title's audience over-indexes on in each forecast country."),
+      h("p", null, "Every candidate country's probability is locked in the ledger, not just the top rows, so AUC and calibration can be graded. Grading happens once a title's 4-week horizon has passed in Netflix's weekly data.")),
+    h("section", null, h("h2", null, "RIPPLE: which songs"),
+      h("p", null, "The score is the Qloo age gap, from 0 to 1: how far the artist's audience sits from the show's audience by age band, using Qloo demographics for both (the artist's over-index weighted by the age bands the show over-indexes on)."),
+      h("p", null, "Evidence: 195 artists placed in 24 shows, with the outcome being the artist's Wikipedia page spike (days +7 to +35 over days -60 to -8). On releases from 2024 on (9 shows) the age gap's mean within-show Spearman is 0.28 (permutation p 0.02). It does not predict a placebo spike measured entirely before release (-0.11), and real minus placebo is significant (p 0.03; 0.04 on all 24 shows)."),
+      h("p", null, "Qloo taste fit predicted nothing (about 0.00) and is shown as context only. Obscurity (low Wikipedia views before release) correlates with the spike (0.29) but predicts the placebo spike almost as well (0.28): it is mostly regression to the mean, so it is shown as context with that warning, not scored."),
+      h("p", null, "Live: a release's songs are locked only if the lock happens before its outcome window opens (release + 7 days) and at least 4 songs are scorable. Older releases are shown as an early read only, with a reason. Many new 2026 titles have no Qloo audience profile yet, which is a coverage limit."),
+      h("p", null, "Known miss: the model would not have picked Kate Bush's Running Up That Hill for Stranger Things 4. The show's audience skews young and her Qloo audience does not, yet taste fit was very high, and her page views rose from about 10k a month to 909k in June 2022 because of how the scene used the song, which neither Qloo nor Wikipedia sees.")),
     h("section", null, h("h2", null, "Data sources"),
       h("ul", { class: "plain-list" },
-        h("li", null, h("strong", null, "Netflix Top 10"), ": the public weekly TSV, by country. Defines storms and grades SPILLOVER."),
-        h("li", null, h("strong", null, "Wikimedia pageviews API"), ": daily views per article. Grades RIPPLE."),
-        h("li", null, h("strong", null, "Qloo Insights"), ": entity search, demographics (age bands), cross-domain affinity (show to artist), and location-conditioned affinity (taste by country)."))),
+        h("li", null, h("strong", null, "Netflix Top 10"), ": the public weekly TSV, by country. Defines storms, supplies the SPILLOVER history and grades it."),
+        h("li", null, h("strong", null, "Wikimedia pageviews API"), ": daily views per article. The RIPPLE outcome and its prior-views context."),
+        h("li", null, h("strong", null, "Qloo Insights"), ": entity search and demographics (age bands) for the RIPPLE age gap, and the partners list of artists a title's audience over-indexes on in each country."))),
     h("p", null, "The Qloo key stays on the server; this page only talks to AFTERSHOCK's own API."));
 }
 

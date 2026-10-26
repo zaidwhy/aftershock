@@ -168,22 +168,25 @@ def spearman(xs, ys):
 
 
 def grade(rows, last_week):
-    """Grade locked spillover forecasts whose horizon has passed."""
+    """Grade locked spillover forecasts. Closed: the 4-week horizon has passed. So far: the
+    horizon is still open, and a country counts as a hit only if it has already joined; misses
+    there can still turn into hits, so the partial AUC is labelled as such everywhere."""
     first = first_entries(rows)
-    graded, hits, pending = [], 0, 0
+    graded, so_far, pending = [], [], 0
     for record in ledger.read():
         if record.get("kind") != "spillover":
             continue
         origin = date.fromisoformat(record["origin_week"])
-        if origin + timedelta(weeks=HORIZON) > last_week:
+        joined_week = first.get(tuple(record["title"]), {}).get(record["target"])
+        joined = joined_week and origin < date.fromisoformat(joined_week) <= origin + timedelta(weeks=HORIZON)
+        row = {"probability": record["probability"], "hit": bool(joined)}
+        if origin + timedelta(weeks=HORIZON) <= last_week:
+            graded.append(row)
+        else:
             pending += 1
-            continue
-        weeks = first.get(tuple(record["title"]), {})
-        joined_week = weeks.get(record["target"])
-        hit = bool(joined_week and origin < date.fromisoformat(joined_week) <= origin + timedelta(weeks=HORIZON))
-        hits += hit
-        graded.append({"probability": record["probability"], "hit": hit})
-    return graded, hits, pending
+            if last_week > origin:
+                so_far.append(row)
+    return graded, so_far, pending
 
 
 def main():
@@ -265,7 +268,9 @@ def main():
         if key in lock_ids:
             storm["detail"]["spillover"]["locked_at"], storm["detail"]["spillover"]["ledger_id"] = lock_ids[key]
 
-    graded, hits, pending = grade(rows, last_week)
+    graded, so_far, pending = grade(rows, last_week)
+    hits = sum(g["hit"] for g in graded)
+    so_far_hits = sum(g["hit"] for g in so_far)
     ripple_graded = grade_ripples(date.today())
     backtest = _read_json(RESULTS / "spillover_backtest.json")
     qloo_test = _read_json(RESULTS / "spillover_qloo_test.json")
@@ -278,7 +283,10 @@ def main():
         "spillover": {"locked": sum(1 for r in records if r["kind"] == "spillover"), "graded": len(graded),
                       "hits": hits, "pending": pending,
                       "auc": roc_auc([g["probability"] for g in graded], [int(g["hit"]) for g in graded])
-                      if graded and 0 < hits < len(graded) else None},
+                      if graded and 0 < hits < len(graded) else None,
+                      "so_far": {"forecasts": len(so_far), "hits": so_far_hits,
+                                 "auc": roc_auc([g["probability"] for g in so_far], [int(g["hit"]) for g in so_far])
+                                 if so_far and 0 < so_far_hits < len(so_far) else None}},
         "ripple": {"locked": sum(1 for r in records if r["kind"] == "ripple"), **ripple_graded},
         "backtest": {
             "spillover": {"history_auc": metric(backtest, "history baseline"),

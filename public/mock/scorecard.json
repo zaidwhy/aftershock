@@ -1,7 +1,55 @@
 {
-  "_comment": "MOCK DATA for UI development. All counts and metrics are invented placeholders, not results.",
-  "spillover": {"locked": 120, "graded": 80, "hits_top5": 9, "auc": 0.81, "baseline_auc": 0.80, "weeks": ["2026-11-01"]},
-  "ripple": {"locked": 40, "graded": 12, "spearman": 0.41, "baseline_spearman": 0.12},
-  "backtest": {"spillover": {"history_auc": 0.817, "qloo_auc": null}, "ripple": {"n": 0, "spearman": null}},
-  "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl"
+ "_comment": "MOCK DATA for UI development. Every number is synthetic (invented, not Qloo output, not a forecast or a result).",
+ "spillover": {
+  "locked": 120,
+  "graded": 80,
+  "hits": 9,
+  "pending": 40,
+  "auc": 0.8
+ },
+ "ripple": {
+  "locked": 14,
+  "graded_releases": 2,
+  "pending_releases": 1,
+  "mean_spearman": 0.2
+ },
+ "backtest": {
+  "spillover": {
+   "history_auc": 0.81,
+   "test_breakouts": 800,
+   "subset_breakouts": 200,
+   "history_auc_same_subset": 0.82,
+   "qloo_auc": 0.82
+  },
+  "ripple": {
+   "n_artists": 190,
+   "n_shows": 24,
+   "n_shows_2024_plus": 9,
+   "gap_2024_plus": 0.25,
+   "gap_2024_plus_p": 0.03,
+   "fit_2024_plus": 0.0,
+   "obscurity_2024_plus": 0.3,
+   "placebo": {
+    "all": {
+     "n_shows": 24,
+     "real: obscurity": 0.25,
+     "real: gap": 0.1,
+     "placebo: obscurity (its own pre-window)": 0.2,
+     "placebo: gap": -0.1,
+     "p: gap real minus gap placebo": 0.05
+    },
+    "2024_plus": {
+     "n_shows": 9,
+     "real: obscurity": 0.3,
+     "real: gap": 0.25,
+     "placebo: obscurity (its own pre-window)": 0.28,
+     "placebo: gap": -0.1,
+     "p: gap real minus gap placebo": 0.04
+    }
+   }
+  }
+ },
+ "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl",
+ "ledger_intact": true,
+ "data_week": "2026-10-25"
 }
