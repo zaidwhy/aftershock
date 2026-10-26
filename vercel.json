@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{aftershock/**,data/private/**,data/public/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/health", "destination": "/api/index" }
+  ]
+}

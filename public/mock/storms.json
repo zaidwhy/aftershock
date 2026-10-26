@@ -1,0 +1,70 @@
+{
+  "_comment": "MOCK DATA for UI development. Everything here is invented except where a note says otherwise. Not Qloo output, not a forecast.",
+  "week": "2026-10-25",
+  "storms": [
+    {
+      "id": "stranger-things-s4",
+      "title": "Stranger Things",
+      "season": "Season 4",
+      "category": "TV (English)",
+      "origin_countries": [
+        {
+          "code": "US",
+          "name": "United States"
+        },
+        {
+          "code": "GB",
+          "name": "United Kingdom"
+        }
+      ],
+      "origin_week": "2026-10-25",
+      "qloo_entity": "mock-uuid",
+      "top_forecast": {
+        "code": "BR",
+        "name": "Brazil",
+        "probability": 0.62
+      },
+      "has_ripple": true
+    },
+    {
+      "id": "hakone-ekiden-our-story-s1",
+      "title": "Hakone Ekiden: Our Story",
+      "season": "Season 1",
+      "category": "TV (Non-English)",
+      "origin_countries": [
+        {
+          "code": "JP",
+          "name": "Japan"
+        }
+      ],
+      "origin_week": "2026-10-25",
+      "qloo_entity": null,
+      "top_forecast": {
+        "code": "KR",
+        "name": "South Korea",
+        "probability": 0.61
+      },
+      "has_ripple": false
+    },
+    {
+      "id": "the-glory-s1",
+      "title": "The Glory",
+      "season": "Season 1",
+      "category": "TV (Non-English)",
+      "origin_countries": [
+        {
+          "code": "KR",
+          "name": "South Korea"
+        }
+      ],
+      "origin_week": "2026-10-25",
+      "qloo_entity": null,
+      "top_forecast": {
+        "code": "JP",
+        "name": "Japan",
+        "probability": 0.62
+      },
+      "has_ripple": false
+    }
+  ]
+}

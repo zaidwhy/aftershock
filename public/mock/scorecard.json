@@ -1,0 +1,7 @@
+{
+  "_comment": "MOCK DATA for UI development. All counts and metrics are invented placeholders, not results.",
+  "spillover": {"locked": 120, "graded": 80, "hits_top5": 9, "auc": 0.81, "baseline_auc": 0.80, "weeks": ["2026-11-01"]},
+  "ripple": {"locked": 40, "graded": 12, "spearman": 0.41, "baseline_spearman": 0.12},
+  "backtest": {"spillover": {"history_auc": 0.817, "qloo_auc": null}, "ripple": {"n": 0, "spearman": null}},
+  "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl"
+}

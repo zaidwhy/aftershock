@@ -1,0 +1,136 @@
+{
+  "horizon_weeks": 4,
+  "cutoff": "2026-03-22",
+  "last_week": "2026-10-18",
+  "train_events": 8696,
+  "test_events": 829,
+  "test_positives": 758,
+  "test_pairs": 76760,
+  "metrics": [
+    {
+      "model": "history baseline",
+      "auc": 0.8169202723383407,
+      "brier": 0.009494410482175197,
+      "top5_precision": 0.041254523522316046
+    },
+    {
+      "model": "global country base rate",
+      "auc": 0.5583397194310745,
+      "brier": 0.009771938835679813,
+      "top5_precision": 0.015199034981905911
+    },
+    {
+      "model": "uniform",
+      "auc": 0.5,
+      "brier": 0.25,
+      "top5_precision": 0.011821471652593486
+    }
+  ],
+  "pending_events": [
+    {
+      "title": [
+        "A Long Goodbye",
+        "N/A"
+      ],
+      "origin_countries": [
+        "JP"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Alas Roban The Series",
+        "Alas Roban The Series: Season 1"
+      ],
+      "origin_countries": [
+        "ID"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Black Showman",
+        "N/A"
+      ],
+      "origin_countries": [
+        "JP"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Brooklyn",
+        "N/A"
+      ],
+      "origin_countries": [
+        "GB",
+        "IE",
+        "MT"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Cada d\u00eda nace un listo",
+        "N/A"
+      ],
+      "origin_countries": [
+        "ES"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Evil Eye",
+        "N/A"
+      ],
+      "origin_countries": [
+        "ID",
+        "MY",
+        "SG"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Extrawurst",
+        "N/A"
+      ],
+      "origin_countries": [
+        "AT",
+        "DE"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Fast 888",
+        "N/A"
+      ],
+      "origin_countries": [
+        "TH"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Fukrey Returns",
+        "N/A"
+      ],
+      "origin_countries": [
+        "PK"
+      ],
+      "origin_week": "2026-10-18"
+    },
+    {
+      "title": [
+        "Hakone Ekiden: Our Story",
+        "Hakone Ekiden: Our Story: Season 1"
+      ],
+      "origin_countries": [
+        "JP"
+      ],
+      "origin_week": "2026-10-18"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "Monthly English Wikipedia pageviews are real, rounded, as supplied by the project owner (Running Up That Hill 2022, Master of Puppets 2022, Murder on the Dancefloor 2023-10 to 2024-02). Show names and release dates are real. Nothing else here is mock.",
+  "replays": [
+    {"show": "Stranger Things 4", "release": "2022-05-27", "song": "Running Up That Hill", "artist": "Kate Bush",
+     "monthly_views": [["2022-01",12000],["2022-02",10000],["2022-03",10000],["2022-04",10000],["2022-05",134000],["2022-06",909000],["2022-07",535000],["2022-08",223000],["2022-09",134000]]},
+    {"show": "Stranger Things 4", "release": "2022-05-27", "song": "Master of Puppets", "artist": "Metallica",
+     "monthly_views": [["2022-06",5000],["2022-07",74000],["2022-08",20000],["2022-09",10000]]},
+    {"show": "Saltburn", "release": "2023-11-17", "song": "Murder on the Dancefloor", "artist": "Sophie Ellis-Bextor",
+     "monthly_views": [["2023-10",6000],["2023-11",48000],["2023-12",144000],["2024-01",398000],["2024-02",299000]]}
+  ]
+}

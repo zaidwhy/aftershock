@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFTERSHOCK - forecast where a breakout show spreads</title>
+<meta name="description" content="When a show breaks out on Netflix in a few countries, AFTERSHOCK forecasts which countries it charts in next and which songs in it will spike. Every forecast is locked in a public ledger first.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M0 16h8l4-12 6 24 4-12h10' fill='none' stroke='%23D9482B' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" defer></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="site-head">
+  <a class="brand" href="#/" aria-label="AFTERSHOCK home"><span class="brand-mark" aria-hidden="true"></span>AFTERSHOCK</a>
+  <nav aria-label="Primary">
+    <a href="#/" data-nav="home">Storms</a>
+    <a href="#/try" data-nav="try">Try it</a>
+    <a href="#/scorecard" data-nav="scorecard">Scorecard</a>
+    <a href="#/method" data-nav="method">Method</a>
+  </nav>
+</header>
+<main id="app" tabindex="-1"><p class="status" role="status">Loading...</p></main>
+<footer class="site-foot">
+  <p>Forecasts are probabilities, not promises. Built on Qloo's taste graph, Netflix's public Top 10 and Wikimedia pageviews.</p>
+</footer>
+<noscript><p class="status">AFTERSHOCK needs JavaScript to draw its charts.</p></noscript>
+</body>
+</html>

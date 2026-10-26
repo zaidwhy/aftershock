@@ -1,0 +1,140 @@
+{
+  "_comment": "MOCK DATA for UI development. Everything here is invented except where a note says otherwise. Not Qloo output, not a forecast. Probabilities, ledger id and dates are mock.",
+  "id": "hakone-ekiden-our-story-s1",
+  "title": "Hakone Ekiden: Our Story",
+  "season": "Season 1",
+  "category": "TV (Non-English)",
+  "origin_week": "2026-10-25",
+  "origin_countries": [
+    {
+      "code": "JP",
+      "name": "Japan"
+    }
+  ],
+  "spillover": {
+    "horizon_weeks": 4,
+    "forecasts": [
+      {
+        "code": "KR",
+        "name": "South Korea",
+        "probability": 0.61,
+        "history_probability": 0.58,
+        "qloo_relative": 0.03,
+        "why": "South Korea joined 15 of 57 past breakouts that started in Japan; Qloo affinity here is 0.03 above this title's average country"
+      },
+      {
+        "code": "TW",
+        "name": "Taiwan",
+        "probability": 0.51,
+        "history_probability": 0.5,
+        "qloo_relative": 0.01,
+        "why": "Taiwan joined 20 of 60 past breakouts that started in Japan; Qloo affinity here is 0.01 above this title's average country"
+      },
+      {
+        "code": "TH",
+        "name": "Thailand",
+        "probability": 0.41,
+        "history_probability": 0.36,
+        "qloo_relative": 0.05,
+        "why": "Thailand joined 25 of 63 past breakouts that started in Japan; Qloo affinity here is 0.05 above this title's average country"
+      },
+      {
+        "code": "SG",
+        "name": "Singapore",
+        "probability": 0.33,
+        "history_probability": 0.3,
+        "qloo_relative": 0.03,
+        "why": "Singapore joined 30 of 66 past breakouts that started in Japan; Qloo affinity here is 0.03 above this title's average country"
+      },
+      {
+        "code": "HK",
+        "name": "Hong Kong",
+        "probability": 0.28,
+        "history_probability": 0.27,
+        "qloo_relative": 0.01,
+        "why": "Hong Kong joined 35 of 69 past breakouts that started in Japan; Qloo affinity here is 0.01 above this title's average country"
+      },
+      {
+        "code": "PH",
+        "name": "Philippines",
+        "probability": 0.22,
+        "history_probability": 0.17,
+        "qloo_relative": 0.05,
+        "why": "Philippines joined 40 of 42 past breakouts that started in Japan; Qloo affinity here is 0.05 above this title's average country"
+      },
+      {
+        "code": "ID",
+        "name": "Indonesia",
+        "probability": 0.19,
+        "history_probability": 0.16,
+        "qloo_relative": 0.03,
+        "why": "Indonesia joined 45 of 45 past breakouts that started in Japan; Qloo affinity here is 0.03 above this title's average country"
+      },
+      {
+        "code": "VN",
+        "name": "Vietnam",
+        "probability": 0.15,
+        "history_probability": 0.14,
+        "qloo_relative": 0.01,
+        "why": "Vietnam joined 50 of 48 past breakouts that started in Japan; Qloo affinity here is 0.01 above this title's average country"
+      },
+      {
+        "code": "MY",
+        "name": "Malaysia",
+        "probability": 0.11,
+        "history_probability": 0.06,
+        "qloo_relative": 0.05,
+        "why": "Malaysia joined 15 of 51 past breakouts that started in Japan; Qloo affinity here is 0.05 above this title's average country"
+      },
+      {
+        "code": "AU",
+        "name": "Australia",
+        "probability": 0.1,
+        "history_probability": 0.07,
+        "qloo_relative": 0.03,
+        "why": "Australia joined 20 of 54 past breakouts that started in Japan; Qloo affinity here is 0.03 above this title's average country"
+      },
+      {
+        "code": "US",
+        "name": "United States",
+        "probability": 0.07,
+        "history_probability": 0.06,
+        "qloo_relative": 0.01,
+        "why": "United States joined 25 of 57 past breakouts that started in Japan; Qloo affinity here is 0.01 above this title's average country"
+      },
+      {
+        "code": "IN",
+        "name": "India",
+        "probability": 0.07,
+        "history_probability": 0.02,
+        "qloo_relative": 0.05,
+        "why": "India joined 30 of 60 past breakouts that started in Japan; Qloo affinity here is 0.05 above this title's average country"
+      }
+    ],
+    "locked_at": "2026-10-30T10:00:00Z",
+    "ledger_id": "7be04d8"
+  },
+  "ripple": null,
+  "partners": [
+    {
+      "code": "KR",
+      "artists": [
+        "Mock Artist A",
+        "Mock Artist B"
+      ],
+      "brands": [
+        "Mock Brand"
+      ]
+    },
+    {
+      "code": "TW",
+      "artists": [
+        "Mock Artist A",
+        "Mock Artist B"
+      ],
+      "brands": [
+        "Mock Brand"
+      ]
+    }
+  ]
+}

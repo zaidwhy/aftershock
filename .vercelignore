@@ -1,0 +1,11 @@
+.venv/
+.cache/
+.vercel/
+data/raw/
+*.log
+.pytest_cache/
+__pycache__/
+tests/
+*.local
+.env
+.env.*
