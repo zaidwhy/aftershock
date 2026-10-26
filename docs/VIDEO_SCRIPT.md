@@ -1,0 +1,9 @@
+# Demo video script (about 2 minutes)
+
+Record the deployed site at 1280 wide. Say it in your own words; the lines are a guide.
+
+1. **Hook (0:00-0:15), landing page.** Let the seismograph draw Running Up That Hill. "In 2022 Stranger Things put a 1985 Kate Bush song in front of a new audience, and its Wikipedia page went from 10,000 views a month to 900,000. Can an agent see that kind of jump coming? AFTERSHOCK tries, and grades itself in public."
+2. **Storms (0:15-0:45).** Open Fukrey Returns. "Every week AFTERSHOCK reads Netflix's public Top 10 in 94 countries and finds titles that just broke out in one to three. This film broke out in Pakistan. Bangladesh joined 19 of 47 past breakouts that started in Pakistan, so it gets 38%." Scroll to partners: "Qloo names the artists this audience already loves in each country, as launch partners." Mention every country's probability is locked in the ledger.
+3. **Try it (0:45-1:15).** Wednesday, as of 2022-11-23, with Space Song, Non je ne regrette rien, Physical, Don't Worry Be Happy, In Dreams. "The score is the gap Qloo measures between the show's audience and each artist's audience by age. The top two here were the two songs that actually spiked."
+4. **Scorecard (1:15-1:45).** "We tested every Qloo signal before using it. Qloo did not improve the country forecast, so that probability is history only. For songs, taste fit predicted nothing, and the obvious baseline, how unknown a song was, turned out to be regression to the mean: it predicts a fake spike measured before release just as well. The age gap is the one signal that tracks the real spike and not the placebo." Point at the placebo table.
+5. **Close (1:45-2:00).** Ledger link and the MCP tools. "Every forecast is locked before its outcome exists. Netflix and Wikipedia grade it. It also runs as an MCP server, so any agent can ask it where a hit goes next."
