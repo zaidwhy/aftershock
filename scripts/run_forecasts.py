@@ -18,7 +18,7 @@ import httpx
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from aftershock import ledger  # noqa: E402
+from aftershock import ledger, wiki  # noqa: E402
 from aftershock.netflix import (  # noqa: E402
     HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
@@ -34,6 +34,7 @@ HORIZON = 4
 SHOW_TOP = 15
 LOCK_TOP = 10
 MAX_STORMS = 40
+MAX_RIPPLE_SONGS = 25
 log = logging.getLogger("run_forecasts")
 
 
@@ -118,13 +119,43 @@ def partners(client, entity_id, country_name):
 
 
 def live_placements():
+    """{storm-style id: {show, show_type, platform, release_date, songs: [(song, artist)]}}."""
     if not LIVE_PLACEMENTS.exists():
         return {}
-    by_show = {}
+    titles = {}
     with LIVE_PLACEMENTS.open(encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
-            by_show.setdefault(norm(row["show"]), []).append((row["song"], row["artist"]))
-    return by_show
+            key = slug((row["show"], row["release_date"]))
+            entry = titles.setdefault(key, {"id": key, "show": row["show"], "show_type": row.get("show_type", ""),
+                                            "platform": row.get("platform", ""), "release_date": row["release_date"],
+                                            "songs": []})
+            if (row["song"], row["artist"]) not in entry["songs"]:
+                entry["songs"].append((row["song"], row["artist"]))
+    return titles
+
+
+def ripple_watch(client, titles, today):
+    """Score each new release's soundtrack as of its release date, plus the early Wikipedia read."""
+    watched = []
+    for entry in titles.values():
+        types = {"movie": "urn:entity:movie", "tv_show": "urn:entity:tv_show"}.get(entry["show_type"])
+        try:
+            ripple = score_placements(client, entry["show"], entry["songs"][:MAX_RIPPLE_SONGS], show_type=types,
+                                      as_of=date.fromisoformat(entry["release_date"]), max_songs=MAX_RIPPLE_SONGS)
+        except QlooError as err:
+            log.warning("ripple failed for %s: %s", entry["show"], err)
+            continue
+        if not ripple.get("resolved"):
+            log.info("not in Qloo: %s", entry["show"])
+            continue
+        for song in ripple["songs"]:
+            if song.get("wiki_article"):
+                early = wiki.spike(song["wiki_article"], entry["release_date"], today)
+                song.update(early_status=early.status, early_ratio=round(early.ratio, 2) if early.ratio else None,
+                            early_after_mean=round(early.after_mean, 1) if early.after_mean is not None else None)
+        watched.append({**{k: entry[k] for k in ("id", "show", "show_type", "platform", "release_date")},
+                        "qloo_show": ripple["show"], "show_age": ripple["show_age"], "songs": ripple["songs"]})
+    return watched
 
 
 def _read_json(path):
@@ -175,7 +206,7 @@ def main():
     log.info("last week %s: %d breakouts this week, model fit on %d events", last_week, len(storms_now), len(observed))
 
     client = None if args.no_qloo else Qloo(call_budget=4000)
-    placements = live_placements()
+    titles = live_placements()
     storms, to_lock = [], []
     entity_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
     known = sorted({v for v in entity_of.values() if v})
@@ -196,12 +227,6 @@ def main():
             "why": why_text(model, event, c, names),
         } for c in ranked]
         ripple = None
-        songs = placements.get(norm(event["title"][0]))
-        if client and songs:
-            try:
-                ripple = score_placements(client, event["title"][0], songs[:8])
-            except QlooError as err:
-                log.warning("ripple failed for %s: %s", event["title"][0], err)
         partner_rows = [{"code": c, "artists": partners(client, entity_id, names[c])} for c in ranked[:3]] if entity_id else []
         storm_id = slug(event["title"])
         summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
@@ -213,10 +238,13 @@ def main():
                                                       "ripple": ripple, "partners": partner_rows}})
         to_lock += [{"kind": "spillover", "title": list(event["title"]), "origin_week": str(event["origin_week"]),
                      "target": f["code"], "probability": f["probability"]} for f in forecasts[:LOCK_TOP]]
-        if ripple:
-            to_lock += [{"kind": "ripple", "title": list(event["title"]), "origin_week": str(event["origin_week"]),
-                         "target": f"{s['song']} | {s['artist']}", "score": s["score"]} for s in ripple["songs"] if s.get("score") is not None]
 
+    watched = ripple_watch(client, titles, date.today()) if client else []
+    for item in watched:
+        to_lock += [{"kind": "ripple", "title": [item["show"], item["release_date"]], "origin_week": item["release_date"],
+                     "target": f"{song['song']} | {song['artist']}", "score": song["score"],
+                     "wiki_article": song.get("wiki_article")}
+                    for song in item["songs"] if song.get("score") is not None]
     already = {(tuple(r["title"]), r["origin_week"]) for r in ledger.read()}
     fresh = [f for f in to_lock if (tuple(f["title"]), f["origin_week"]) not in already]
     if fresh and not args.no_lock:
@@ -257,7 +285,12 @@ def main():
         "data_week": str(last_week),
     }
     PRIVATE.mkdir(parents=True, exist_ok=True)
-    (PRIVATE / "storms.json").write_text(json.dumps({"week": str(last_week), "storms": storms}, indent=1), encoding="utf-8")
+    for item in watched:
+        key = (tuple([item["show"], item["release_date"]]), item["release_date"])
+        if key in lock_ids:
+            item["locked_at"], item["ledger_id"] = lock_ids[key]
+    (PRIVATE / "storms.json").write_text(json.dumps({"week": str(last_week), "storms": storms, "ripples": watched},
+                                                    indent=1), encoding="utf-8")
     (PRIVATE / "scorecard.json").write_text(json.dumps(scorecard, indent=1), encoding="utf-8")
     log.info("wrote %d storms; locked %d new forecasts; graded %d (hits %d); qloo live calls %s",
              len(storms), len(fresh) if not args.no_lock else 0, len(graded), hits, client.live_calls if client else 0)

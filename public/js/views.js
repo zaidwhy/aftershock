@@ -1,8 +1,8 @@
 import { h } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
-import { getStorms, getStorm, getScorecard, getReplays, getRipple, isMock } from "./api.js";
+import { getStorms, getStorm, getScorecard, getReplays, getRipples, getRipple, scoreSongs, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
-import { seismograph, ripplePanel, forecastMap } from "./charts.js";
+import { seismograph, ripplePanel, generationGap, forecastMap } from "./charts.js";
 import { ISO } from "./iso.js";
 
 const countryName = (code) => ISO[code]?.[1] ?? code;
@@ -32,6 +32,7 @@ export function renderHome(root, isCurrent) {
   setTitle("");
   const chartBox = h("div", { class: "hero-chart" });
   const stormBox = h("div", null);
+  const watchBox = h("div", null);
   add(root, 
     h("section", { class: "hero" },
       h("p", { class: "eyebrow" }, "Breakout forecasting"),
@@ -39,6 +40,9 @@ export function renderHome(root, isCurrent) {
       h("p", { class: "pitch" }, "AFTERSHOCK uses Qloo's taste graph to forecast which countries a breakout show charts in next, and which songs placed in it will spike. Every forecast is locked in a public ledger before the outcome is known."),
       chartBox),
     mockNote(),
+    h("section", { "aria-labelledby": "watch-h" },
+      h("h2", { id: "watch-h" }, "Songs to watch"),
+      watchBox),
     h("section", { "aria-labelledby": "live-h" },
       h("h2", { id: "live-h" }, "Live storms this week"),
       stormBox));
@@ -59,6 +63,17 @@ export function renderHome(root, isCurrent) {
     replays.forEach((r, i) => picks.append(h("button", { type: "button", class: "chip", onclick: () => show(i) }, r.song)));
     chartBox.append(stage, caption, picks);
     show(0);
+  });
+
+  load(watchBox, "new releases", isCurrent, getRipples, ({ ripples }) => {
+    if (!ripples?.length) { add(watchBox, h("p", { class: "status" }, "No new releases with known song placements yet.")); return; }
+    add(watchBox,
+      h("p", { class: "muted" }, "New releases whose placed songs were scored on release day, before any spike."),
+      h("ul", { class: "storm-list" }, ripples.map((r) => h("li", null,
+        h("a", { href: `#/ripple/${encodeURIComponent(r.id)}`, class: "storm-link" },
+          h("span", { class: "storm-title" }, r.show),
+          h("span", { class: "storm-meta" }, `${r.platform} | released ${r.release_date} | ${r.songs} ${r.songs === 1 ? "song" : "songs"}`),
+          h("span", { class: "storm-next" }, r.top_song ? h("span", null, "Top: ", h("strong", null, r.top_song.song), ` by ${r.top_song.artist} `, h("span", { class: "mono" }, plain2(r.top_song.score))) : "No ranked song"))))));
   });
 
   load(stormBox, "this week's storms", isCurrent, getStorms, ({ week, storms }) => {
@@ -107,6 +122,46 @@ export function renderStorm(root, id, isCurrent) {
   });
 }
 
+/* ----------------------------------------------------------------- ripple */
+const earlyRead = (x) => (x.early_ratio == null ? "n/a" : `${x.early_ratio.toFixed(1)}x${x.early_status === "pending" ? " pending" : ""}`);
+
+export function renderRipple(root, id, isCurrent) {
+  setTitle("Release");
+  load(root, "this release", isCurrent, () => getRipple(id), (r) => {
+    setTitle(r.show);
+    const songs = [...(r.songs || [])].filter((x) => x.resolved !== false).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    add(root,
+      h("p", { class: "crumb" }, h("a", { href: "#/" }, "Songs to watch")),
+      h("h1", null, r.show),
+      h("p", { class: "meta" }, `${r.platform} | released ${r.release_date} | scored as of release day`),
+      mockNote(),
+      h("p", null, "Each song is ranked within this release by how unknown it was on Wikipedia before release and how far its audience sits from the show's audience by age (Qloo). The early read is Wikipedia views since release over the 60 days before; it keeps accumulating for 35 days."),
+      songs.length ? h("section", { "aria-labelledby": "rs-h" },
+        h("h2", { id: "rs-h" }, "Ranked songs"),
+        h("p", { class: "legend" }, h("span", { class: "key key-show" }), "Show audience", h("span", { class: "key key-artist" }), "Artist audience", h("span", { class: "muted" }, " (over-index by age band)")),
+        songTable(r, songs)) : h("p", { class: "status" }, "No songs were scored for this release."),
+      h("p", { class: "locked mono" }, r.locked_at ? `Locked at ${dateLabel(r.locked_at)} | ledger id ${r.ledger_id}` : "Not locked yet."));
+  });
+}
+
+function songTable(r, songs) {
+  const heads = ["#", "Song", "Artist", "Score", "Age gap", "Prior views/day", "Early read", "Generation gap"];
+  const numCols = [3, 4, 5, 6];
+  return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Ranked songs table, scrolls sideways on narrow screens" },
+    h("table", { class: "fc rt" },
+      h("caption", null, "Score runs 0 to 1 within this release. Early read above 1x means views since release are above the pre-release average."),
+      h("thead", null, h("tr", null, heads.map((t, i) => h("th", { scope: "col", class: numCols.includes(i) ? "num" : null }, t)))),
+      h("tbody", null, songs.map((x, i) => h("tr", null,
+        h("td", { class: "mono" }, i + 1),
+        h("th", { scope: "row" }, x.song),
+        h("td", null, x.artist),
+        h("td", { class: "num mono prob" }, plain2(x.score)),
+        h("td", { class: "num mono" }, x.age_gap == null ? "n/a" : x.age_gap.toFixed(2)),
+        h("td", { class: "num mono" }, x.prior_daily_views == null ? "n/a" : Math.round(x.prior_daily_views).toLocaleString("en-US")),
+        h("td", { class: "num mono" }, earlyRead(x)),
+        h("td", null, generationGap(r.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`)))))));
+}
+
 function forecastTable(fc) {
   return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Forecast table, scrolls sideways on narrow screens" },
     h("table", { class: "fc" },
@@ -139,7 +194,7 @@ export function renderTry(root, isCurrent) {
       if (bad >= 0) { out.replaceChildren(errorBox("your input", new Error(`Line ${bad + 1} needs both a song and an artist, written "song | artist".`))); songs.focus(); return; }
       btn.disabled = true;
       out.replaceChildren(loading("scores from Qloo"));
-      getRipple(showName, parsed).then((r) => {
+      scoreSongs(showName, parsed).then((r) => {
         if (!isCurrent()) return;
         out.replaceChildren();
         if (r.resolved === false || r.show_resolved === false) add(out, h("div", { class: "status status-error", role: "alert" }, h("p", null, `"${showName}" was not found in Qloo, so no audience profile exists to score against.`)));

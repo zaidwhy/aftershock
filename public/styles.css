@@ -146,6 +146,8 @@ th, td { text-align: left; padding: 9px 10px 9px 4px; border-bottom: 1px solid v
 thead th { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
 th.num, td.num { text-align: right; }
 .fc { min-width: 640px; }
+.rt { min-width: 860px; }
+.rt .gap-wrap { width: 200px; position: relative; }
 .fc .prob { color: var(--accent-ink); font-weight: 500; }
 .fc .why { color: var(--ink-soft); min-width: 260px; }
 .locked { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 0.85rem; color: var(--ink-soft); }

@@ -1,0 +1,109 @@
+{
+ "_comment": "MOCK DATA for UI development. Every show, song, score and view count here is invented and is not a live scoring.",
+ "id": "mock-series-one-2026-10-23",
+ "show": "Mock Series One",
+ "show_type": "tv_show",
+ "platform": "Netflix",
+ "release_date": "2026-10-23",
+ "qloo_show": "Mock Series One",
+ "show_age": {
+  "24_and_younger": 0.52,
+  "25_to_29": 0.38,
+  "30_to_34": 0.1,
+  "35_to_44": -0.4,
+  "45_to_54": -0.3,
+  "55_and_older": -0.45
+ },
+ "locked_at": "2026-10-27T01:00:00Z",
+ "ledger_id": "mock-ledger-0001",
+ "songs": [
+  {
+   "song": "Mock Song Alpha",
+   "artist": "Artist A",
+   "resolved": true,
+   "score": 1.0,
+   "age_gap": 0.71,
+   "fit": 0.83,
+   "prior_daily_views": 66.3,
+   "wiki_article": "Mock_Song_Alpha",
+   "obscurity": -4.2,
+   "artist_age": {
+    "24_and_younger": -0.2,
+    "25_to_29": -0.1,
+    "30_to_34": 0.05,
+    "35_to_44": 0.2,
+    "45_to_54": 0.3,
+    "55_and_older": 0.15
+   },
+   "early_status": "pending",
+   "early_ratio": 1.8,
+   "early_after_mean": 119.3
+  },
+  {
+   "song": "Mock Song Bravo",
+   "artist": "Artist B",
+   "resolved": true,
+   "score": 0.82,
+   "age_gap": 0.55,
+   "fit": 0.61,
+   "prior_daily_views": 210.0,
+   "wiki_article": "Mock_Song_Bravo",
+   "obscurity": -4.2,
+   "artist_age": {
+    "24_and_younger": 0.0,
+    "25_to_29": 0.1,
+    "30_to_34": 0.2,
+    "35_to_44": 0.1,
+    "45_to_54": 0.2,
+    "55_and_older": 0.0
+   },
+   "early_status": "pending",
+   "early_ratio": 1.1,
+   "early_after_mean": 231.0
+  },
+  {
+   "song": "Mock Song Charlie",
+   "artist": "Artist C",
+   "resolved": true,
+   "score": 0.64,
+   "age_gap": 0.4,
+   "fit": 0.7,
+   "prior_daily_views": null,
+   "wiki_article": null,
+   "obscurity": null,
+   "artist_age": {
+    "24_and_younger": 0.1,
+    "25_to_29": 0.2,
+    "30_to_34": 0.1,
+    "35_to_44": 0.0,
+    "45_to_54": 0.1,
+    "55_and_older": -0.1
+   },
+   "early_status": "pending",
+   "early_ratio": null,
+   "early_after_mean": null
+  },
+  {
+   "song": "Mock Song Delta",
+   "artist": "Artist D",
+   "resolved": true,
+   "score": 0.31,
+   "age_gap": 0.22,
+   "fit": 0.5,
+   "prior_daily_views": 4800.0,
+   "wiki_article": "Mock_Song_Delta",
+   "obscurity": -4.2,
+   "artist_age": {
+    "24_and_younger": 0.3,
+    "25_to_29": 0.2,
+    "30_to_34": 0.1,
+    "35_to_44": -0.1,
+    "45_to_54": -0.2,
+    "55_and_older": -0.3
+   },
+   "early_status": "pending",
+   "early_ratio": 1.0,
+   "early_after_mean": 4810.0
+  }
+ ]
+}

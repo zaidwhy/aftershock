@@ -86,10 +86,11 @@ def percentiles(values):
             (sum(k == v for k in known) - 1) / (2 * (len(known) - 1)) for v in values]
 
 
-def score_placements(client, show_name, placements, show_type=None, as_of=None):
-    """placements: [(song, artist)]. Returns the API `ripple` shape plus resolution flags."""
-    if len(placements) > MAX_SONGS:
-        raise ValueError(f"at most {MAX_SONGS} songs per request, got {len(placements)}")
+def score_placements(client, show_name, placements, show_type=None, as_of=None, max_songs=MAX_SONGS):
+    """placements: [(song, artist)]. Returns the API `ripple` shape plus resolution flags.
+    max_songs caps visitor requests; the weekly job scores whole soundtracks."""
+    if len(placements) > max_songs:
+        raise ValueError(f"at most {max_songs} songs per request, got {len(placements)}")
     as_of = as_of or date.today()
     show = resolve_show(client, show_name, show_type or "urn:entity:tv_show,urn:entity:movie")
     if not show:

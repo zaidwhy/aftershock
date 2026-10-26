@@ -55,3 +55,22 @@ Famous ripples with real Wikipedia monthly views, for the intro animation.
 {"replays": [{"show": "Stranger Things 4", "release": "2022-05-27", "song": "Running Up That Hill", "artist": "Kate Bush",
               "monthly_views": [["2022-01", 12000], ["2022-06", 909000]]}]}
 ```
+
+## GET /api/ripples
+New releases (premiered in the last few weeks) whose placed songs were scored as of release day and locked in the ledger.
+```json
+{"ripples": [{"id": "show-2026-10-23", "show": "Show", "show_type": "tv_show", "platform": "Netflix", "release_date": "2026-10-23",
+              "songs": 14, "top_song": {"song": "...", "artist": "...", "score": 1.0}, "locked_at": "2026-10-27T01:00:00Z"}]}
+```
+
+## GET /api/ripples/{id}
+```json
+{"id": "...", "show": "...", "show_type": "tv_show", "platform": "Netflix", "release_date": "2026-10-23",
+ "qloo_show": "Show", "show_age": {"24_and_younger": 0.4, "...": 0},
+ "locked_at": "...", "ledger_id": "...",
+ "songs": [{"song": "...", "artist": "...", "resolved": true, "score": 1.0, "age_gap": 0.61, "fit": 0.83,
+            "prior_daily_views": 66.3, "wiki_article": "Space_Song", "obscurity": -4.2,
+            "artist_age": {"24_and_younger": -0.2, "...": 0},
+            "early_status": "pending", "early_ratio": 1.8, "early_after_mean": 120.4}]}
+```
+`score` is the within-release percentile average of obscurity (fewer prior Wikipedia views) and the Qloo age gap; `fit` is context only. `early_ratio` is views since release over the pre-release baseline, still accumulating while `early_status` is `pending` (the full window is 35 days).

@@ -54,6 +54,23 @@ def storm(storm_id: str):
     raise HTTPException(404, f"no storm with id {storm_id!r}")
 
 
+@app.get("/api/ripples")
+def ripples():
+    """New releases whose soundtracks were scored as of release day, with the early Wikipedia read."""
+    data = _load(PRIVATE / "storms.json")
+    return {"ripples": [{k: r[k] for k in ("id", "show", "show_type", "platform", "release_date")} |
+                        {"songs": len(r["songs"]), "top_song": r["songs"][0] if r["songs"] else None,
+                         "locked_at": r.get("locked_at")} for r in data.get("ripples", [])]}
+
+
+@app.get("/api/ripples/{ripple_id}")
+def ripple_title(ripple_id: str):
+    for item in _load(PRIVATE / "storms.json").get("ripples", []):
+        if item["id"] == ripple_id:
+            return item
+    raise HTTPException(404, f"no scored release with id {ripple_id!r}")
+
+
 @app.get("/api/scorecard")
 def scorecard():
     return _load(PRIVATE / "scorecard.json")

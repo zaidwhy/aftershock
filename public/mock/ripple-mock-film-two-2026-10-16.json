@@ -1,0 +1,65 @@
+{
+ "_comment": "MOCK DATA for UI development. Every show, song, score and view count here is invented and is not a live scoring.",
+ "id": "mock-film-two-2026-10-16",
+ "show": "Mock Film Two",
+ "show_type": "film",
+ "platform": "Prime Video",
+ "release_date": "2026-10-16",
+ "qloo_show": "Mock Film Two",
+ "show_age": {
+  "24_and_younger": 0.1,
+  "25_to_29": 0.2,
+  "30_to_34": 0.3,
+  "35_to_44": 0.1,
+  "45_to_54": -0.3,
+  "55_and_older": -0.5
+ },
+ "locked_at": "2026-10-20T01:00:00Z",
+ "ledger_id": "mock-ledger-0002",
+ "songs": [
+  {
+   "song": "Mock Song Echo",
+   "artist": "Artist E",
+   "resolved": true,
+   "score": 0.9,
+   "age_gap": 0.6,
+   "fit": 0.77,
+   "prior_daily_views": 35.2,
+   "wiki_article": "Mock_Song_Echo",
+   "obscurity": -4.2,
+   "artist_age": {
+    "24_and_younger": -0.4,
+    "25_to_29": -0.3,
+    "30_to_34": -0.1,
+    "35_to_44": 0.1,
+    "45_to_54": 0.3,
+    "55_and_older": 0.4
+   },
+   "early_status": "pending",
+   "early_ratio": 2.4,
+   "early_after_mean": 84.5
+  },
+  {
+   "song": "Mock Song Foxtrot",
+   "artist": "Artist F",
+   "resolved": true,
+   "score": 0.35,
+   "age_gap": 0.18,
+   "fit": 0.4,
+   "prior_daily_views": 1500.0,
+   "wiki_article": "Mock_Song_Foxtrot",
+   "obscurity": -4.2,
+   "artist_age": {
+    "24_and_younger": 0.1,
+    "25_to_29": 0.2,
+    "30_to_34": 0.3,
+    "35_to_44": 0.2,
+    "45_to_54": -0.2,
+    "55_and_older": -0.4
+   },
+   "early_status": "pending",
+   "early_ratio": 1.2,
+   "early_after_mean": 1800.0
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "_comment": "MOCK DATA for UI development. Every show, song, score and view count here is invented and is not a live scoring.",
+ "ripples": [
+  {
+   "id": "mock-series-one-2026-10-23",
+   "show": "Mock Series One",
+   "show_type": "tv_show",
+   "platform": "Netflix",
+   "release_date": "2026-10-23",
+   "songs": 4,
+   "top_song": {
+    "song": "Mock Song Alpha",
+    "artist": "Artist A",
+    "score": 1.0
+   },
+   "locked_at": "2026-10-27T01:00:00Z"
+  },
+  {
+   "id": "mock-film-two-2026-10-16",
+   "show": "Mock Film Two",
+   "show_type": "film",
+   "platform": "Prime Video",
+   "release_date": "2026-10-16",
+   "songs": 2,
+   "top_song": {
+    "song": "Mock Song Echo",
+    "artist": "Artist E",
+    "score": 0.9
+   },
+   "locked_at": "2026-10-20T01:00:00Z"
+  }
+ ]
+}

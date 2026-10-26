@@ -18,9 +18,11 @@ async function getJson(url) {
 export const getStorms = () => getJson(cfg.mock ? `${cfg.mockBase}/storms.json` : `${cfg.apiBase}/storms`);
 export const getStorm = (id) => getJson(cfg.mock ? `${cfg.mockBase}/storm-${encodeURIComponent(id)}.json` : `${cfg.apiBase}/storms/${encodeURIComponent(id)}`);
 export const getScorecard = () => getJson(cfg.mock ? `${cfg.mockBase}/scorecard.json` : `${cfg.apiBase}/scorecard`);
+export const getRipples = () => getJson(cfg.mock ? `${cfg.mockBase}/ripples.json` : `${cfg.apiBase}/ripples`);
+export const getRipple = (id) => getJson(cfg.mock ? `${cfg.mockBase}/ripple-${encodeURIComponent(id)}.json` : `${cfg.apiBase}/ripples/${encodeURIComponent(id)}`);
 export const getReplays = () => getJson(cfg.mock ? `${cfg.mockBase}/replays.json` : `${cfg.apiBase}/replays`);
 
-export async function getRipple(show, songs) {
+export async function scoreSongs(show, songs) {
   if (cfg.mock) {
     const r = await getJson(`${cfg.mockBase}/ripple.json`);
     // Mock mode: match typed songs against the three canned songs, flag the rest unresolved.
