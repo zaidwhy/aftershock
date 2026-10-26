@@ -1,0 +1,30 @@
+# Weekly: after Netflix publishes its Top 10 (Tuesdays), forecast the new breakouts, grade the old
+# ones, and commit the ledger, so every lock carries a public GitHub timestamp. Needs the repo
+# secret QLOO_API_KEY. Qloo responses stay in the runner's cache and are never committed.
+name: weekly-forecast
+on:
+  schedule:
+    - cron: "0 22 * * 2"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python scripts/run_forecasts.py
+        env:
+          QLOO_API_KEY: ${{ secrets.QLOO_API_KEY }}
+      - name: Commit the ledger
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ledger/forecasts.jsonl
+          git diff --cached --quiet || git commit -m "Weekly forecast lock $(date -u +%Y-%m-%d)"
+          git push
