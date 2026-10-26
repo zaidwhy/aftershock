@@ -93,8 +93,18 @@ def _name_variants(name: str) -> set[str]:
     return variants
 
 
+NON_SONG_SUFFIX = re.compile(
+    r"\b(film|movie|tv|television|series|album|ep|band|novel|book|character|surname|given name|company|"
+    r"video game|musical|play|opera|disambiguation|soundtrack)\b",
+    re.I,
+)
+
+
 def title_matches(title: str, song: str) -> bool:
     """True when a Wikipedia title names the song, allowing '(song)' / '(Kate Bush song)' suffixes."""
+    suffix = re.search(r"\(([^)]*)\)\s*$", title)
+    if suffix and NON_SONG_SUFFIX.search(suffix.group(1)) and not NON_SONG_SUFFIX.search(song):
+        return False
     return bool(_name_variants(title) & _name_variants(song))
 
 
@@ -133,6 +143,58 @@ def resolve_article(song: str, artist: str) -> str | None:
     intro = {p["title"]: p.get("extract", "") for p in extracts["query"]["pages"].values()}
     for title in titles:
         if mentions_artist(intro.get(title, ""), artist):
+            return title
+    return None
+
+
+MUSIC_WORD = re.compile(
+    r"\b(band|singer|musician|rapper|group|duo|trio|quartet|dj|producer|composer|songwriter|vocalist|"
+    r"artist|guitarist|drummer|pianist|violinist|orchestra|choir|ensemble)\b",
+    re.I,
+)
+
+
+def first_artist(artist: str) -> str:
+    return artist.split(",")[0].strip()
+
+
+def artist_title_matches(title: str, artist: str) -> bool:
+    """True when a Wikipedia title is the artist's own page: exact name, music disambiguator only."""
+    name = first_artist(artist)
+    suffix = re.search(r"\s*\(([^)]*)\)\s*$", title)
+    base = title[: suffix.start()] if suffix else title
+    if suffix and not MUSIC_WORD.search(suffix.group(1)):
+        return False
+    if suffix and re.search(r"\b(song|single|album|film|ep|soundtrack)\b", suffix.group(1), re.I):
+        return False
+    wanted = _fold(name)
+    got = _fold(base)
+    return bool(wanted) and (got == wanted or re.sub(r"^the ", "", got) == re.sub(r"^the ", "", wanted))
+
+
+def resolve_artist_article(artist: str) -> str | None:
+    """English Wikipedia article for the artist (first of a comma list), or None."""
+    name = first_artist(artist)
+    if not name:
+        return None
+    found = _cached_get(
+        API_URL,
+        {"action": "query", "list": "search", "srsearch": name, "srnamespace": 0,
+         "srlimit": 8, "format": "json"},
+    )["json"]
+    titles = [hit["title"] for hit in found["query"]["search"] if artist_title_matches(hit["title"], artist)]
+    if not titles:
+        return None
+    extracts = _cached_get(
+        API_URL,
+        {"action": "query", "prop": "extracts", "exintro": 1, "explaintext": 1,
+         "exchars": INTRO_CHARS, "exlimit": "max", "titles": "|".join(titles),
+         "redirects": 1, "format": "json"},
+    )["json"]
+    intro = {p["title"]: p.get("extract", "") for p in extracts["query"]["pages"].values()}
+    for title in titles:
+        text = intro.get(title, "")
+        if "may refer to" not in text and MUSIC_WORD.search(text):
             return title
     return None
 

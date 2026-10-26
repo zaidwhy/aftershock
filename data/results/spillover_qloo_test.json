@@ -1,0 +1,31 @@
+{
+  "metrics": [
+    {
+      "model": "history baseline",
+      "auc": 0.8188282753919796,
+      "brier": 0.009868841977643605,
+      "top5_precision": 0.052000000000000005
+    },
+    {
+      "model": "history + Qloo",
+      "auc": 0.8182258063148146,
+      "brier": 0.00992493216630638,
+      "top5_precision": 0.052000000000000005
+    },
+    {
+      "model": "history baseline (resolved only)",
+      "auc": 0.8111875941802957,
+      "brier": 0.012294375148924466,
+      "top5_precision": 0.06666666666666667
+    },
+    {
+      "model": "history + Qloo (resolved only)",
+      "auc": 0.81074205496908,
+      "brier": 0.012415939733320336,
+      "top5_precision": 0.06666666666666667
+    }
+  ],
+  "test_events": 200,
+  "resolved_test": 147,
+  "live_calls": 1432
+}

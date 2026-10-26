@@ -5,6 +5,7 @@ A placement pulls a song into the spotlight when the show's audience would like 
 score = fit x age_gap, both in [0, 1].
 """
 import logging
+import re
 
 from aftershock.qloo import QlooError, resolve
 
@@ -40,7 +41,18 @@ def taste_fit(client, show_id, artist_ids):
     response, so values are comparable inside one show only."""
     body = client.insights(filter__type="urn:entity:artist", signal__interests__entities=show_id,
                            filter__results__entities=",".join(artist_ids), take=len(artist_ids))
-    return {e["entity_id"]: float(e["query"]["affinity"]) for e in body.get("results", {}).get("entities", [])}
+    return {e["entity_id"]: float(e["query"]["affinity"]) for e in body.get("results", {}).get("entities", [])
+            if e.get("query", {}).get("affinity") is not None}
+
+
+def resolve_show(client, name, types):
+    """Release labels like "Stranger Things 4 (Volume 1)" are not Qloo names; try the bare title too."""
+    bare = re.sub(r"\s*\(.*?\)", "", name).strip()
+    for candidate in dict.fromkeys([name, bare, re.sub(r"\s+\d+$", "", bare)]):
+        hit = resolve(client, candidate, types)
+        if hit:
+            return hit
+    return None
 
 
 def score_placements(client, show_name, placements, show_type=None):
@@ -48,7 +60,7 @@ def score_placements(client, show_name, placements, show_type=None):
     if len(placements) > MAX_SONGS:
         raise ValueError(f"at most {MAX_SONGS} songs per request, got {len(placements)}")
     types = show_type or "urn:entity:tv_show,urn:entity:movie"
-    show = resolve(client, show_name, types)
+    show = resolve_show(client, show_name, types)
     if not show:
         return {"resolved": False, "show": show_name, "songs": []}
     show_age = age_profile(client, show["entity_id"])

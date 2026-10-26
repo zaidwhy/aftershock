@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from aftershock import ledger  # noqa: E402
 from aftershock.netflix import (  # noqa: E402
-    HistoryBaseline, breakout_events, first_entries, load_rows, title_categories,
+    HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
 from aftershock.qloo import Qloo, QlooError, norm  # noqa: E402
 from aftershock.ripple import score_placements  # noqa: E402
@@ -119,6 +119,10 @@ def live_placements():
     return by_show
 
 
+def _read_json(path):
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
 def grade(rows, last_week):
     """Grade locked spillover forecasts whose horizon has passed."""
     first = first_entries(rows)
@@ -167,7 +171,8 @@ def main():
     storms, to_lock = [], []
     entity_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
     known = sorted({v for v in entity_of.values() if v})
-    affinity = qloo_relative_all(client, known, countries, names) if known else {}
+    # In-country affinity covered 1.8% of title-country pairs and added no AUC, so it is not fetched.
+    affinity = {}
     for event in storms_now:
         candidates = [c for c in countries if c not in event["origin_countries"]]
         probabilities = model.predict(event, candidates)
@@ -178,8 +183,9 @@ def main():
             "code": c, "name": names[c], "probability": round(probabilities[c], 4),
             "history_probability": round(probabilities[c], 4),
             "qloo_relative": round(relative[c], 3) if c in relative else None,
-            "why": why_text(model, event, c, names) + (
-                f"; Qloo affinity here is {relative[c]:+.2f} against this title's average country" if c in relative else ""),
+            # Qloo's in-country affinity did not improve this forecast in the backtest
+            # (scripts/test_spillover_qloo.py), so it is shown as context, not used in the probability.
+            "why": why_text(model, event, c, names),
         } for c in ranked]
         ripple = None
         songs = placements.get(norm(event["title"][0]))
@@ -218,15 +224,26 @@ def main():
             storm["detail"]["spillover"]["locked_at"], storm["detail"]["spillover"]["ledger_id"] = lock_ids[key]
 
     graded, hits, pending = grade(rows, last_week)
-    backtest = json.loads((RESULTS / "spillover_backtest.json").read_text()) if (RESULTS / "spillover_backtest.json").exists() else {}
-    qloo_test = json.loads((RESULTS / "spillover_qloo_test.json").read_text()) if (RESULTS / "spillover_qloo_test.json").exists() else {}
-    ripple_test = json.loads((RESULTS / "ripple_test.json").read_text()) if (RESULTS / "ripple_test.json").exists() else {}
+    backtest = _read_json(RESULTS / "spillover_backtest.json")
+    qloo_test = _read_json(RESULTS / "spillover_qloo_test.json")
+    ripple_test = _read_json(RESULTS / "ripple_test.json")
+    metric = lambda table, name: next((m["auc"] for m in table.get("metrics", []) if m["model"] == name), None)  # noqa: E731
+    records = ledger.read()
+    graded_ripple = [r for r in records if r["kind"] == "ripple"]
     scorecard = {
-        "spillover": {"locked": sum(1 for r in ledger.read() if r["kind"] == "spillover"), "graded": len(graded),
+        "spillover": {"locked": sum(1 for r in records if r["kind"] == "spillover"), "graded": len(graded),
                       "hits": hits, "pending": pending,
-                      "mean_probability_graded": round(sum(g["probability"] for g in graded) / len(graded), 4) if graded else None},
-        "ripple": {"locked": sum(1 for r in ledger.read() if r["kind"] == "ripple")},
-        "backtest": {"spillover": backtest.get("metrics"), "spillover_qloo": qloo_test.get("metrics"), "ripple": ripple_test or None},
+                      "auc": roc_auc([g["probability"] for g in graded], [int(g["hit"]) for g in graded])
+                      if graded and 0 < hits < len(graded) else None,
+                      "baseline_auc": None},
+        "ripple": {"locked": len(graded_ripple), "graded": 0, "spearman": None, "baseline_spearman": None},
+        "backtest": {
+            "spillover": {"history_auc": metric(backtest, "history baseline"),
+                          "qloo_auc": metric(qloo_test, "history + Qloo"),
+                          "history_auc_same_subset": metric(qloo_test, "history baseline")},
+            "ripple": {"n": ripple_test.get("n", 0), "spearman": ripple_test.get("spearman"),
+                       "baseline_spearman": ripple_test.get("baseline_spearman")},
+        },
         "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl",
         "ledger_intact": ledger.verify() is None,
         "data_week": str(last_week),

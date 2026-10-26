@@ -1,8 +1,11 @@
 import { h } from "./dom.js";
 import { loading, errorBox } from "./dom.js";
 import { getStorms, getStorm, getScorecard, getReplays, getRipple, isMock } from "./api.js";
-import { pct, plain2, num2, dateLabel, monthLabel, views } from "./format.js";
+import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
 import { seismograph, ripplePanel, forecastMap } from "./charts.js";
+import { ISO } from "./iso.js";
+
+const countryName = (code) => ISO[code]?.[1] ?? code;
 
 const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - forecast where a breakout show spreads"; };
 const mockNote = () => (isMock() ? h("p", { class: "mock-flag" }, "Mock data (?mock=1). Numbers are placeholders, except the replay pageviews.") : null);
@@ -88,6 +91,11 @@ export function renderStorm(root, id, isCurrent) {
         mapBox,
         h("p", { class: "legend" }, h("span", { class: "key key-origin" }), "Origin countries (outlined)", h("span", { class: "key key-ramp" }), "Darker = higher probability"),
         fc.length ? forecastTable(fc) : h("p", { class: "status" }, "No forecast rows for this title.")),
+      st.partners?.some((p) => p.artists?.length) ? h("section", { "aria-labelledby": "par-h" },
+        h("h2", { id: "par-h" }, "Who this audience already loves there"),
+        h("p", { class: "muted" }, "From Qloo: artists the title's audience over-indexes on in each forecast country, as partners for a local launch."),
+        h("ul", { class: "partners" }, st.partners.filter((p) => p.artists?.length).map((p) => h("li", null,
+          h("strong", null, countryName(p.code)), " ", h("span", null, p.artists.join(", ")))))) : null,
       st.ripple ? h("section", { "aria-labelledby": "rip-h" }, h("h2", { id: "rip-h" }, "Song ripple"),
         h("p", { class: "muted" }, "Songs placed in the show whose Wikipedia pageviews may spike. Score = taste fit x age gap."), ripplePanel(st.ripple)) : null,
       h("p", { class: "locked mono" }, st.spillover?.locked_at ? `Locked at ${dateLabel(st.spillover.locked_at)} | ledger id ${st.spillover.ledger_id}` : "Not locked yet."));
@@ -103,13 +111,11 @@ function forecastTable(fc) {
   return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Forecast table, scrolls sideways on narrow screens" },
     h("table", { class: "fc" },
       h("caption", null, "Ranked forecast. Probability is the chance the title enters that country's Top 10 within the horizon."),
-      h("thead", null, h("tr", null, ["#", "Country", "Probability", "History", "Qloo", "Why"].map((t, i) => h("th", { scope: "col", class: i >= 2 && i <= 4 ? "num" : null }, t)))),
+      h("thead", null, h("tr", null, ["#", "Country", "Probability", "Why"].map((t, i) => h("th", { scope: "col", class: i === 2 ? "num" : null }, t)))),
       h("tbody", null, fc.map((f, i) => h("tr", null,
         h("td", { class: "mono" }, i + 1),
         h("th", { scope: "row" }, f.name),
         h("td", { class: "num mono prob" }, pct(f.probability)),
-        h("td", { class: "num mono" }, pct(f.history_probability)),
-        h("td", { class: "num mono" }, num2(f.qloo_relative)),
         h("td", { class: "why" }, f.why))))));
 }
 
@@ -160,7 +166,7 @@ export function renderScorecard(root, isCurrent) {
     box.append(
       h("div", { class: "grid2" },
         scoreBlock("Spillover", "graded weekly by Netflix Top 10", sp.locked, sp.graded,
-          [["Top-5 hits", sp.hits_top5], ["AUC", plain2(sp.auc)], ["Baseline AUC", plain2(sp.baseline_auc)]]),
+          [["Hits (locked top 10 per title)", sp.hits], ["Pending", sp.pending], ["AUC", plain2(sp.auc)]]),
         scoreBlock("Ripple", "graded daily by Wikipedia pageviews", rp.locked, rp.graded,
           [["Spearman", plain2(rp.spearman)], ["Baseline Spearman", plain2(rp.baseline_spearman)]])),
       h("h2", null, "Backtests on past events"),
