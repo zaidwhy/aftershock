@@ -1,0 +1,73 @@
+{
+  "outcome": "artist",
+  "n_shows": 28,
+  "n": 222,
+  "n_shows_2024_plus": 13,
+  "live_calls": 0,
+  "all": {
+    "score": {
+      "mean_spearman": 0.06,
+      "top1_hit_rate": 0.179,
+      "p_value": 0.2179
+    },
+    "fit": {
+      "mean_spearman": 0.016,
+      "top1_hit_rate": 0.179,
+      "p_value": 0.4198
+    },
+    "gap": {
+      "mean_spearman": 0.073,
+      "top1_hit_rate": 0.25,
+      "p_value": 0.1484
+    },
+    "obscurity": {
+      "mean_spearman": 0.222,
+      "top1_hit_rate": 0.143,
+      "p_value": 0.0025
+    },
+    "obscurity_plus_gap": {
+      "mean_spearman": 0.162,
+      "top1_hit_rate": 0.286,
+      "p_value": 0.015
+    },
+    "random": {
+      "mean_spearman": -0.023,
+      "top1_hit_rate": 0.25,
+      "p_value": null
+    }
+  },
+  "2024_plus": {
+    "score": {
+      "mean_spearman": 0.187,
+      "top1_hit_rate": 0.154,
+      "p_value": 0.063
+    },
+    "fit": {
+      "mean_spearman": 0.02,
+      "top1_hit_rate": 0.0,
+      "p_value": 0.4438
+    },
+    "gap": {
+      "mean_spearman": 0.195,
+      "top1_hit_rate": 0.308,
+      "p_value": 0.022
+    },
+    "obscurity": {
+      "mean_spearman": 0.193,
+      "top1_hit_rate": 0.231,
+      "p_value": 0.05
+    },
+    "obscurity_plus_gap": {
+      "mean_spearman": 0.211,
+      "top1_hit_rate": 0.385,
+      "p_value": 0.0295
+    },
+    "random": {
+      "mean_spearman": -0.271,
+      "top1_hit_rate": 0.154,
+      "p_value": null
+    }
+  },
+  "spearman": 0.06,
+  "baseline_spearman": 0.222
+}

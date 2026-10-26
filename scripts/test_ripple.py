@@ -115,6 +115,10 @@ def main():
                                        else ("artist_ratio", "artist_baseline_mean", "artist_status"))
     rows = [r for r in csv.DictReader(TRUTH.open(encoding="utf-8"))
             if r.get(status_col) == "ok" and r.get(ratio_col) and r.get(base_col)]
+    if args.outcome == "artist":
+        # The outcome is the artist's page, so one artist placed twice in a show is one data point.
+        seen = set()
+        rows = [r for r in rows if (r["show"], r["artist"]) not in seen and not seen.add((r["show"], r["artist"]))]
     groups = defaultdict(list)
     for row in rows:
         groups[(row["show"], row.get("show_type", ""), row["release_date"])].append(row)
@@ -132,14 +136,17 @@ def main():
             by_show[(show, release)] = features
     rng = random.Random(11)
     for fs in by_show.values():
-        for f in fs:
+        obscurity_rank, gap_rank = ranks([f["obscurity"] for f in fs]), ranks([f["gap"] for f in fs])
+        for f, o, g in zip(fs, obscurity_rank, gap_rank):
             f["random"] = rng.random()
+            # Does Qloo's age gap add to the non-Qloo obscurity baseline? Equal-weight rank sum.
+            f["obscurity_plus_gap"] = o + g
     recent = {k: v for k, v in by_show.items() if k[1] >= "2024-01-01"}
     report = {"outcome": args.outcome, "n_shows": len(by_show), "n": sum(len(v) for v in by_show.values()),
               "n_shows_2024_plus": len(recent), "live_calls": client.live_calls}
     for label, subset in (("all", by_show), ("2024_plus", recent)):
         if subset:
-            report[label] = {key: evaluate(subset, key) for key in ("score", "fit", "gap", "obscurity", "random")}
+            report[label] = {key: evaluate(subset, key) for key in ("score", "fit", "gap", "obscurity", "obscurity_plus_gap", "random")}
     report["spearman"] = report.get("all", {}).get("score", {}).get("mean_spearman")
     report["baseline_spearman"] = report.get("all", {}).get("obscurity", {}).get("mean_spearman")
     out = OUT_DIR / ("ripple_test.json" if args.outcome == "song" else "ripple_test_artist.json")

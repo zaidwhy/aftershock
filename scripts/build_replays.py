@@ -11,7 +11,7 @@ UA = {"User-Agent": "aftershock/0.1 (https://github.com/zaidwhy/aftershock; zaid
 CASES = [
     ("Stranger Things 4", "2022-05-27", "Running Up That Hill", "Kate Bush", "Running_Up_That_Hill", "2021120100", "2022123100"),
     ("Stranger Things 4 vol. 2", "2022-07-01", "Master of Puppets", "Metallica", "Master_of_Puppets_(song)", "2022010100", "2022123100"),
-    ("Wednesday", "2022-11-23", "Bloody Mary", "Lady Gaga", "Bloody_Mary_(Lady_Gaga_song)", "2022060100", "2023063000"),
+    ("Wednesday", "2022-11-23", "Goo Goo Muck", "The Cramps", "Goo_Goo_Muck", "2022060100", "2023063000"),
     ("Saltburn", "2023-11-17", "Murder on the Dancefloor", "Sophie Ellis-Bextor", "Murder_on_the_Dancefloor", "2023060100", "2024063000"),
 ]
 

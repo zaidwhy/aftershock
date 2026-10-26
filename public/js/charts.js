@@ -98,7 +98,10 @@ export function ripplePanel(ripple) {
         h("span", { class: "mono score-num", "aria-label": `ripple score ${x.score.toFixed(2)}` }, x.score.toFixed(2)),
         h("div", { class: "bar", role: "img", "aria-label": `Score ${x.score.toFixed(2)} out of a panel maximum of ${maxScore.toFixed(2)}` },
           h("span", { style: `width:${Math.max(2, (x.score / maxScore) * 100)}%` }))),
-      h("p", { class: "song-math mono" }, `taste fit ${x.fit.toFixed(2)} x age gap ${x.age_gap.toFixed(2)}`,
+      h("p", { class: "song-math mono" }, [
+          x.age_gap != null ? `age gap ${x.age_gap.toFixed(2)}` : "age gap n/a",
+          x.prior_daily_views != null ? `prior Wikipedia views ${x.prior_daily_views.toFixed(0)}/day` : "no Wikipedia page",
+          x.fit != null ? `taste fit ${x.fit.toFixed(2)} (context)` : null].filter(Boolean).join(" | "),
         graded && x.observed_ratio != null ? ` | observed views ratio ${x.observed_ratio.toFixed(1)}x` : ""),
       generationGap(ripple.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`));
   });

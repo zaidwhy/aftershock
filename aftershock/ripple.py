@@ -1,18 +1,29 @@
 """RIPPLE: which songs placed in a show will spike.
 
-A placement pulls a song into the spotlight when the show's audience would like the artist
-(taste fit) but does not already know them (the artist's audience sits in other age bands).
-score = fit x age_gap, both in [0, 1].
+A placement pulls a song into the spotlight when the show puts it in front of people who do not
+know it yet. Two measurable halves, ranked within one show:
+- obscurity: how little attention the song (or its artist) got on Wikipedia in the 60 days
+  before the reference date; no Qloo involved.
+- age gap: how far the artist's audience sits from the show's audience by age band (Qloo
+  demographics for both).
+score = mean of the two within-show percentiles. On 28 shows / 222 artists (scripts/test_ripple.py)
+obscurity alone and the age gap each carried signal on 2024+ releases, and their sum picked the
+biggest spike in 38% of shows vs 23% for obscurity alone. Qloo taste fit predicted nothing in
+that test, so it is reported as context and not scored.
 """
 import logging
+import math
 import re
+from datetime import date, timedelta
 
+from aftershock import wiki
 from aftershock.qloo import QlooError, resolve
 
 log = logging.getLogger(__name__)
 
 AGE_BANDS = ["24_and_younger", "25_to_29", "30_to_34", "35_to_44", "45_to_54", "55_and_older"]
 MAX_SONGS = 8
+BASELINE_DAYS = (60, 8)  # same window as the backtest: days -60..-8 before the reference date
 
 
 def age_profile(client, entity_id):
@@ -55,12 +66,32 @@ def resolve_show(client, name, types):
     return None
 
 
-def score_placements(client, show_name, placements, show_type=None):
+def prior_attention(song, artist, as_of):
+    """Mean daily Wikipedia views before as_of, for the song's article or else the artist's.
+    Returns (views, article) or (None, None) when neither has an article."""
+    article = wiki.resolve_article(song, artist) or wiki.resolve_artist_article(artist)
+    if not article:
+        return None, None
+    start, end = as_of - timedelta(days=BASELINE_DAYS[0]), as_of - timedelta(days=BASELINE_DAYS[1])
+    series = wiki.daily_views(article, start, end)
+    return sum(series.values()) / len(series), article
+
+
+def percentiles(values):
+    """Within-list percentile in [0, 1] (ties share a rank); None stays None."""
+    known = sorted(v for v in values if v is not None)
+    if len(known) < 2:
+        return [0.5 if v is not None else None for v in values]
+    return [None if v is None else sum(k < v for k in known) / (len(known) - 1) +
+            (sum(k == v for k in known) - 1) / (2 * (len(known) - 1)) for v in values]
+
+
+def score_placements(client, show_name, placements, show_type=None, as_of=None):
     """placements: [(song, artist)]. Returns the API `ripple` shape plus resolution flags."""
     if len(placements) > MAX_SONGS:
         raise ValueError(f"at most {MAX_SONGS} songs per request, got {len(placements)}")
-    types = show_type or "urn:entity:tv_show,urn:entity:movie"
-    show = resolve_show(client, show_name, types)
+    as_of = as_of or date.today()
+    show = resolve_show(client, show_name, show_type or "urn:entity:tv_show,urn:entity:movie")
     if not show:
         return {"resolved": False, "show": show_name, "songs": []}
     show_age = age_profile(client, show["entity_id"])
@@ -73,23 +104,24 @@ def score_placements(client, show_name, placements, show_type=None):
     fit = taste_fit(client, show["entity_id"], known) if known else {}
     songs = []
     for song, artist in placements:
+        row = {"song": song, "artist": artist, "resolved": False}
         artist_id = artists.get(artist)
-        if not artist_id:
-            songs.append({"song": song, "artist": artist, "resolved": False})
-            continue
-        try:
-            artist_age = age_profile(client, artist_id)
-        except QlooError as err:
-            log.warning("demographics failed for %s: %s", artist, err)
-            songs.append({"song": song, "artist": artist, "resolved": False})
-            continue
-        gap = age_gap(show_age, artist_age)
-        song_fit = fit.get(artist_id)
-        songs.append({
-            "song": song, "artist": artist, "resolved": song_fit is not None,
-            "fit": song_fit, "age_gap": round(gap, 3), "artist_age": artist_age,
-            "score": round(song_fit * gap, 3) if song_fit is not None else None,
-        })
-    songs.sort(key=lambda s: -(s.get("score") or -1))
-    return {"resolved": True, "show": show["name"], "show_entity": show["entity_id"],
-            "show_age": show_age, "songs": songs}
+        if artist_id:
+            try:
+                artist_age = age_profile(client, artist_id)
+                row.update(resolved=True, artist_age=artist_age, age_gap=round(age_gap(show_age, artist_age), 3),
+                           fit=fit.get(artist_id))
+            except QlooError as err:
+                log.warning("demographics failed for %s: %s", artist, err)
+        views, article = prior_attention(song, artist, as_of)
+        row.update(prior_daily_views=round(views, 1) if views is not None else None, wiki_article=article,
+                   obscurity=round(-math.log(views + 1), 3) if views is not None else None)
+        songs.append(row)
+    gap_pct = percentiles([s.get("age_gap") for s in songs])
+    obscure_pct = percentiles([s.get("obscurity") for s in songs])
+    for s, g, o in zip(songs, gap_pct, obscure_pct):
+        parts = [p for p in (g, o) if p is not None]
+        s["score"] = round(sum(parts) / len(parts), 3) if parts else None
+    songs.sort(key=lambda s: -(s["score"] if s["score"] is not None else -1))
+    return {"resolved": True, "show": show["name"], "show_entity": show["entity_id"], "show_age": show_age,
+            "as_of": str(as_of), "songs": songs}

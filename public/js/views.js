@@ -97,7 +97,7 @@ export function renderStorm(root, id, isCurrent) {
         h("ul", { class: "partners" }, st.partners.filter((p) => p.artists?.length).map((p) => h("li", null,
           h("strong", null, countryName(p.code)), " ", h("span", null, p.artists.join(", ")))))) : null,
       st.ripple ? h("section", { "aria-labelledby": "rip-h" }, h("h2", { id: "rip-h" }, "Song ripple"),
-        h("p", { class: "muted" }, "Songs placed in the show whose Wikipedia pageviews may spike. Score = taste fit x age gap."), ripplePanel(st.ripple)) : null,
+        h("p", { class: "muted" }, "Songs placed in the show whose Wikipedia pageviews may spike. Score = within-show rank of how unknown the song was before release, averaged with the rank of the age gap between the show's audience and the artist's (Qloo)."), ripplePanel(st.ripple)) : null,
       h("p", { class: "locked mono" }, st.spillover?.locked_at ? `Locked at ${dateLabel(st.spillover.locked_at)} | ledger id ${st.spillover.ledger_id}` : "Not locked yet."));
     forecastMap(fc, st.origin_countries).then((svg) => {
       if (isCurrent()) mapBox.replaceChildren(svg);
@@ -152,7 +152,7 @@ export function renderTry(root, isCurrent) {
       h("p", { id: "songs-help", class: "help" }, "Format: song | artist. Up to 8 lines. Limited to 10 live scorings per hour.")),
     btn);
   add(root, h("h1", null, "Try it on any show"),
-    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each one in Qloo and scores taste fit times age gap."),
+    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each one in Qloo and Wikipedia and ranks them by how unknown each song is and how far its audience sits from the show's."),
     mockNote(), form, out);
 }
 
@@ -179,7 +179,7 @@ export function renderScorecard(root, isCurrent) {
       h("p", null, h("a", { class: "btn", href: sc.ledger_url, rel: "noopener" }, "Open the public ledger")),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
-        h("p", null, "Qloo describes the taste of groups, not of any individual: a high score says an audience tends to like something, not that a given person will. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. Backtests on past events are biased in both directions, because today's Qloo data postdates those events: a song that already spiked now looks like a better taste fit for the show's audience, and a smaller age gap, than it did before release. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+        h("p", null, "Qloo describes the taste of groups, not of any individual: a high score says an audience tends to like something, not that a given person will. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. Backtests on past events are biased in both directions, because today's Qloo data postdates those events: a song that already spiked now has a younger audience, so its age gap looks smaller than it was before release. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
   });
 }
 
@@ -202,7 +202,7 @@ export function renderMethod(root) {
       h("p", null, "Start with a title that entered Netflix's Top 10 in 1 to 3 countries. From past breakouts that began in the same countries, count how often each other country followed; that is the history probability. Then adjust it with Qloo: how strongly the title's audience taste matches each country, relative to the title's average country. The output is a probability per country over a four-week horizon, graded against the next weekly Top 10."),
       h("p", null, "The history column in the forecast table is the baseline. The Qloo column is how far the taste signal moved the forecast away from it.")),
     h("section", null, h("h2", null, "RIPPLE: which songs spike"),
-      h("p", null, "For each song placed in a show, compare two audiences from Qloo: the show's and the artist's. Taste fit is how strongly the show's audience over-indexes on the artist. Age gap is how far the show's audience skews younger than the artist's. Score = taste fit x age gap."),
+      h("p", null, "For each song placed in a show, compare two audiences from Qloo, the show's and the artist's, by age band: the age gap is how far the artist's audience sits from the bands the show's audience over-indexes on. Add obscurity: the song's mean daily Wikipedia views in the 60 days before release (its artist's page when the song has none). Score = the average of the two within-show percentiles. We also tested Qloo taste fit (how much the show's audience likes the artist); it did not predict spikes, so it is shown as context only."),
       h("p", null, "Stranger Things 4 is the case: its audience over-indexes on 24-and-younger (+0.71) while Kate Bush's is flat there (+0.03) and peaks at 45-54 (+0.34), yet fit is very high (0.925). Her English Wikipedia views went from about 10k a month to 909k in June 2022. Graded daily against Wikimedia pageviews.")),
     h("section", null, h("h2", null, "Data sources"),
       h("ul", { class: "plain-list" },

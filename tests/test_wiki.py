@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from aftershock.wiki import mentions_artist, spike_from_series, title_matches
+from aftershock.wiki import artist_title_matches, mentions_artist, spike_from_series, title_matches
 
 RELEASE = date(2022, 5, 27)
 
@@ -29,6 +29,12 @@ def test_title_accepts_song_with_subtitle_and_remix_tail():
 def test_title_rejects_unrelated():
     assert not title_matches("Stranger Things (TV series)", "Running Up That Hill")
     assert not title_matches("Hill (surname)", "Running Up That Hill")
+
+
+def test_title_rejects_non_song_article_with_same_name():
+    assert not title_matches("F1 (film)", "F1")
+    assert not title_matches("Wicked (album)", "Wicked")
+    assert title_matches("Slash (song)", "SLASH")
 
 
 def test_artist_mention():
@@ -72,3 +78,20 @@ def test_missing_days_count_as_zero_views():
     result = spike_from_series(series, RELEASE, today=RELEASE + timedelta(days=100))
     assert result.baseline_mean == 0
     assert result.after_mean == 100 * 15 / 29
+
+
+def test_artist_title_accepts_exact_and_music_disambiguators():
+    assert artist_title_matches("Metallica", "Metallica")
+    assert artist_title_matches("Journey (band)", "Journey")
+    assert artist_title_matches("The Beach Boys", "The Beach Boys")
+    assert artist_title_matches("Kate Bush", "Kate Bush, Peter Gabriel")
+    assert artist_title_matches("Sienna Spiro", "SIENNA SPIRO")
+    assert artist_title_matches("Pink (singer)", "Pink")
+
+
+def test_artist_title_rejects_non_music_disambiguators_and_other_names():
+    assert not artist_title_matches("Journey (film)", "Journey")
+    assert not artist_title_matches("Journey (Journey album)", "Journey")
+    assert not artist_title_matches("Journey (song)", "Journey")
+    assert not artist_title_matches("Journey Through the Past", "Journey")
+    assert not artist_title_matches("Metallica (album)", "Metallica")

@@ -6,6 +6,7 @@ network calls are paced to at most 10 requests per second.
 import hashlib
 import json
 import logging
+import os
 import re
 import threading
 import time
@@ -20,7 +21,8 @@ import httpx
 log = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent
-CACHE_DIR = ROOT / ".cache" / "wiki"
+# Serverless filesystems are read-only outside /tmp.
+CACHE_DIR = Path("/tmp/wiki-cache") if os.environ.get("VERCEL") else ROOT / ".cache" / "wiki"
 USER_AGENT = "aftershock-research/0.1 (https://github.com/zaidwhy)"
 API_URL = "https://en.wikipedia.org/w/api.php"
 VIEWS_URL = (

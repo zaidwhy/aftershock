@@ -4,7 +4,7 @@
 
 AFTERSHOCK watches Netflix's public Top 10 for titles that just broke out in one to three countries. It forecasts the countries each title charts in next, and scores the songs placed in a show for how likely they are to spike. Every forecast is locked in a hash-chained public ledger before its outcome exists, then graded against Netflix's next weekly chart and Wikipedia's daily pageviews.
 
-The thesis: a placed song spikes when a show puts it in front of an audience that would like it but does not know it yet. In 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of viewers aged 24 and under; its English Wikipedia page went from about 10,000 views a month to 909,926 in June 2022. Qloo can measure both halves of that sentence: how much a show's audience likes an artist (cross-domain affinity), and which age bands each audience over-indexes on (demographics).
+The thesis: a placed song spikes when a show puts it in front of people who do not know it yet. In 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of viewers aged 24 and under; its English Wikipedia page went from about 10,000 views a month to 909,926 in June 2022. Qloo measures who each audience is by age band, so it can say how far a song's audience sits from a show's; Wikipedia says how known the song already was.
 
 Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/), October 2026. MIT licensed.
 
@@ -18,11 +18,11 @@ Distributors, dubbing studios, music publishers and catalog owners all react to 
 |---|---|---|
 | Resolve a show, film or artist | `GET /search` with `types`, then an exact-name check | `/search` always returns its nearest match, even for names it does not know, so an unchecked first hit is not a resolution |
 | Who the show's audience is | `GET /v2/insights?filter.type=urn:demographics&signal.interests.entities=<show>` | age-band over-index of the audience |
-| Who each artist's audience is | same, with the artist as the signal | the age gap between the two audiences is the "does not know it yet" half |
-| Would the show's audience like the artist | `GET /v2/insights?filter.type=urn:entity:artist&signal.interests.entities=<show>&filter.results.entities=<artists>` | cross-domain affinity, the "would like it" half; compared within one show because Qloo rescales affinity per response |
+| Who each artist's audience is | same, with the artist as the signal | the age gap between the two audiences |
+| Would the show's audience like the artist (tested, context only) | `GET /v2/insights?filter.type=urn:entity:artist&signal.interests.entities=<show>&filter.results.entities=<artists>` | cross-domain affinity; compared within one show because Qloo rescales affinity per response. It did not predict spikes (section 3), so it is shown, not scored |
 | Who to work with in each forecast country | `GET /v2/insights?filter.type=urn:entity:artist&signal.interests.entities=<title>&signal.location.query=<country>` | local artists the title's audience over-indexes on |
 
-RIPPLE score = taste fit x age gap, both in [0, 1] (`aftershock/ripple.py`).
+RIPPLE score = the average of two within-show percentiles: the Qloo age gap between the artist's audience and the show's, and obscurity (the song's mean daily Wikipedia views in the 60 days before release, or its artist's when the song has no article). See `aftershock/ripple.py`.
 
 SPILLOVER probability comes from Netflix history: for a title that broke out in countries A, how often each other country followed past breakouts that started in A, smoothed toward that country's general rate (`aftershock/netflix.py`).
 
@@ -40,25 +40,28 @@ All numbers below come from scripts in this repo; rerun them to reproduce.
 
 We then tested whether Qloo's location-conditioned affinity for the title improves it (`scripts/test_spillover_qloo.py`, 200 test breakouts, 1,432 Qloo calls): AUC 0.8188 without Qloo, 0.8182 with it. Qloo returned an in-country value for only 1.8% of title-country pairs, so it carries almost no signal here. **The country forecast is therefore history-only**, and Qloo is used where it does add something: naming local partners.
 
-**RIPPLE** (`scripts/test_ripple.py`, 516 real placements from 44 titles collected with source URLs in `data/placements.csv`; 105 songs in 17 shows have a Wikipedia article and at least 4 scored songs). Spike = mean daily views in days +7..+35 after release over days -60..-8 before. Mean within-show Spearman between predictor and log spike, one-sided permutation p-value:
+**RIPPLE** (`scripts/test_ripple.py`). Ground truth: 516 real placements from 44 titles, each with a source URL (`data/placements.csv`, reproducible with `scripts/scrape_placements.py`). Outcome: the spike of the artist's Wikipedia page (mean daily views on days +7..+35 after release over days -60..-8), one row per artist per show; 222 artists in 28 shows with at least 4 scored artists. Mean within-show Spearman between each predictor and the log spike, with a one-sided permutation p-value (2,000 within-show shuffles):
 
-| Predictor | All 17 shows | 8 shows released 2024 or later |
-|---|---|---|
-| fit x age gap | 0.11 (p 0.18) | 0.28 (p 0.053) |
-| Qloo fit alone | 0.17 (p 0.08) | 0.12 |
-| how obscure the song was | 0.15 | 0.16 |
-| random | -0.04 | -0.06 |
+| Predictor | All 28 shows | 13 shows released 2024 or later | Top pick was the biggest spike (2024+) |
+|---|---|---|---|
+| obscurity (Wikipedia views before release, no Qloo) | 0.22 (p 0.003) | 0.19 (p 0.05) | 23% |
+| Qloo age gap | 0.07 (p 0.15) | 0.20 (p 0.02) | 31% |
+| obscurity + Qloo age gap (shipped) | 0.16 (p 0.02) | 0.21 (p 0.03) | 38% |
+| Qloo taste fit | 0.02 (p 0.42) | 0.02 (p 0.44) | 0% |
+| random | -0.02 | -0.27 | 15% |
 
-This is not proof. The samples are small, and backtests on past spikes are contaminated by the spikes themselves: Qloo's data is a current snapshot, so after Stranger Things made Kate Bush popular with young viewers, her measured age gap shrank and her measured fit grew. Within Stranger Things 4 she has the highest fit of every placed song (0.925) but a below-average gap. The leak pushes the two halves of the score in opposite directions, so only forecasts made before release can test the idea fairly. That is what the ledger is for.
+On song pages (105 songs, 17 shows) the shipped score reaches 0.25 on 2024+ releases against 0.16 for obscurity alone; small samples, read as direction, not proof.
+
+What this says: how unknown a song was is the strongest single signal, and Qloo's age gap adds to it on recent releases but not on older ones. That split is what contamination predicts: Qloo's data is a current snapshot, so a song that already spiked has since gained a younger audience and now shows a smaller age gap than it had before release (within Stranger Things 4, Kate Bush now has the highest taste fit of any placed song, 0.925, and a below-average gap). Taste fit, the obvious Qloo feature, predicted nothing. The only clean test is a forecast made before release, which is what the ledger is for.
 
 ## 4. Request to result, one example
 
-Input: Stranger Things, five placed songs.
-1. `/search?query=Stranger Things&types=urn:entity:tv_show` returns entity `07F1170E-...`; the name matches exactly.
-2. Demographics for the show: 24 and under +0.71, 25-29 +0.45, 35-44 -0.62.
-3. Demographics for Kate Bush: 24 and under +0.03, 45-54 +0.34.
-4. Artist affinity with the show as the signal: Kate Bush 0.925, The Clash 0.846, Metallica 0.768.
-5. Age gap = (1 - familiarity) / 2, where familiarity is the artist's over-index weighted by the show's positive bands; score = fit x gap.
+Input: Wednesday (released 2022-11-23) and five songs Tunefind lists as placed in it, scored as of the release date.
+1. `/search?query=Wednesday&types=urn:entity:tv_show,urn:entity:movie` returns the show; the name matches exactly.
+2. Demographics for the show and for each artist give six age-band over-indexes each; the age gap weights the artist's over-index by the bands the show over-indexes on.
+3. Wikipedia: mean daily views of each song's article from 60 to 8 days before release.
+4. Scores, highest first: Space Song (Beach House) 1.00, Physical (Dua Lipa) 0.60, Non, je ne regrette rien (Edith Piaf) 0.60, Dream Weaver (Gary Wright) 0.50, Dancing in the Dark (Bruce Springsteen) 0.10.
+5. Measured song-page spikes (`data/ripple_truth.csv`): Space Song 4.2x, Non, je ne regrette rien 2.1x, Dream Weaver 1.4x, Physical 1.1x, Dancing in the Dark 1.1x.
 
 ## 5. Run it
 

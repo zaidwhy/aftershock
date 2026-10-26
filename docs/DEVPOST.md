@@ -6,7 +6,7 @@
 
 ## Inspiration
 
-In May 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a teenage audience. Its English Wikipedia page went from about 10,000 views a month to 909,926 in June. Saltburn did the same for "Murder on the Dancefloor" in 2023. Nobody outside Netflix saw these coming, and nobody outside Netflix knows where a show that just broke out in Japan will chart next. Agents are good at explaining the past; we wanted one that commits to the future and gets graded.
+In May 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a teenage audience. Its English Wikipedia page went from about 10,000 views a month to 909,926 in June. Saltburn did the same for "Murder on the Dancefloor" in 2023, and Wednesday for The Cramps' "Goo Goo Muck" (from about 11 views a month to 14,858). Nobody outside Netflix saw these coming, and nobody outside Netflix knows where a show that just broke out in Japan will chart next. Agents are good at explaining the past; we wanted one that commits to the future and gets graded.
 
 ## What it does
 
@@ -14,7 +14,7 @@ Every week AFTERSHOCK reads Netflix's public per-country Top 10, finds titles th
 
 - forecasts which of the other 90+ countries it charts in over the next four weeks, with the evidence ("Bangladesh joined 19 of 47 past breakouts that started in Pakistan", so Fukrey Returns gets 38% there);
 - uses Qloo to name the local artists that title's audience already loves in each forecast country, as launch partners;
-- for shows with known song placements, scores each song for spike potential: Qloo taste fit of the show's audience for the artist, times the age gap between the two audiences;
+- for shows with known song placements, ranks each song by spike potential: how unknown it was on Wikipedia before release, plus the age gap Qloo measures between the show's audience and the artist's;
 - locks every forecast in a hash-chained public ledger before the outcome exists, and grades it against the next Netflix chart and Wikipedia's daily pageviews.
 
 You can also score your own show and songs on the Try page, and any MCP agent (Claude Desktop, Claude Code) can call `list_storms`, `spillover_forecast` and `ripple_score`.
@@ -28,7 +28,7 @@ Python (FastAPI, httpx), a vanilla JS front end with d3 for the map, an MCP serv
 We tested every Qloo signal against a baseline before using it.
 
 - Country spread: Netflix history alone reaches ROC AUC 0.817 on 829 held-out breakouts. Adding Qloo's in-country affinity gave 0.8182 vs 0.8188: no lift, because Qloo had an in-country value for only 1.8% of title-country pairs. So the probability is history-only, and Qloo does the job it is good at: who to partner with locally.
-- Song ripples: on 105 placed songs in 17 shows, fit x age gap correlates with the measured spike at a mean within-show Spearman of 0.11 overall and 0.28 for 2024+ releases (permutation p = 0.053), against 0.15 / 0.16 for "how obscure the song was" and about 0 for random. Promising, not proven. Backtests here are biased by construction: Qloo's data is a current snapshot, so a song that already spiked now looks like a better fit and a smaller age gap than before release. That is why the ledger exists.
+- Song ripples: on 222 artists placed in 28 shows (516 placements collected with source URLs), the strongest single predictor of a spike is how unknown the song was before release (within-show Spearman 0.22, p = 0.003). Qloo's age gap between the show's audience and the artist's adds to it on 2024+ releases (0.21 combined vs 0.19 alone; the top pick was the biggest spike in 38% of shows vs 23%), and Qloo taste fit predicted nothing (0.02). So the shipped score is obscurity plus Qloo age gap, and fit is shown only as context. Older releases are contaminated: Qloo's data is a current snapshot, so a song that already spiked now has a younger audience and a smaller age gap than it had before release. That is why every forecast goes into a ledger before release.
 
 ## Challenges
 

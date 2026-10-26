@@ -3,7 +3,7 @@
   "n_shows": 17,
   "n": 105,
   "n_shows_2024_plus": 8,
-  "live_calls": 41,
+  "live_calls": 0,
   "all": {
     "score": {
       "mean_spearman": 0.11,
@@ -24,6 +24,11 @@
       "mean_spearman": 0.149,
       "top1_hit_rate": 0.235,
       "p_value": 0.1029
+    },
+    "obscurity_plus_gap": {
+      "mean_spearman": 0.176,
+      "top1_hit_rate": 0.294,
+      "p_value": 0.0605
     },
     "random": {
       "mean_spearman": -0.036,
@@ -51,6 +56,11 @@
       "mean_spearman": 0.158,
       "top1_hit_rate": 0.25,
       "p_value": 0.1674
+    },
+    "obscurity_plus_gap": {
+      "mean_spearman": 0.251,
+      "top1_hit_rate": 0.25,
+      "p_value": 0.0725
     },
     "random": {
       "mean_spearman": -0.063,
