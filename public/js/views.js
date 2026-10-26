@@ -129,7 +129,7 @@ export function renderRipple(root, id, isCurrent) {
   setTitle("Release");
   load(root, "this release", isCurrent, () => getRipple(id), (r) => {
     setTitle(r.show);
-    const songs = [...(r.songs || [])].filter((x) => x.resolved !== false).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const songs = [...(r.songs || [])].filter((x) => x.score != null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     add(root,
       h("p", { class: "crumb" }, h("a", { href: "#/" }, "Songs to watch")),
       h("h1", null, r.show),
@@ -156,10 +156,10 @@ function songTable(r, songs) {
         h("th", { scope: "row" }, x.song),
         h("td", null, x.artist),
         h("td", { class: "num mono prob" }, plain2(x.score)),
-        h("td", { class: "num mono" }, x.age_gap == null ? "n/a" : x.age_gap.toFixed(2)),
+        h("td", { class: "num mono" }, x.age_gap == null ? "not in Qloo" : x.age_gap.toFixed(2)),
         h("td", { class: "num mono" }, x.prior_daily_views == null ? "n/a" : Math.round(x.prior_daily_views).toLocaleString("en-US")),
         h("td", { class: "num mono" }, earlyRead(x)),
-        h("td", null, generationGap(r.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`)))))));
+        h("td", null, x.artist_age ? generationGap(r.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`) : h("span", { class: "muted" }, "artist not in Qloo; scored on obscurity only")))))));
 }
 
 function forecastTable(fc) {

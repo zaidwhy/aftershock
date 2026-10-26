@@ -56,6 +56,8 @@ def show_features(client, show, show_type, rows, ratio_col="ratio", base_col="ba
     if not hit:
         return None
     show_age = age_profile(client, hit["entity_id"])
+    if show_age is None:
+        return None
     artist_ids = {}
     for row in rows:
         if row["artist"] not in artist_ids:
@@ -74,7 +76,10 @@ def show_features(client, show, show_type, rows, ratio_col="ratio", base_col="ba
         artist_id = artist_ids.get(row["artist"])
         if not artist_id or artist_id not in fit:
             continue
-        gap = age_gap(show_age, age_profile(client, artist_id))
+        artist_age = age_profile(client, artist_id)
+        if artist_age is None:
+            continue  # Qloo has no demographics for this artist; an all-zero profile is not data
+        gap = age_gap(show_age, artist_age)
         features.append({"song": row["song"], "artist": row["artist"], "fit": fit[artist_id], "gap": gap,
                          "score": fit[artist_id] * gap, "log_ratio": math.log(float(row[ratio_col])),
                          "obscurity": -math.log(float(row[base_col]) + 1)})

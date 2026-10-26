@@ -1,73 +1,73 @@
 {
   "outcome": "song",
-  "n_shows": 17,
-  "n": 105,
-  "n_shows_2024_plus": 8,
+  "n_shows": 15,
+  "n": 96,
+  "n_shows_2024_plus": 6,
   "live_calls": 0,
   "all": {
     "score": {
-      "mean_spearman": 0.11,
-      "top1_hit_rate": 0.235,
-      "p_value": 0.1764
+      "mean_spearman": 0.104,
+      "top1_hit_rate": 0.2,
+      "p_value": 0.1899
     },
     "fit": {
-      "mean_spearman": 0.168,
-      "top1_hit_rate": 0.294,
-      "p_value": 0.0825
+      "mean_spearman": 0.17,
+      "top1_hit_rate": 0.267,
+      "p_value": 0.078
     },
     "gap": {
-      "mean_spearman": 0.119,
-      "top1_hit_rate": 0.176,
-      "p_value": 0.1209
+      "mean_spearman": 0.135,
+      "top1_hit_rate": 0.133,
+      "p_value": 0.1359
     },
     "obscurity": {
       "mean_spearman": 0.149,
-      "top1_hit_rate": 0.235,
-      "p_value": 0.1029
+      "top1_hit_rate": 0.267,
+      "p_value": 0.1019
     },
     "obscurity_plus_gap": {
-      "mean_spearman": 0.176,
-      "top1_hit_rate": 0.294,
-      "p_value": 0.0605
+      "mean_spearman": 0.179,
+      "top1_hit_rate": 0.333,
+      "p_value": 0.077
     },
     "random": {
-      "mean_spearman": -0.036,
-      "top1_hit_rate": 0.118,
+      "mean_spearman": -0.06,
+      "top1_hit_rate": 0.067,
       "p_value": null
     }
   },
   "2024_plus": {
     "score": {
-      "mean_spearman": 0.278,
-      "top1_hit_rate": 0.375,
-      "p_value": 0.053
+      "mean_spearman": 0.321,
+      "top1_hit_rate": 0.333,
+      "p_value": 0.04
     },
     "fit": {
-      "mean_spearman": 0.119,
-      "top1_hit_rate": 0.375,
-      "p_value": 0.2659
+      "mean_spearman": 0.109,
+      "top1_hit_rate": 0.333,
+      "p_value": 0.2864
     },
     "gap": {
-      "mean_spearman": 0.166,
-      "top1_hit_rate": 0.125,
-      "p_value": 0.1289
+      "mean_spearman": 0.222,
+      "top1_hit_rate": 0.0,
+      "p_value": 0.1224
     },
     "obscurity": {
-      "mean_spearman": 0.158,
-      "top1_hit_rate": 0.25,
-      "p_value": 0.1674
+      "mean_spearman": 0.16,
+      "top1_hit_rate": 0.333,
+      "p_value": 0.2059
     },
     "obscurity_plus_gap": {
-      "mean_spearman": 0.251,
-      "top1_hit_rate": 0.25,
-      "p_value": 0.0725
+      "mean_spearman": 0.285,
+      "top1_hit_rate": 0.333,
+      "p_value": 0.0655
     },
     "random": {
-      "mean_spearman": -0.063,
-      "top1_hit_rate": 0.125,
+      "mean_spearman": 0.126,
+      "top1_hit_rate": 0.167,
       "p_value": null
     }
   },
-  "spearman": 0.11,
+  "spearman": 0.104,
   "baseline_spearman": 0.149
 }

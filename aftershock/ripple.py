@@ -6,10 +6,10 @@ know it yet. Two measurable halves, ranked within one show:
   before the reference date; no Qloo involved.
 - age gap: how far the artist's audience sits from the show's audience by age band (Qloo
   demographics for both).
-score = mean of the two within-show percentiles. On 28 shows / 222 artists (scripts/test_ripple.py)
-obscurity alone and the age gap each carried signal on 2024+ releases, and their sum picked the
-biggest spike in 38% of shows vs 23% for obscurity alone. Qloo taste fit predicted nothing in
-that test, so it is reported as context and not scored.
+score = mean of the two within-show percentiles. On 195 artists in 24 shows (scripts/test_ripple.py,
+artist-page outcome) the age gap alone matched obscurity on 2024+ releases (Spearman 0.28 vs 0.29)
+and the sum was best (0.31; top pick was the biggest spike in 56% of shows vs 33%). Qloo taste fit
+predicted nothing (0.00), so it is reported as context and not scored.
 """
 import logging
 import math
@@ -27,10 +27,23 @@ BASELINE_DAYS = (60, 8)  # same window as the backtest: days -60..-8 before the 
 
 
 def age_profile(client, entity_id):
+    """Age-band over-index, or None when Qloo has no demographic data for the entity
+    (an all-zero profile would otherwise read as a real, perfectly average audience)."""
     body = client.insights(filter__type="urn:demographics", signal__interests__entities=entity_id)
     rows = body.get("results", {}).get("demographics") or []
-    age = rows[0]["query"]["age"] if rows else {}
+    age = rows[0]["query"].get("age") if rows else None
+    if not age or not any(age.get(band) for band in AGE_BANDS):
+        return None
     return {band: float(age.get(band, 0.0)) for band in AGE_BANDS}
+
+
+def resolve_artist(client, artist):
+    """Placement credits list collaborators ("Mumford and Sons, Chris Stapleton"); fall back to the first."""
+    hit = resolve(client, artist, "urn:entity:artist")
+    if hit:
+        return hit
+    first = re.split(r",| feat\.? | featuring | & | x ", artist, maxsplit=1)[0].strip()
+    return resolve(client, first, "urn:entity:artist") if first != artist else None
 
 
 def age_gap(show_age, artist_age):
@@ -96,10 +109,12 @@ def score_placements(client, show_name, placements, show_type=None, as_of=None, 
     if not show:
         return {"resolved": False, "show": show_name, "songs": []}
     show_age = age_profile(client, show["entity_id"])
+    if show_age is None:
+        return {"resolved": False, "show": show["name"], "reason": "Qloo has no audience profile for this title", "songs": []}
     artists = {}
     for _, artist in placements:
         if artist not in artists:
-            hit = resolve(client, artist, "urn:entity:artist")
+            hit = resolve_artist(client, artist)
             artists[artist] = hit["entity_id"] if hit else None
     known = sorted({a for a in artists.values() if a})
     fit = taste_fit(client, show["entity_id"], known) if known else {}
@@ -110,8 +125,9 @@ def score_placements(client, show_name, placements, show_type=None, as_of=None, 
         if artist_id:
             try:
                 artist_age = age_profile(client, artist_id)
-                row.update(resolved=True, artist_age=artist_age, age_gap=round(age_gap(show_age, artist_age), 3),
-                           fit=fit.get(artist_id))
+                row.update(resolved=True, fit=fit.get(artist_id))
+                if artist_age is not None:
+                    row.update(artist_age=artist_age, age_gap=round(age_gap(show_age, artist_age), 3))
             except QlooError as err:
                 log.warning("demographics failed for %s: %s", artist, err)
         views, article = prior_attention(song, artist, as_of)

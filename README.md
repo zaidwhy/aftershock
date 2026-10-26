@@ -40,19 +40,18 @@ All numbers below come from scripts in this repo; rerun them to reproduce.
 
 We then tested whether Qloo's location-conditioned affinity for the title improves it (`scripts/test_spillover_qloo.py`, 200 test breakouts, 1,432 Qloo calls): AUC 0.8188 without Qloo, 0.8182 with it. Qloo returned an in-country value for only 1.8% of title-country pairs, so it carries almost no signal here. **The country forecast is therefore history-only**, and Qloo is used where it does add something: naming local partners.
 
-**RIPPLE** (`scripts/test_ripple.py`). Ground truth: 516 real placements from 44 titles, each with a source URL (`data/placements.csv`, reproducible with `scripts/scrape_placements.py`). Outcome: the spike of the artist's Wikipedia page (mean daily views on days +7..+35 after release over days -60..-8), one row per artist per show; 222 artists in 28 shows with at least 4 scored artists. Mean within-show Spearman between each predictor and the log spike, with a one-sided permutation p-value (2,000 within-show shuffles):
+**RIPPLE** (`scripts/test_ripple.py`). Ground truth: 516 real placements from 44 titles, each with a source URL (`data/placements.csv`, reproducible with `scripts/scrape_placements.py`). Outcome: the spike of the artist's Wikipedia page (mean daily views on days +7..+35 after release over days -60..-8), one row per artist per show; artists Qloo has no demographic profile for are excluded rather than treated as average. That leaves 195 artists in 24 shows with at least 4 scored artists. Mean within-show Spearman between each predictor and the log spike, with a one-sided permutation p-value (2,000 within-show shuffles):
 
-| Predictor | All 28 shows | 13 shows released 2024 or later | Top pick was the biggest spike (2024+) |
+| Predictor | All 24 shows | 9 shows released 2024 or later | Top pick was the biggest spike (2024+) |
 |---|---|---|---|
-| obscurity (Wikipedia views before release, no Qloo) | 0.22 (p 0.003) | 0.19 (p 0.05) | 23% |
-| Qloo age gap | 0.07 (p 0.15) | 0.20 (p 0.02) | 31% |
-| obscurity + Qloo age gap (shipped) | 0.16 (p 0.02) | 0.21 (p 0.03) | 38% |
-| Qloo taste fit | 0.02 (p 0.42) | 0.02 (p 0.44) | 0% |
-| random | -0.02 | -0.27 | 15% |
+| obscurity (Wikipedia views before release, no Qloo) | 0.27 (p 0.001) | 0.29 (p 0.01) | 33% |
+| Qloo age gap | 0.08 (p 0.16) | 0.28 (p 0.02) | 33% |
+| obscurity + Qloo age gap (shipped) | 0.20 (p 0.008) | 0.31 (p 0.007) | 56% |
+| Qloo taste fit | 0.00 (p 0.48) | -0.01 (p 0.50) | 0% |
 
-On song pages (105 songs, 17 shows) the shipped score reaches 0.25 on 2024+ releases against 0.16 for obscurity alone; small samples, read as direction, not proof.
+On song pages (96 songs, 15 shows) the shipped score reaches 0.29 on 2024+ releases against 0.16 for obscurity alone (p 0.07); small samples, read as direction, not proof.
 
-What this says: how unknown a song was is the strongest single signal, and Qloo's age gap adds to it on recent releases but not on older ones. That split is what contamination predicts: Qloo's data is a current snapshot, so a song that already spiked has since gained a younger audience and now shows a smaller age gap than it had before release (within Stranger Things 4, Kate Bush now has the highest taste fit of any placed song, 0.925, and a below-average gap). Taste fit, the obvious Qloo feature, predicted nothing. The only clean test is a forecast made before release, which is what the ledger is for.
+What this says: how unknown a song was is the strongest single signal overall. On recent releases Qloo's age gap is as strong as obscurity on its own, and the two together are best; on older releases the gap fades. That split is what contamination predicts: Qloo's data is a current snapshot, so a song that already spiked has since gained a younger audience and now shows a smaller age gap than it had before release (within Stranger Things 4, Kate Bush now has the highest taste fit of any placed song, 0.925, and a below-average gap). Taste fit, the obvious Qloo feature, predicted nothing. The only clean test is a forecast made before release, which is what the ledger is for.
 
 ## 4. Request to result, one example
 
