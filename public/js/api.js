@@ -22,7 +22,7 @@ export const getRipples = () => getJson(cfg.mock ? `${cfg.mockBase}/ripples.json
 export const getRipple = (id) => getJson(cfg.mock ? `${cfg.mockBase}/ripple-${encodeURIComponent(id)}.json` : `${cfg.apiBase}/ripples/${encodeURIComponent(id)}`);
 export const getReplays = () => getJson(cfg.mock ? `${cfg.mockBase}/replays.json` : `${cfg.apiBase}/replays`);
 
-export async function scoreSongs(show, songs) {
+export async function scoreSongs(show, songs, asOf) {
   if (cfg.mock) {
     const r = await getJson(`${cfg.mockBase}/ripple.json`);
     // Mock mode: match typed songs against the three canned songs, flag the rest unresolved.
@@ -32,5 +32,6 @@ export async function scoreSongs(show, songs) {
     return { show_age: r.show_age, songs: out, resolved: true };
   }
   const q = songs.map((s) => `${s.song}|${s.artist}`).join(";");
-  return getJson(`${cfg.apiBase}/ripple?show=${encodeURIComponent(show)}&songs=${encodeURIComponent(q)}`);
+  const when = asOf ? `&as_of=${encodeURIComponent(asOf)}` : "";
+  return getJson(`${cfg.apiBase}/ripple?show=${encodeURIComponent(show)}&songs=${encodeURIComponent(q)}${when}`);
 }

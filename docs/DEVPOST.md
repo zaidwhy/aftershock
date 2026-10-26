@@ -6,7 +6,7 @@
 
 ## Inspiration
 
-In May 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a teenage audience. Its English Wikipedia page went from about 10,000 views a month to 909,926 in June. Saltburn did the same for "Murder on the Dancefloor" in 2023, and Wednesday for The Cramps' "Goo Goo Muck" (from about 11 views a month to 14,858). Nobody outside Netflix saw these coming, and nobody outside Netflix knows where a show that just broke out in Japan will chart next. Agents are good at explaining the past; we wanted one that commits to the future and gets graded.
+In May 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a teenage audience. Its English Wikipedia page went from about 10,000 views a month to 909,926 in June. Saltburn did the same for "Murder on the Dancefloor" in 2023, and Wednesday for The Cramps' "Goo Goo Muck" (from about 11 views a month to 14,858). Nobody outside Netflix saw these coming, and nobody outside Netflix knows where a show that just broke out in Japan will chart next. Agents are good at explaining the past; we wanted one that commits to the future and gets graded. (Our model would not have caught Kate Bush either: the song was already well known, and the spike came from how the scene used it. We say so on the site.)
 
 ## What it does
 
@@ -51,4 +51,4 @@ python, fastapi, httpx, d3, mcp, qloo, netflix-top-10, wikimedia-pageviews, verc
 
 ## Testing instructions for judges
 
-No login. Open the demo, pick any storm on the home page, or go to Try it and enter a show plus a few `song | artist` lines (for example `Stranger Things` with `Running Up That Hill | Kate Bush`). Live scoring is capped at 10 requests per visitor per hour so the shared key lasts through judging.
+No login. Open the demo, pick any storm on the home page, or go to Try it and enter a show plus a few `song | artist` lines (for example `Wednesday`, as of 2022-11-23, with `Space Song | Beach House`, `Physical | Dua Lipa`, `Dream Weaver | Gary Wright` and `Dancing In the Dark | Bruce Springsteen`; the real spikes were 4.2x, 1.1x, 1.4x and 1.1x). Live scoring is capped at 10 requests per visitor per hour so the shared key lasts through judging.

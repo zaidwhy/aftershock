@@ -93,7 +93,7 @@ export function ripplePanel(ripple) {
     return h("li", { class: "song" },
       h("div", { class: "song-head" },
         h("div", null, h("strong", null, x.song), h("span", { class: "muted" }, ` - ${x.artist}`)),
-        h("span", { class: `tag ${graded ? "tag-graded" : "tag-pending"}` }, graded ? "graded" : "pending")),
+        x.status ? h("span", { class: `tag ${graded ? "tag-graded" : "tag-pending"}` }, graded ? "graded" : "pending") : null),
       h("div", { class: "score-row" },
         h("span", { class: "mono score-num", "aria-label": `ripple score ${x.score.toFixed(2)}` }, x.score.toFixed(2)),
         h("div", { class: "bar", role: "img", "aria-label": `Score ${x.score.toFixed(2)} out of a panel maximum of ${maxScore.toFixed(2)}` },

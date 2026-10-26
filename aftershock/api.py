@@ -8,6 +8,7 @@ import logging
 import os
 import time
 from collections import defaultdict, deque
+from datetime import date
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -22,6 +23,7 @@ PRIVATE = ROOT / "data" / "private"
 PUBLIC_DATA = ROOT / "data" / "public"
 RIPPLE_PER_HOUR = 10
 MAX_FIELD = 120
+WIKI_FIRST_DAY = date(2015, 8, 1)  # Wikimedia per-article pageviews start in July 2015
 
 app = FastAPI(title="AFTERSHOCK", docs_url=None, redoc_url=None)
 _ripple_hits = defaultdict(deque)
@@ -97,8 +99,11 @@ def _parse_songs(songs):
 
 @app.get("/api/ripple")
 def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX_FIELD),
-           songs: str = Query(..., min_length=3, max_length=MAX_SONGS * (2 * MAX_FIELD + 2))):
+           songs: str = Query(..., min_length=3, max_length=MAX_SONGS * (2 * MAX_FIELD + 2)),
+           as_of: date | None = None):
     placements = _parse_songs(songs)
+    if as_of and not (WIKI_FIRST_DAY <= as_of <= date.today()):
+        raise HTTPException(422, f"as_of must be between {WIKI_FIRST_DAY} and today; got {as_of}")
     visitor = request.client.host if request.client else "unknown"
     hits = _ripple_hits[visitor]
     now = time.time()
@@ -108,7 +113,7 @@ def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX
         raise HTTPException(429, f"limit is {RIPPLE_PER_HOUR} live scorings per hour per visitor")
     hits.append(now)
     try:
-        return score_placements(Qloo(call_budget=40), show, placements)
+        return score_placements(Qloo(call_budget=40), show, placements, as_of=as_of)
     except QlooError as err:
         log.warning("ripple scoring failed: %s", err)
         raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err

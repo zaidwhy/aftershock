@@ -180,6 +180,7 @@ export function renderTry(root, isCurrent) {
   const out = h("div", { class: "try-out", "aria-live": "polite" });
   const show = h("input", { id: "show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Stranger Things", maxlength: "120" });
   const songs = h("textarea", { id: "songs", name: "songs", rows: "6", required: true, "aria-describedby": "songs-help", placeholder: "Running Up That Hill | Kate Bush\nMaster of Puppets | Metallica" });
+  const asOf = h("input", { id: "asof", name: "asof", type: "date", min: "2015-08-01", "aria-describedby": "asof-help" });
   const btn = h("button", { type: "submit", class: "btn btn-primary" }, "Score these songs");
   const form = h("form", { class: "try-form", novalidate: true,
     onsubmit: (e) => {
@@ -194,7 +195,7 @@ export function renderTry(root, isCurrent) {
       if (bad >= 0) { out.replaceChildren(errorBox("your input", new Error(`Line ${bad + 1} needs both a song and an artist, written "song | artist".`))); songs.focus(); return; }
       btn.disabled = true;
       out.replaceChildren(loading("scores from Qloo"));
-      scoreSongs(showName, parsed).then((r) => {
+      scoreSongs(showName, parsed, asOf.value || null).then((r) => {
         if (!isCurrent()) return;
         out.replaceChildren();
         if (r.resolved === false || r.show_resolved === false) add(out, h("div", { class: "status status-error", role: "alert" }, h("p", null, `"${showName}" was not found in Qloo, so no audience profile exists to score against.`)));
@@ -205,6 +206,8 @@ export function renderTry(root, isCurrent) {
     h("div", { class: "field" }, h("label", { for: "show" }, "Show or film"), show),
     h("div", { class: "field" }, h("label", { for: "songs" }, "Songs, one per line"), songs,
       h("p", { id: "songs-help", class: "help" }, "Format: song | artist. Up to 8 lines. Limited to 10 live scorings per hour.")),
+    h("div", { class: "field" }, h("label", { for: "asof" }, "Score as of (optional)"), asOf,
+      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show: obscurity is read from Wikipedia before this date. Try Wednesday as of 2022-11-23 with Space Song | Beach House, Physical | Dua Lipa, Dream Weaver | Gary Wright, Dancing In the Dark | Bruce Springsteen. Qloo's audience data is today's, so past replays carry its later knowledge.")),
     btn);
   add(root, h("h1", null, "Try it on any show"),
     h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each one in Qloo and Wikipedia and ranks them by how unknown each song is and how far its audience sits from the show's."),
@@ -257,7 +260,7 @@ export function renderMethod(root) {
       h("p", null, "Start with a title that entered Netflix's Top 10 in 1 to 3 countries. From past breakouts that began in the same countries, count how often each other country followed; that is the history probability. Then adjust it with Qloo: how strongly the title's audience taste matches each country, relative to the title's average country. The output is a probability per country over a four-week horizon, graded against the next weekly Top 10."),
       h("p", null, "The history column in the forecast table is the baseline. The Qloo column is how far the taste signal moved the forecast away from it.")),
     h("section", null, h("h2", null, "RIPPLE: which songs spike"),
-      h("p", null, "For each song placed in a show, compare two audiences from Qloo, the show's and the artist's, by age band: the age gap is how far the artist's audience sits from the bands the show's audience over-indexes on. Add obscurity: the song's mean daily Wikipedia views in the 60 days before release (its artist's page when the song has none). Score = the average of the two within-show percentiles. We also tested Qloo taste fit (how much the show's audience likes the artist); it did not predict spikes, so it is shown as context only."),
+      h("p", null, "For each song placed in a show, compare two audiences from Qloo, the show's and the artist's, by age band: the age gap is how far the artist's audience sits from the bands the show's audience over-indexes on. Add obscurity: the song's mean daily Wikipedia views in the 60 days before release (its artist's page when the song has none). Score = the average of the two within-show percentiles. We also tested Qloo taste fit (how much the show's audience likes the artist); it did not predict spikes, so it is shown as context only. It has a known blind spot: it would not have picked Running Up That Hill. That song already had about 350 Wikipedia views a day before Stranger Things 4, and its spike came from how the show used it, which neither Qloo nor Wikipedia can see."),
       h("p", null, "Stranger Things 4 is the case: its audience over-indexes on 24-and-younger (+0.71) while Kate Bush's is flat there (+0.03) and peaks at 45-54 (+0.34), yet fit is very high (0.925). Her English Wikipedia views went from about 10k a month to 909k in June 2022. Graded daily against Wikimedia pageviews.")),
     h("section", null, h("h2", null, "Data sources"),
       h("ul", { class: "plain-list" },

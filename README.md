@@ -81,6 +81,7 @@ API contract: `docs/API.md`. Public ledger: `ledger/forecasts.jsonl` (each line 
 
 ## 6. Limits: what the results do not establish
 
+- The score does not see how a show uses a song. It would not have picked Running Up That Hill: as of Stranger Things 4's release it ties for last of the six songs we tried, because the song already had about 350 Wikipedia views a day; the spike came from the scene, not from obscurity or age. Scene prominence is the next feature.
 - Qloo describes the taste of groups, never of a person. No personal data is sent to Qloo.
 - A probability is not a promise: a 20% forecast that misses was not wrong.
 - Backtests use today's Qloo data on past events, so they can be optimistic (fit) or pessimistic (age gap). The live ledger is the real test.
