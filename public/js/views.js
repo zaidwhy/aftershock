@@ -1,5 +1,5 @@
 import { h } from "./dom.js";
-import { loading, errorBox } from "./dom.js";
+import { loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm, getScorecard, getReplays, getRipple, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
 import { seismograph, ripplePanel, forecastMap } from "./charts.js";
@@ -32,7 +32,7 @@ export function renderHome(root, isCurrent) {
   setTitle("");
   const chartBox = h("div", { class: "hero-chart" });
   const stormBox = h("div", null);
-  root.append(
+  add(root, 
     h("section", { class: "hero" },
       h("p", { class: "eyebrow" }, "Breakout forecasting"),
       h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next?")),
@@ -62,8 +62,8 @@ export function renderHome(root, isCurrent) {
   });
 
   load(stormBox, "this week's storms", isCurrent, getStorms, ({ week, storms }) => {
-    if (!storms.length) { stormBox.append(h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
-    stormBox.append(
+    if (!storms.length) { add(stormBox, h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
+    add(stormBox, 
       h("p", { class: "muted" }, `Week of ${week}. Titles that entered Netflix's Top 10 in 1 to 3 countries.`),
       h("ul", { class: "storm-list" }, storms.map((s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
@@ -81,7 +81,7 @@ export function renderStorm(root, id, isCurrent) {
     setTitle(st.title);
     const fc = st.spillover?.forecasts || [];
     const mapBox = h("div", { class: "map-box" }, loading("the map"));
-    root.append(
+    add(root, 
       h("p", { class: "crumb" }, h("a", { href: "#/" }, "All storms")),
       h("h1", null, st.title, st.season ? h("span", { class: "h1-sub" }, ` ${st.season}`) : null),
       h("p", { class: "meta" }, `${st.category || "Title"} | origin week ${st.origin_week} | broke out in `, h("strong", null, origins(st.origin_countries))),
@@ -142,8 +142,8 @@ export function renderTry(root, isCurrent) {
       getRipple(showName, parsed).then((r) => {
         if (!isCurrent()) return;
         out.replaceChildren();
-        if (r.resolved === false || r.show_resolved === false) out.append(h("div", { class: "status status-error", role: "alert" }, h("p", null, `"${showName}" was not found in Qloo, so no audience profile exists to score against.`)));
-        else out.append(h("h2", null, `Ripple scores for ${showName}`), ripplePanel(r));
+        if (r.resolved === false || r.show_resolved === false) add(out, h("div", { class: "status status-error", role: "alert" }, h("p", null, `"${showName}" was not found in Qloo, so no audience profile exists to score against.`)));
+        else add(out, h("h2", null, `Ripple scores for ${showName}`), ripplePanel(r));
       }).catch((err) => { if (isCurrent()) out.replaceChildren(errorBox("the scores", err)); })
         .finally(() => { btn.disabled = false; });
     } },
@@ -151,7 +151,7 @@ export function renderTry(root, isCurrent) {
     h("div", { class: "field" }, h("label", { for: "songs" }, "Songs, one per line"), songs,
       h("p", { id: "songs-help", class: "help" }, "Format: song | artist. Up to 8 lines. Limited to 10 live scorings per hour.")),
     btn);
-  root.append(h("h1", null, "Try it on any show"),
+  add(root, h("h1", null, "Try it on any show"),
     h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each one in Qloo and scores taste fit times age gap."),
     mockNote(), form, out);
 }
@@ -160,10 +160,10 @@ export function renderTry(root, isCurrent) {
 export function renderScorecard(root, isCurrent) {
   setTitle("Scorecard");
   const box = h("div", null);
-  root.append(h("h1", null, "Scorecard"), h("p", { class: "pitch" }, "Forecasts are locked first and graded later. Nothing here is edited after the fact."), mockNote(), box);
+  add(root, h("h1", null, "Scorecard"), h("p", { class: "pitch" }, "Forecasts are locked first and graded later. Nothing here is edited after the fact."), mockNote(), box);
   load(box, "the scorecard", isCurrent, getScorecard, (sc) => {
     const sp = sc.spillover || {}, rp = sc.ripple || {}, bt = sc.backtest || {};
-    box.append(
+    add(box, 
       h("div", { class: "grid2" },
         scoreBlock("Spillover", "graded weekly by Netflix Top 10", sp.locked, sp.graded,
           [["Hits (locked top 10 per title)", sp.hits], ["Pending", sp.pending], ["AUC", plain2(sp.auc)]]),
@@ -179,7 +179,7 @@ export function renderScorecard(root, isCurrent) {
       h("p", null, h("a", { class: "btn", href: sc.ledger_url, rel: "noopener" }, "Open the public ledger")),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
-        h("p", null, "Qloo describes the taste of groups, not of any individual: a high score says an audience tends to like something, not that a given person will. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. Backtests on past events are optimistic, because today's Qloo data postdates those events and may carry information that was not available at the time. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+        h("p", null, "Qloo describes the taste of groups, not of any individual: a high score says an audience tends to like something, not that a given person will. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. Backtests on past events are biased in both directions, because today's Qloo data postdates those events: a song that already spiked now looks like a better taste fit for the show's audience, and a smaller age gap, than it did before release. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
   });
 }
 
@@ -195,7 +195,7 @@ function scoreBlock(name, graded_by, locked, graded, extra) {
 /* ----------------------------------------------------------------- method */
 export function renderMethod(root) {
   setTitle("Method");
-  root.append(
+  add(root, 
     h("h1", null, "Method"),
     h("p", { class: "pitch" }, "Two models, one rule: lock the forecast before the outcome."),
     h("section", null, h("h2", null, "SPILLOVER: which countries next"),
@@ -214,5 +214,5 @@ export function renderMethod(root) {
 
 export function renderNotFound(root) {
   setTitle("Not found");
-  root.append(h("h1", null, "Page not found"), h("p", null, h("a", { href: "#/" }, "Back to this week's storms")));
+  add(root, h("h1", null, "Page not found"), h("p", null, h("a", { href: "#/" }, "Back to this week's storms")));
 }

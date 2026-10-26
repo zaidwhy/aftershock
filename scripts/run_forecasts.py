@@ -47,6 +47,14 @@ def refresh_netflix():
     log.info("refreshed Netflix data: %d bytes", len(resp.text))
 
 
+def season_label(title):
+    """Netflix's season_title repeats the show name ("Show: Season 2"); keep only the season part."""
+    show, season = title
+    if season == "N/A":
+        return None
+    return season[len(show):].lstrip(": ").strip() or season if season.startswith(show) else season
+
+
 def slug(title):
     return re.sub(r"[^a-z0-9]+", "-", f"{title[0]} {'' if title[1] == 'N/A' else title[1]}".lower()).strip("-")[:80]
 
@@ -196,12 +204,12 @@ def main():
                 log.warning("ripple failed for %s: %s", event["title"][0], err)
         partner_rows = [{"code": c, "artists": partners(client, entity_id, names[c])} for c in ranked[:3]] if entity_id else []
         storm_id = slug(event["title"])
-        summary = {"id": storm_id, "title": event["title"][0], "season": None if event["title"][1] == "N/A" else event["title"][1],
+        summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
                    "category": event["category"], "origin_week": str(event["origin_week"]),
                    "origin_countries": [{"code": c, "name": names[c]} for c in event["origin_countries"]],
                    "qloo_entity": entity_id, "has_ripple": bool(ripple),
                    "top_forecast": forecasts[0] if forecasts else None}
-        storms.append({"summary": summary, "detail": {**summary, "spillover": {"horizon_weeks": HORIZON, "forecasts": forecasts},
+        storms.append({"netflix_title": list(event["title"]), "summary": summary, "detail": {**summary, "spillover": {"horizon_weeks": HORIZON, "forecasts": forecasts},
                                                       "ripple": ripple, "partners": partner_rows}})
         to_lock += [{"kind": "spillover", "title": list(event["title"]), "origin_week": str(event["origin_week"]),
                      "target": f["code"], "probability": f["probability"]} for f in forecasts[:LOCK_TOP]]
@@ -219,7 +227,7 @@ def main():
     for record in ledger.read():
         lock_ids.setdefault((tuple(record["title"]), record["origin_week"]), (record["locked_at"], record["hash"]))
     for storm in storms:
-        key = (tuple([storm["summary"]["title"], storm["summary"]["season"] or "N/A"]), storm["summary"]["origin_week"])
+        key = (tuple(storm["netflix_title"]), storm["summary"]["origin_week"])
         if key in lock_ids:
             storm["detail"]["spillover"]["locked_at"], storm["detail"]["spillover"]["ledger_id"] = lock_ids[key]
 

@@ -29,7 +29,8 @@ export function seismograph(replay) {
     const i = Math.min(Math.floor(f), data.length - 2);
     const t = f - i;
     const v = data[i][1] * (1 - t) + data[i + 1][1] * t;
-    return 3 + 100 * Math.sqrt(v / max);
+    // Linear, so a 90x spike reads as 90x; the jitter is cosmetic, the envelope is the data.
+    return 2 + 100 * (v / max);
   };
   let d = "";
   for (let x = 0; x < N; x++) {

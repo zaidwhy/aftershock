@@ -22,3 +22,7 @@ export function errorBox(what, err, retry) {
     h("p", null, h("strong", null, `Could not load ${what}. `), err.message || String(err)),
     retry ? h("button", { type: "button", class: "btn", onclick: retry }, "Try again") : null);
 }
+// Element.append writes null as the text "null"; conditional sections pass null when absent.
+export function add(parent, ...kids) {
+  parent.append(...kids.flat().filter((k) => k != null && k !== false));
+}
