@@ -25,7 +25,7 @@ See the end of this file for the latest results; everything below is committed l
 ## Decisions taken overnight (and why)
 
 - SPILLOVER decision test: Qloo location affinity adds no AUC (0.8188 history vs 0.8182 with Qloo; Qloo had a value for 1.8% of title-country pairs). Per the pre-set rule, the country forecast is history-only and Qloo is used for local partners instead.
-- RIPPLE test is inconclusive on past data, and the reason is structural: Qloo's data is a snapshot taken after past spikes, which inflates fit and shrinks the age gap of songs that already spiked. The forward ledger is the real test, so forecasts are locked for new releases.
+- RIPPLE: the first formula (taste fit x age gap) did not beat a no-Qloo obscurity baseline. On the larger artist-level test, fit predicted nothing while the age gap matched obscurity on 2024+ releases, so the shipped score is obscurity + Qloo age gap and fit is context only. Past data is contaminated (Qloo's snapshot postdates the spikes), so the forward ledger is the real test.
 - Stayed with AFTERSHOCK rather than switching to READ THE ROOM: the product, data pipeline and ledger exist, the honesty of the measurement is itself the differentiator, and a rebuild in 3 days was the bigger risk.
 - No paid LLM. The agentic parts: an autonomous weekly job (detect, resolve, forecast, lock, grade) and an MCP server so Claude and other agents can call the tools.
 
