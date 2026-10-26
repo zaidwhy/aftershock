@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import logging
+import math
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -32,7 +33,7 @@ RESULTS = ROOT / "data" / "results"
 LIVE_PLACEMENTS = ROOT / "data" / "placements_live.csv"
 HORIZON = 4
 SHOW_TOP = 15
-LOCK_TOP = 10
+MIN_RIPPLE_SONGS = 4
 MAX_STORMS = 40
 MAX_RIPPLE_SONGS = 25
 log = logging.getLogger("run_forecasts")
@@ -75,36 +76,6 @@ def resolve_title(client, event):
         if norm(hit.get("name", "")) == norm(event["title"][0]):
             return hit["entity_id"]
     return None
-
-
-def qloo_relative_all(client, entity_ids, countries, names):
-    """{entity: {country: affinity minus the entity's mean across countries}}, one batched call
-    per country and entity type (Qloo returns only entities it holds for that type)."""
-    ids = ",".join(entity_ids)
-
-    def one_country(code):
-        found = []
-        for entity_type in ("urn:entity:tv_show", "urn:entity:movie"):
-            try:
-                body = client.get("/v2/insights", {"filter.type": entity_type, "signal.location.query": names[code],
-                                                   "filter.results.entities": ids, "take": len(entity_ids)})
-            except QlooError as err:
-                log.warning("affinity failed in %s: %s", code, err)
-                continue
-            found += [(e["entity_id"], e["query"]["affinity"]) for e in body.get("results", {}).get("entities", [])]
-        return code, found
-
-    by_entity = {}
-    # Calls take seconds each; five in flight keeps the client's 4 req/s pacing busy.
-    with ThreadPoolExecutor(max_workers=5) as pool:
-        for code, found in pool.map(one_country, countries):
-            for entity, value in found:
-                by_entity.setdefault(entity, {})[code] = value
-    relative = {}
-    for entity, values in by_entity.items():
-        mean = sum(values.values()) / len(values)
-        relative[entity] = {c: v - mean for c, v in values.items()}
-    return relative
 
 
 def partners(client, entity_id, country_name):
@@ -162,6 +133,40 @@ def _read_json(path):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
+def grade_ripples(today):
+    """Within-release Spearman of locked ripple scores against the Wikipedia spike, for releases
+    whose 35-day window has closed."""
+    by_release = {}
+    for record in ledger.read():
+        if record.get("kind") == "ripple" and record.get("wiki_article"):
+            by_release.setdefault((tuple(record["title"]), record["origin_week"]), []).append(record)
+    rhos, pending = [], 0
+    for (_, release), records in by_release.items():
+        spikes = [(r["score"], wiki.spike(r["wiki_article"], release, today)) for r in records]
+        if any(spike.status != "ok" for _, spike in spikes):
+            pending += 1
+            continue
+        usable = [(score, math.log(spike.ratio)) for score, spike in spikes if spike.ratio]
+        if len(usable) >= MIN_RIPPLE_SONGS:
+            rhos.append(spearman([u[0] for u in usable], [u[1] for u in usable]))
+    return {"graded_releases": len(rhos), "pending_releases": pending,
+            "mean_spearman": round(sum(rhos) / len(rhos), 3) if rhos else None}
+
+
+def spearman(xs, ys):
+    def ranks(values):
+        order = sorted(range(len(values)), key=lambda i: values[i])
+        out = [0.0] * len(values)
+        for rank, i in enumerate(order):
+            out[i] = float(rank)
+        return out
+    rx, ry = ranks(xs), ranks(ys)
+    mx, my = sum(rx) / len(rx), sum(ry) / len(ry)
+    cov = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    var = math.sqrt(sum((a - mx) ** 2 for a in rx) * sum((b - my) ** 2 for b in ry))
+    return cov / var if var else 0.0
+
+
 def grade(rows, last_week):
     """Grade locked spillover forecasts whose horizon has passed."""
     first = first_entries(rows)
@@ -209,38 +214,39 @@ def main():
     titles = live_placements()
     storms, to_lock = [], []
     entity_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
-    known = sorted({v for v in entity_of.values() if v})
-    # In-country affinity covered 1.8% of title-country pairs and added no AUC, so it is not fetched.
-    affinity = {}
     for event in storms_now:
         candidates = [c for c in countries if c not in event["origin_countries"]]
         probabilities = model.predict(event, candidates)
         entity_id = entity_of.get(event["title"])
-        relative = affinity.get(entity_id, {})
         ranked = sorted(candidates, key=lambda c: -probabilities[c])[:SHOW_TOP]
-        forecasts = [{
-            "code": c, "name": names[c], "probability": round(probabilities[c], 4),
-            "history_probability": round(probabilities[c], 4),
-            "qloo_relative": round(relative[c], 3) if c in relative else None,
-            # Qloo's in-country affinity did not improve this forecast in the backtest
-            # (scripts/test_spillover_qloo.py), so it is shown as context, not used in the probability.
-            "why": why_text(model, event, c, names),
-        } for c in ranked]
-        ripple = None
+        # History only: Qloo's in-country affinity added no AUC in scripts/test_spillover_qloo.py
+        # (it had a value for 1.8% of title-country pairs), so Qloo's job here is the partners list.
+        forecasts = [{"code": c, "name": names[c], "probability": round(probabilities[c], 4),
+                      "why": why_text(model, event, c, names)} for c in ranked]
         partner_rows = [{"code": c, "artists": partners(client, entity_id, names[c])} for c in ranked[:3]] if entity_id else []
         storm_id = slug(event["title"])
         summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
                    "category": event["category"], "origin_week": str(event["origin_week"]),
                    "origin_countries": [{"code": c, "name": names[c]} for c in event["origin_countries"]],
-                   "qloo_entity": entity_id, "has_ripple": bool(ripple),
+                   "qloo_entity": entity_id,
                    "top_forecast": forecasts[0] if forecasts else None}
         storms.append({"netflix_title": list(event["title"]), "summary": summary, "detail": {**summary, "spillover": {"horizon_weeks": HORIZON, "forecasts": forecasts},
-                                                      "ripple": ripple, "partners": partner_rows}})
+                                                      "partners": partner_rows}})
+        # Every candidate country is locked, not just the top rows, so AUC and calibration can be graded.
         to_lock += [{"kind": "spillover", "title": list(event["title"]), "origin_week": str(event["origin_week"]),
-                     "target": f["code"], "probability": f["probability"]} for f in forecasts[:LOCK_TOP]]
+                     "target": c, "probability": round(probabilities[c], 4)} for c in sorted(candidates)]
 
     watched = ripple_watch(client, titles, date.today()) if client else []
     for item in watched:
+        scored = [song for song in item["songs"] if song.get("score") is not None]
+        # A ripple forecast counts only if locked before the outcome window opens (release + 7 days)
+        # and ranks at least MIN_RIPPLE_SONGS songs; anything else is shown as an early read only.
+        opens = date.fromisoformat(item["release_date"]) + timedelta(days=wiki.AFTER_FROM)
+        item["lockable"] = date.today() < opens and len(scored) >= MIN_RIPPLE_SONGS
+        if not item["lockable"]:
+            item["not_locked_reason"] = ("released before tracking began; its outcome window was already open"
+                                         if date.today() >= opens else f"fewer than {MIN_RIPPLE_SONGS} scorable songs")
+            continue
         to_lock += [{"kind": "ripple", "title": [item["show"], item["release_date"]], "origin_week": item["release_date"],
                      "target": f"{song['song']} | {song['artist']}", "score": song["score"],
                      "wiki_article": song.get("wiki_article")}
@@ -260,25 +266,33 @@ def main():
             storm["detail"]["spillover"]["locked_at"], storm["detail"]["spillover"]["ledger_id"] = lock_ids[key]
 
     graded, hits, pending = grade(rows, last_week)
+    ripple_graded = grade_ripples(date.today())
     backtest = _read_json(RESULTS / "spillover_backtest.json")
     qloo_test = _read_json(RESULTS / "spillover_qloo_test.json")
-    ripple_test = _read_json(RESULTS / "ripple_test.json")
+    ripple_test = _read_json(RESULTS / "ripple_test_artist.json")
+    controls = _read_json(RESULTS / "ripple_controls.json")
     metric = lambda table, name: next((m["auc"] for m in table.get("metrics", []) if m["model"] == name), None)  # noqa: E731
     records = ledger.read()
-    graded_ripple = [r for r in records if r["kind"] == "ripple"]
+    recent = ripple_test.get("2024_plus", {})
     scorecard = {
         "spillover": {"locked": sum(1 for r in records if r["kind"] == "spillover"), "graded": len(graded),
                       "hits": hits, "pending": pending,
                       "auc": roc_auc([g["probability"] for g in graded], [int(g["hit"]) for g in graded])
-                      if graded and 0 < hits < len(graded) else None,
-                      "baseline_auc": None},
-        "ripple": {"locked": len(graded_ripple), "graded": 0, "spearman": None, "baseline_spearman": None},
+                      if graded and 0 < hits < len(graded) else None},
+        "ripple": {"locked": sum(1 for r in records if r["kind"] == "ripple"), **ripple_graded},
         "backtest": {
             "spillover": {"history_auc": metric(backtest, "history baseline"),
-                          "qloo_auc": metric(qloo_test, "history + Qloo"),
-                          "history_auc_same_subset": metric(qloo_test, "history baseline")},
-            "ripple": {"n": ripple_test.get("n", 0), "spearman": ripple_test.get("spearman"),
-                       "baseline_spearman": ripple_test.get("baseline_spearman")},
+                          "test_breakouts": backtest.get("test_events"),
+                          "subset_breakouts": qloo_test.get("test_events"),
+                          "history_auc_same_subset": metric(qloo_test, "history baseline"),
+                          "qloo_auc": metric(qloo_test, "history + Qloo")},
+            "ripple": {"n_artists": ripple_test.get("n"), "n_shows": ripple_test.get("n_shows"),
+                       "n_shows_2024_plus": ripple_test.get("n_shows_2024_plus"),
+                       "gap_2024_plus": recent.get("gap", {}).get("mean_spearman"),
+                       "gap_2024_plus_p": recent.get("gap", {}).get("p_value"),
+                       "fit_2024_plus": recent.get("fit", {}).get("mean_spearman"),
+                       "obscurity_2024_plus": recent.get("obscurity", {}).get("mean_spearman"),
+                       "placebo": controls},
         },
         "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl",
         "ledger_intact": ledger.verify() is None,

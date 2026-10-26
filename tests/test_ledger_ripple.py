@@ -34,8 +34,16 @@ def test_age_gap_young_show_old_artist_is_large():
     assert 0.0 <= age_gap(show, old_artist) <= 1.0
 
 
-def test_percentiles_rank_within_show_and_keep_missing():
-    from aftershock.ripple import percentiles
-    assert percentiles([3.0, 1.0, 2.0]) == [1.0, 0.0, 0.5]
-    assert percentiles([1.0, None, 1.0]) == [0.5, None, 0.5]
-    assert percentiles([None, 2.0]) == [None, 0.5]
+class FakeSearch:
+    def __init__(self, names):
+        self.names = names
+
+    def search(self, query, types=None, take=5):
+        return [{"name": n, "entity_id": n} for n in self.names]
+
+
+def test_resolve_prefers_exact_name_over_subtitled_spinoff():
+    from aftershock.qloo import resolve
+    assert resolve(FakeSearch(["Love Is Blind: UK", "Love Is Blind"]), "Love Is Blind", None)["name"] == "Love Is Blind"
+    assert resolve(FakeSearch(["Love Is Blind: UK"]), "Love Is Blind", None) is None
+    assert resolve(FakeSearch(["Money Trap"]), "Money Trap: The Karun Treasure", None)["name"] == "Money Trap"

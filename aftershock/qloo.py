@@ -81,16 +81,27 @@ class Qloo:
         return self.get("/v2/insights", {k.replace("__", "."): v for k, v in params.items()})
 
 
-def norm(text):
+def norm(text, keep_subtitle=False):
+    """Fold case and accents and drop parentheticals; by default also drop a ": subtitle", which
+    Netflix adds ("Money Trap: The Karun Treasure") but Qloo often omits."""
     text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
-    text = re.sub(r"\(.*?\)|:.*$", "", text)
+    text = re.sub(r"\(.*?\)", "", text)
+    if not keep_subtitle:
+        text = re.sub(r":.*$", "", text)
     return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
 def resolve(client, name, types):
-    """Return the first search hit whose name matches, or None. /search always returns its
-    nearest match even for unknown names, so an unchecked first hit is not a resolution."""
-    for hit in client.search(name, types=types):
-        if norm(hit.get("name", "")) == norm(name):
+    """Return the search hit whose name matches, or None. /search always returns its nearest
+    match even for unknown names, so an unchecked first hit is not a resolution. An exact match
+    (subtitle kept) wins over a subtitle-insensitive one, so "Love Is Blind" never becomes
+    "Love Is Blind: UK" when the original is in the results."""
+    hits = client.search(name, types=types)
+    for hit in hits:
+        if norm(hit.get("name", ""), keep_subtitle=True) == norm(name, keep_subtitle=True):
             return hit
+    if ":" in name:
+        for hit in hits:
+            if norm(hit.get("name", "")) == norm(name):
+                return hit
     return None

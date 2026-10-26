@@ -3,7 +3,7 @@
   "n_shows": 24,
   "n": 195,
   "n_shows_2024_plus": 9,
-  "live_calls": 0,
+  "live_calls": 3,
   "all": {
     "score": {
       "mean_spearman": 0.055,
@@ -68,6 +68,6 @@
       "p_value": null
     }
   },
-  "spearman": 0.055,
-  "baseline_spearman": 0.267
+  "spearman": 0.282,
+  "baseline_spearman": 0.285
 }

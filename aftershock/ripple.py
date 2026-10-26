@@ -1,15 +1,16 @@
 """RIPPLE: which songs placed in a show will spike.
 
-A placement pulls a song into the spotlight when the show puts it in front of people who do not
-know it yet. Two measurable halves, ranked within one show:
-- obscurity: how little attention the song (or its artist) got on Wikipedia in the 60 days
-  before the reference date; no Qloo involved.
-- age gap: how far the artist's audience sits from the show's audience by age band (Qloo
-  demographics for both).
-score = mean of the two within-show percentiles. On 195 artists in 24 shows (scripts/test_ripple.py,
-artist-page outcome) the age gap alone matched obscurity on 2024+ releases (Spearman 0.28 vs 0.29)
-and the sum was best (0.31; top pick was the biggest spike in 56% of shows vs 33%). Qloo taste fit
-predicted nothing (0.00), so it is reported as context and not scored.
+A placement pulls a song into the spotlight when the show puts it in front of an audience it has
+not reached. The score is the Qloo age gap: how far the artist's audience sits from the show's
+audience by age band, in [0, 1] (Qloo demographics for both).
+
+Why only the gap (scripts/test_ripple.py, scripts/test_ripple_controls.py; 195 artists, 24 shows):
+- Obscurity (low Wikipedia views before release) correlates with the spike, but it "predicts" a
+  placebo spike measured entirely before release almost as well (0.19 vs 0.27; 0.28 vs 0.29 on
+  2024+ releases): it is mostly regression to the mean, so it is shown as context, not scored.
+- The age gap does not predict the placebo (-0.13) but does predict the real spike (0.08 overall,
+  0.28 on 2024+); real minus placebo is significant (permutation p 0.04 overall, 0.03 on 2024+).
+- Qloo taste fit predicted nothing (0.00) and is shown as context only.
 """
 import logging
 import math
@@ -90,15 +91,6 @@ def prior_attention(song, artist, as_of):
     return sum(series.values()) / len(series), article
 
 
-def percentiles(values):
-    """Within-list percentile in [0, 1] (ties share a rank); None stays None."""
-    known = sorted(v for v in values if v is not None)
-    if len(known) < 2:
-        return [0.5 if v is not None else None for v in values]
-    return [None if v is None else sum(k < v for k in known) / (len(known) - 1) +
-            (sum(k == v for k in known) - 1) / (2 * (len(known) - 1)) for v in values]
-
-
 def score_placements(client, show_name, placements, show_type=None, as_of=None, max_songs=MAX_SONGS):
     """placements: [(song, artist)]. Returns the API `ripple` shape plus resolution flags.
     max_songs caps visitor requests; the weekly job scores whole soundtracks."""
@@ -134,11 +126,8 @@ def score_placements(client, show_name, placements, show_type=None, as_of=None, 
         row.update(prior_daily_views=round(views, 1) if views is not None else None, wiki_article=article,
                    obscurity=round(-math.log(views + 1), 3) if views is not None else None)
         songs.append(row)
-    gap_pct = percentiles([s.get("age_gap") for s in songs])
-    obscure_pct = percentiles([s.get("obscurity") for s in songs])
-    for s, g, o in zip(songs, gap_pct, obscure_pct):
-        parts = [p for p in (g, o) if p is not None]
-        s["score"] = round(sum(parts) / len(parts), 3) if parts else None
+    for s in songs:
+        s["score"] = s.get("age_gap")
     songs.sort(key=lambda s: -(s["score"] if s["score"] is not None else -1))
     return {"resolved": True, "show": show["name"], "show_entity": show["entity_id"], "show_age": show_age,
             "as_of": str(as_of), "songs": songs}

@@ -1,5 +1,5 @@
-"""Decision test for RIPPLE: within each show, does score = fit x age_gap rank the placed songs
-by their measured Wikipedia spike better than simple baselines?
+"""Backtest for RIPPLE: within each show, how well does each predictor (Qloo age gap, the shipped
+score; Qloo taste fit; obscurity; their combinations) rank the placed songs by measured spike?
 
 Input: data/ripple_truth.csv (built by build_ripple_truth.py). Qloo rescales affinity within a
 response, so everything is compared within a show, then averaged across shows.
@@ -82,7 +82,9 @@ def show_features(client, show, show_type, rows, ratio_col="ratio", base_col="ba
         gap = age_gap(show_age, artist_age)
         features.append({"song": row["song"], "artist": row["artist"], "fit": fit[artist_id], "gap": gap,
                          "score": fit[artist_id] * gap, "log_ratio": math.log(float(row[ratio_col])),
-                         "obscurity": -math.log(float(row[base_col]) + 1)})
+                         "obscurity": -math.log(float(row[base_col]) + 1),
+                         "baseline_mean": float(row[base_col]), "release": row["release_date"],
+                         "article": row["article" if ratio_col == "ratio" else "artist_article"]})
     return features
 
 
@@ -152,8 +154,12 @@ def main():
     for label, subset in (("all", by_show), ("2024_plus", recent)):
         if subset:
             report[label] = {key: evaluate(subset, key) for key in ("score", "fit", "gap", "obscurity", "obscurity_plus_gap", "random")}
-    report["spearman"] = report.get("all", {}).get("score", {}).get("mean_spearman")
-    report["baseline_spearman"] = report.get("all", {}).get("obscurity", {}).get("mean_spearman")
+    # Headline numbers are for the shipped predictor (the Qloo age gap) on 2024+ releases, the
+    # least contaminated subset; obscurity is the comparison (see test_ripple_controls.py for why
+    # it is mostly regression to the mean).
+    recent_report = report.get("2024_plus") or report.get("all", {})
+    report["spearman"] = recent_report.get("gap", {}).get("mean_spearman")
+    report["baseline_spearman"] = recent_report.get("obscurity", {}).get("mean_spearman")
     out = OUT_DIR / ("ripple_test.json" if args.outcome == "song" else "ripple_test_artist.json")
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
