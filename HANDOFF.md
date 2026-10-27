@@ -37,6 +37,10 @@ Fixed: a glossary before first use of storm/SPILLOVER/launch kit/Hotspots/Song c
 
 docs/API.md now covers every served endpoint: /api/title and /api/ask were missing, as were the static /data files the site reads, the shared live-call limits, field length limits and error codes; the Sync Scout example gained `leans`, `show_leans` and `suggestion`. Every documented static file and status code was checked against the live site (10 of 10).
 
+## Accessibility (28 Oct)
+
+Measured, not assumed: axe-core 4.9.1 on 8 live pages, light and dark, plus the home page with an Ask answer and a map selection open: 0 violations at any impact. Keyboard: 40 tab stops in reading order, all with a visible focus ring. Result areas are aria-live. Recorded in README section 5. No defect found, so no code changed.
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.

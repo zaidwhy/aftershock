@@ -107,6 +107,8 @@ The Qloo key stays in that process's environment. `tests/test_mcp_stdio.py` chec
 
 Automation: `.github/workflows/tests.yml` runs the tests on every push; `.github/workflows/forecast.yml` runs the forecast job every Tuesday and commits the ledger (it needs the `QLOO_API_KEY` repo secret). The site is a static front end plus one Python function on Vercel: run `scripts/export_static.py`, then `vercel deploy --prod` from a linked project.
 
+Accessibility, checked on the live site on 28 Oct 2026: axe-core 4.9.1 reports 0 violations of any severity on all eight pages in light and dark mode, including the home page with an Ask answer and a map country open; every control is reachable by keyboard in reading order with a visible focus ring; answers appear in polite live regions so screen readers announce them; the map has keyboard buttons and a text list of its top countries; `prefers-reduced-motion` stops the animations.
+
 API contract: `docs/API.md`.
 
 ### Data and terms
