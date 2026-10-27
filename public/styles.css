@@ -361,3 +361,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .title-text .meta, .title-text .title-blurb { margin: 0 0 6px; max-width: 68ch; }
 .title-blurb { color: var(--ink); font-size: 1rem; }
 .title-facts { font-weight: 500; }
+
+/* Launch kit: brands are the lightest line */
+.kit-list .kit-minor dt { font-size: 0.68rem; color: var(--ink-soft); }
+.kit-list .kit-minor dd { font-size: 0.88rem; color: var(--ink-soft); }

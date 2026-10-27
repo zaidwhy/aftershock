@@ -256,15 +256,15 @@ function kitSection(st) {
   const names = (r, d) => r.kit[d].flatMap((e, i) => [i ? ", " : null,
     common(r, d).has(key(e.name)) ? h("span", { class: "kit-common" }, e.name) : e.name]);
   const specific = (r) => (r.specificity == null ? null : h("p", { class: "kit-spec" },
-    h("strong", null, r.generic ? "Mostly countrywide taste" : "Title-specific"), ` ${Math.round(r.specificity * 100)}% specific to this title`));
+    h("strong", null, r.generic ? "Mostly countrywide taste" : "Title-specific"), `: ${Math.round(r.specificity * 100)}%`));
   return h("section", { "aria-labelledby": "par-h" },
     h("h2", { id: "par-h" }, "Launch kit: what this audience loves there"),
     h("p", { class: "muted" }, "From Qloo: what the title's audience over-indexes on in each forecast country, as a starting point for a local launch. Netflix history says where; this says what to do there. It does not change the probabilities."),
     briefControl(st, rows),
-    anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "muted"), ": what the whole country likes anyway (Qloo, no title)") : null,
+    anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "Greyed out"), ": popular across the whole country anyway, not specific to this title") : null,
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
       h("h3", null, countryName(r.code)), specific(r),
-      h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", null,
+      h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", { class: d === "brand" ? "kit-minor" : null },
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
       hotspotBlock(r)))),
     rows.some((r) => r.hotspots?.cells?.length || r.hotspots?.places?.length)
