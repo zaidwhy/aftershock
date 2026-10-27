@@ -8,6 +8,6 @@ Top-pick early grade. For every breakout locked in the ledger, take its single h
 
 Compare with the expected count if the forecasts were exactly calibrated: the sum of those top-pick probabilities.
 
-Also report the same for a naive baseline that picks, for each breakout, the country that charts the most titles overall (the most frequent Top 10 country in the training history), with its own observed count.
+Also report the same for a naive baseline that picks, for each breakout, the country among that breakout's own forecast countries (so never an origin country) that has charted the most distinct titles in Netflix's history, with its own observed count. Clarified on 27 Oct 2026 at 20:30 UTC, before the week of 25 Oct was published, to state exactly what the code computes.
 
 Reported every week whichever way it goes. The 4-week result on 15 Nov is the real grade; this is the early read.
