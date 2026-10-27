@@ -9,6 +9,7 @@ export const CONFIG = {
 
 import { setConfig } from "./js/api.js";
 import { renderHome, renderStorm, renderRipple, renderTry, renderScout, renderScorecard, renderLedger, renderMethod, renderNotFound } from "./js/views.js";
+import { renderAgent } from "./js/agent.js";
 
 setConfig(CONFIG);
 
@@ -24,6 +25,7 @@ const routes = [
   [/^#\/scorecard$/, () => renderScorecard],
   [/^#\/ledger$/, () => renderLedger],
   [/^#\/method$/, () => renderMethod],
+  [/^#\/agent$/, () => renderAgent],
 ];
 
 function route() {

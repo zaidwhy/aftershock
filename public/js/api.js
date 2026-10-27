@@ -27,6 +27,7 @@ export const getStorm = (id) => stat(`storms/${encodeURIComponent(id)}`, `storm-
 export const getScorecard = () => stat("scorecard");
 export const getReplays = () => stat("replays");
 export const getLedger = () => stat("ledger");
+export const getAgentRun = () => (cfg.mock ? Promise.reject(new Error("The agent log is not part of the mock data.")) : stat("agent_run"));
 
 /** A plain question for the keyword agent (aftershock/ask.py). Song and artist questions use a live Qloo slot. */
 export async function askAgent(question) {

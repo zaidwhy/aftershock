@@ -79,6 +79,9 @@ def export(out=OUT):
     _write(out / "scorecard.json", api.scorecard())
     _write(out / "replays.json", api.replays())
     _write(out / "ledger.json", _ledger_body(listing))
+    run = api.PRIVATE / "agent_run.json"
+    if run.exists():
+        _write(out / "agent_run.json", json.loads(run.read_text(encoding="utf-8")))
     return sorted(p for p in out.rglob("*.json"))
 
 

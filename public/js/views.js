@@ -8,6 +8,7 @@ import { lookupBox } from "./netflix.js";
 import { weekMapSection } from "./weekmap.js";
 import { launchBrief } from "./brief.js";
 import { askBox } from "./ask.js";
+import { agentLine } from "./agent.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -51,6 +52,7 @@ export function renderHome(root, isCurrent) {
   const heroBox = h("div", null);
   const proof = h("aside", { class: "proof", "aria-label": "Evidence at a glance" });
   const mapBox = h("div", null);
+  const agentBox = h("p", { class: "agent-line", hidden: true });
   const stormsP = getStorms();
   add(root,
     h("section", { class: "hero" },
@@ -68,6 +70,7 @@ export function renderHome(root, isCurrent) {
           heroBox)),
       askBox(isCurrent),
       proof,
+      agentBox,
       mapBox,
       lookupBox(isCurrent)),
     mockNote(),
@@ -94,6 +97,8 @@ export function renderHome(root, isCurrent) {
     proof.append(...items.map(([k, v, note]) => h("div", { class: "proof-item" },
       h("p", { class: "proof-k" }, k), h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, note))));
   }).catch(() => { proof.hidden = true; });
+
+  agentLine(agentBox, isCurrent);
 
   stormsP.then((st) => {
     if (isCurrent() && st.map?.countries?.length) mapBox.append(weekMapSection(st.map, st.week, isCurrent));

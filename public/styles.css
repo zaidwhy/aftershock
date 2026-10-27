@@ -411,3 +411,14 @@ dd { margin: 0; font-size: 1.1rem; }
 .step-no .step-n { color: var(--ink-soft); }
 .ask-links { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 12px 0 0; }
 .ask-out .song-head { flex-wrap: wrap; }
+
+/* What the agent did */
+.agent-line { margin: 10px 0 0; font: 400 0.85rem/1.5 var(--mono); color: var(--ink-soft); max-width: 68ch; }
+.agent-line[hidden] { display: none; }
+.agent-steps { list-style: none; margin: 18px 0; padding: 0 0 0 22px; max-width: 760px; border-left: 2px solid var(--rule); }
+.agent-steps li { position: relative; display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 4px 16px; padding: 0 0 22px; }
+.agent-steps li::before { content: ""; position: absolute; left: -29px; top: 0.55rem; width: 12px; height: 12px; background: var(--accent); border: 2px solid var(--paper); border-radius: 50%; }
+.agent-n { font: 400 1.9rem/1.1 var(--serif); text-align: right; overflow-wrap: anywhere; }
+.agent-text { margin: 0; font-size: 1.05rem; }
+.agent-detail { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+@media (max-width: 480px) { .agent-steps li { grid-template-columns: 1fr; } .agent-n { text-align: left; } }

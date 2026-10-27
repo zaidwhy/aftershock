@@ -13,7 +13,7 @@ import re
 import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -290,7 +290,52 @@ def earliest_spillover_origin(records):
     return min(weeks) if weeks else None
 
 
+def _day(d):
+    return f"{d.day} {d:%b}"
+
+
+def agent_run_log(started, args, refresh, week, n_countries, n_rows, found, resolved, missing, forecasts, new, storms, indexed,
+                  graded, hits, so_far, so_far_hits, live_calls):
+    """What the agent did this run, as plain sentences with a count each (public/data/agent_run.json feeds #/agent)."""
+    kits = [r for st in storms for r in st["detail"]["launch_kit"] if r.get("kit") and any(r["kit"].values())]
+    generic = sum(1 for r in kits if r.get("generic"))
+    hotspot_rows = [r for r in kits if (r.get("hotspots") or {}).get("places")]
+    already = forecasts - new
+    locked = already + (0 if args.no_lock else new)
+    step = lambda key, count, text, **extra: {"key": key, "count": count, "text": text, **extra}  # noqa: E731
+    if resolved is None:
+        qloo_step = step("qloo_titles", None, "Skipped Qloo for this run (offline mode), so no titles were looked up.", not_found=[])
+    else:
+        qloo_step = step("qloo_titles", resolved, f"Found {resolved} of {found} titles in Qloo's catalogue"
+                         + (f"; {len(missing)} had no match." if missing else "."), not_found=missing)
+    if args.no_lock:
+        lock_text = (f"Dry run, nothing written: {already:,} of this week's forecasts are already in the public ledger and "
+                     f"{new:,} new ones would be locked.")
+    else:
+        lock_text = f"Locked {new:,} new forecasts in the public ledger; {already:,} were already locked."
+    steps = [
+        step("netflix", n_countries, f"Read Netflix's Top 10 for the week of {_day(week)} in {n_countries} countries",
+             detail=f"{n_rows:,} chart rows in all; data {refresh}."),
+        step("breakouts", found, f"Found {found} titles that broke out in 1 to 3 countries"),
+        qloo_step,
+        step("forecasts", forecasts, f"Forecast every other country for each breakout: {forecasts:,} country forecasts"),
+        step("lock", new, lock_text, already_locked=already),
+        step("kits", len(kits), f"Built {len(kits)} launch kits from Qloo for each breakout's top 3 countries: "
+                                f"{len(kits) - generic} title-specific, {generic} mostly countrywide taste",
+             title_specific=len(kits) - generic, countrywide=generic),
+        step("hotspots", len(hotspot_rows), f"Named hotspot places in {len(hotspot_rows)} of those countries"),
+        step("index", indexed, f"Indexed {indexed:,} titles so anyone can look up where they charted"),
+        step("graded", graded, (f"Graded {graded:,} past forecasts so far: {hits:,} hits" if graded
+                                else "No forecast has reached its 4-week horizon yet, so none is graded") +
+             (f". Another {so_far:,} are still open ({so_far_hits:,} hits so far)." if so_far else "."), hits=hits, of=graded),
+    ]
+    return {"started": started.isoformat(timespec="seconds"), "finished": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "netflix_week": str(week), "dry_run": bool(args.no_lock), "qloo_live_calls": live_calls,
+            "summary": {"breakouts": found, "forecasts_locked": locked, "launch_kits": len(kits)}, "steps": steps}
+
+
 def main():
+    started = datetime.now(timezone.utc)
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-refresh", action="store_true")
     parser.add_argument("--no-qloo", action="store_true")
@@ -305,9 +350,11 @@ def main():
         run_ripple_only(args)
         return
 
+    refresh = "from the cached file"
     if not args.no_refresh:
         try:
             refresh_netflix()
+            refresh = "freshly downloaded"
         except (httpx.HTTPError, RuntimeError) as err:
             log.warning("Netflix refresh failed, using the cached file: %s", err)
     rows = load_rows(RAW)
@@ -325,6 +372,7 @@ def main():
     storms, to_lock = [], []
     controls = {}  # country code -> {domain: names}, Qloo country-only kit, one fetch per country per run
     hit_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
+    missing = [e["title"][0] for e in storms_now if client and not hit_of.get(e["title"])]
     for event in storms_now:
         candidates = [c for c in countries if c not in event["origin_countries"]]
         probabilities = model.predict(event, candidates)
@@ -437,6 +485,13 @@ def main():
     index = title_index.build_index(rows, model, countries, names, last_week, {e["title"] for e in storms_now}, HORIZON)
     (PRIVATE / "titles.json").write_text(json.dumps(index, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     log.info("wrote the title index: %d titles", len(index["titles"]))
+    spill = [r for r in to_lock if r["kind"] == "spillover"]
+    fresh_spill = sum(1 for r in fresh if r["kind"] == "spillover")
+    run_log = agent_run_log(started, args, refresh, last_week, len(countries), len(rows),
+                            len([e for e in events if e["origin_week"] == last_week]),
+                            None if client is None else len(storms_now) - len(missing), missing, len(spill), fresh_spill, storms,
+                            len(index["titles"]), len(graded), hits, len(so_far), so_far_hits, client.live_calls if client else 0)
+    (PRIVATE / "agent_run.json").write_text(json.dumps(run_log, indent=1, ensure_ascii=False), encoding="utf-8")
     log.info("wrote %d storms; locked %d new forecasts; graded %d (hits %d); qloo live calls %s",
              len(storms), len(fresh) if not args.no_lock else 0, len(graded), hits, client.live_calls if client else 0)
 
