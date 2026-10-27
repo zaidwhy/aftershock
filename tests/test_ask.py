@@ -190,3 +190,8 @@ def test_endpoint_wires_the_router(monkeypatch, ctx):
     assert body["intent"] == "launch_kit"
     assert c.get("/api/ask", params={"q": "x" * 201}).status_code == 422
     assert c.get("/api/ask", params={"q": ""}).status_code == 422
+
+
+def test_non_latin_question_gets_a_script_hint_not_a_guess(ctx):
+    out = ask.answer("\u091c\u092c \u0935\u0940 \u092e\u0947\u091f", ctx)
+    assert out["intent"] == "none" and "Latin alphabet" in out["steps"][0]["note"]

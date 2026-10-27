@@ -389,6 +389,10 @@ def answer(question, ctx):
         return _fail("none", "The question was empty. " + HELP)
     raw = raw[:MAX_QUESTION]
     norm = _norm(raw)
+    if not norm:
+        # Netflix's Top 10 data and Qloo list titles in Latin script, so "जब वी मेट" matches nothing
+        return _fail("none", "I could not read that question. Titles are matched as Netflix lists them, in "
+                             "the Latin alphabet: try \"Jab We Met\". " + HELP)
     steps = []
 
     # a) song check: "<song> by <artist> for|in <show>"
