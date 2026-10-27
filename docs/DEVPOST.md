@@ -42,9 +42,13 @@ Python (FastAPI, httpx), a vanilla JS front end with d3 maps, an MCP server on t
 - Some Qloo names arrive with broken accents (UTF-8 read as Mac Roman); we repair them only when the round trip is clean.
 - Many 2026 titles and new artists have no Qloo audience profile yet, and Qloo has no heatmap for some titles; the site shows what exists and says so.
 
+## Who would pay, and why now
+
+The users are the people outside a streamer who act on a breakout: a local distributor or dubbing studio deciding which markets to back, a music publisher or label whose catalogue is in the show, a promoter or brand looking for a tie-in. Today they learn about a breakout after it peaks. The product they would pay for is the weekly brief this site already produces (where next, with the reason; what the audience there loves, with the generic picks flagged; which cities), delivered per territory or per catalogue, with the public ledger as the reason to trust it. The agent costs a few hundred Qloo calls a week to run, and every forecast it has ever made stays checkable.
+
 ## What's next
 
-Grade the ledger weekly as horizons close; lock a Qloo-informed country ranking next to the history-only one so the two are graded head to head; and check whether launch-kit and hotspot suggestions match where a title actually grows.
+Grade the ledger weekly as horizons close and publish the hit rate; lock a Qloo-informed country ranking next to the history-only one so the two are graded head to head; check whether launch-kit and hotspot suggestions match where a title actually grows; and send the weekly brief to a first few distributors and publishers to learn which parts they act on.
 
 ## Built with
 
