@@ -2,19 +2,15 @@
 
 Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (Discord says keys live to 16 Nov); top 3 present on air 5 Nov.
 
-## Do first in the morning (Zaid)
+## Live (27 Oct)
 
-1. Push the repo before Netflix publishes the next Top 10 (Tuesdays; the 27 Oct release is likely evening IST). The ledger's credibility is its public timestamp. The overnight session could not create the GitHub repo (the permission classifier blocks creating public or private repos without you):
-   ```
-   ! cd C:/Users/Asus/projects/aftershock && gh repo create zaidwhy/aftershock --public --source . --remote origin --push --description "Forecasts where a breakout show spreads next and which songs it pulls into the spotlight, using Qloo's taste graph."
-   ```
-   Then check the License shows in the repo's About box (MIT is in LICENSE).
-2. Deploy to your personal Vercel (not the Nobero scope). Link first so the first deploy is a preview, set the key, then go to production:
-   ```
-   ! cd C:/Users/Asus/projects/aftershock && vercel link --yes --project aftershock && vercel env add QLOO_API_KEY production && vercel deploy --prod
-   ```
-   Then `curl -L https://aftershock.vercel.app/health` must show `"qloo_key": true`, and `/requirements.txt` must 404.
-3. Add the repo secret so the weekly job runs: GitHub repo Settings > Secrets > Actions > `QLOO_API_KEY`. Then Actions > weekly-forecast > Run workflow once to check it (it commits the ledger).
+- Repo: https://github.com/zaidwhy/aftershock (public, MIT), `main` pushed; Actions secret `QLOO_API_KEY` set.
+- Site: https://aftershock-beige.vercel.app (personal Vercel, project syzayds-projects/aftershock; `aftershock.vercel.app` was taken). `/health` shows `"qloo_key": true`; `/requirements.txt` and `/data/private/*` return 404.
+- Git auto-deploy is disconnected on purpose: a git-built deploy would ship without the gitignored `data/private/`. Deploy only with `vercel deploy --prod` from this folder.
+- `api/index.py` restores the original path from `__path` (set by the rewrites in vercel.json), because Vercel hands the function `/api/index`.
+
+## Still to do (Zaid)
+
 4. Before judging (after Netflix's 3 Nov update), refresh the live site's data: `.venv/Scripts/python scripts/run_forecasts.py` then `vercel deploy --prod`. The site reads `data/private/storms.json`, which is generated locally and bundled into the deployment, never committed.
 5. Review the Devpost draft in `docs/DEVPOST.md` and submit it yourself. Also record the demo video (the kit and Devpost expect one): landing seismograph, a storm page, a Songs to watch page, Try it with Stranger Things + Running Up That Hill | Kate Bush, the scorecard.
 
@@ -43,7 +39,6 @@ See the end of this file for the latest results; everything below is committed l
 
 ## Known gaps
 
-- Not on GitHub, not deployed (classifier). Steps 1-2 above. Branch is `main`.
 - Demo video not recorded.
 - Early SPILLOVER grades appear once Netflix publishes the week ending 25 Oct; rerun `scripts/run_forecasts.py` then (no new locks are created for already-locked titles).
 - The weekly Action commits the ledger but does not refresh the deployed site; redeploy by hand before judging.

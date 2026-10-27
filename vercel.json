@@ -5,7 +5,7 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/health", "destination": "/api/index" }
+    { "source": "/api/:rest*", "destination": "/api/index?__path=/api/:rest*" },
+    { "source": "/health", "destination": "/api/index?__path=/health" }
   ]
 }

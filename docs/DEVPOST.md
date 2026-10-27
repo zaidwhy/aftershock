@@ -47,7 +47,7 @@ python, fastapi, httpx, d3, mcp, qloo, netflix-top-10, wikimedia-pageviews, gith
 
 ## Links
 
-- Demo: https://aftershock.vercel.app (after deploy; check it loads before submitting)
+- Demo: https://aftershock-beige.vercel.app
 - Code: https://github.com/zaidwhy/aftershock (MIT)
 
 ## Testing instructions for judges
