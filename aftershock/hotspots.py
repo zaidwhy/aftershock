@@ -57,7 +57,7 @@ def top_cells(body, limit=MAX_CELLS):
 def nominatim_name(lat, lon, cache_dir=None):
     """City, town or county name for a point, or None. Cached on disk; 1 live request per second."""
     cache_dir = Path(cache_dir) if cache_dir else CACHE_DIR
-    key = hashlib.sha256(f"{lat:.3f},{lon:.3f}".encode()).hexdigest()[:24]
+    key = hashlib.sha256(f"{lat:.3f},{lon:.3f},en".encode()).hexdigest()[:24]
     cached = cache_dir / f"{key}.json"
     if cached.exists():
         body = json.loads(cached.read_text(encoding="utf-8"))
@@ -66,7 +66,7 @@ def nominatim_name(lat, lon, cache_dir=None):
         if wait > 0:
             time.sleep(wait)
         _last_request[0] = time.monotonic()
-        resp = httpx.get(NOMINATIM_URL, params={"format": "jsonv2", "zoom": 10, "lat": lat, "lon": lon},
+        resp = httpx.get(NOMINATIM_URL, params={"format": "jsonv2", "zoom": 10, "lat": lat, "lon": lon, "accept-language": "en"},
                          headers={"User-Agent": USER_AGENT}, timeout=20.0)
         resp.raise_for_status()
         body = resp.json()
