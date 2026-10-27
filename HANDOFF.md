@@ -36,6 +36,14 @@ Fallback if Qloo loses every arm: reposition the kit as a country-level taste la
 
 Done after the council: mojibake repair for Qloo names (launch_kit.repair_name, tested).
 
+## Progress on the council plan (27 Oct, 18:00-19:30 IST)
+
+- Step 1 registered: docs/EXPERIMENT_KITS.md committed and pushed at 18:00 IST (976177d) before any data. All 81 kit rows, four arms (Qloo title+country, Qloo country-only, Gemini title+country, Gemini country-only), overlap metrics, sign-flip p < 0.05, product rule "generic if overlap with country-only >= 0.6".
+- Experiment NOT finished: scripts/experiment_kits.py collected all Qloo country-only kits (cached) and the first Gemini batch (cached), then Gemini gemini-3.5-flash returned 503 "high demand" repeatedly. Rerun with `.venv/Scripts/python scripts/experiment_kits.py` (cached parts are free; it needs about 6 more Gemini calls and up to 1,500 Qloo /search calls); it writes data/results/kit_experiment.json and data/private/kit_generic.json. Do not change the model without first committing an amendment to docs/EXPERIMENT_KITS.md. Report the result whichever way it lands, then put it on the scorecard and in README/Devpost.
+- Step 2 product side done and deployed (e88c060): each kit row has control/specificity/generic; storm page labels "Title-specific" or "Mostly countrywide taste" with a percentage and mutes names the whole country likes anyway; home tag "Qloo kit (countrywide)". This week: 48 of 81 kit rows title-specific, 33 generic.
+- Honesty fixes done: stale significance claims removed from ripple.py, sync_scout.py and MCP descriptions; /api/ripple, /api/ripples/{id} and MCP ripple_score no longer return raw fit or age profiles (public_ripple). 60 tests pass.
+- Still open from the council plan: hero worked example + kit-rich storms first + buyer line; Devpost overclaims and a Data and terms note; forecast.yml export+deploy (or drop the claim); launch brief if time. Rerun run_forecasts after Netflix's Tuesday update (16 of 81 hotspot rows lost names to OSM timeouts this run).
+
 ## Team plan (27 Oct)
 
 - Teammate 1: Claude Desktop MCP demo with their own Qloo key; second tester. Optional short video for the Devpost gallery.
