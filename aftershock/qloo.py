@@ -33,7 +33,7 @@ class QlooError(RuntimeError):
 
 class Qloo:
     def __init__(self, api_key=None, base_url=None, call_budget=2000, offline=False):
-        self.api_key = api_key or os.environ.get("QLOO_API_KEY", "")
+        self.api_key = (api_key or os.environ.get("QLOO_API_KEY", "")).strip()
         self.base_url = (base_url or os.environ.get("QLOO_BASE_URL") or "https://hackathon.api.qloo.com").rstrip("/")
         self.call_budget = call_budget
         self.offline = offline
