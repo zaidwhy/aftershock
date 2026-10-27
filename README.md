@@ -87,7 +87,7 @@ cp .env.example .env    # then put your Qloo hackathon key after QLOO_API_KEY=
 .venv/Scripts/python -m pytest -q
 ```
 
-From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with six tools, `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout` and `netflix_history`. Add it to Claude Desktop or Claude Code with the command `.venv/Scripts/python -m aftershock.mcp_server`, run from the repo folder. The Qloo key stays in that process's environment.
+From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with seven tools, `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history` and `ask` (the same plain-question router as the site). Add it to Claude Desktop or Claude Code with the command `.venv/Scripts/python -m aftershock.mcp_server`, run from the repo folder. The Qloo key stays in that process's environment.
 
 Automation: `.github/workflows/forecast.yml` runs the forecast job every Tuesday after Netflix publishes and commits the ledger (it needs the `QLOO_API_KEY` repo secret). Read-only pages are served as static JSON: run `scripts/export_static.py` before `vercel deploy --prod`.
 

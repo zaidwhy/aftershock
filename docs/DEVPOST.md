@@ -20,7 +20,7 @@ Every week the agent reads Netflix's public per-country Top 10, finds titles tha
 - **Sync Scout:** for a music supervisor. Type a show; Qloo returns artists its audience loves whose own audience sits outside the show's age groups. A shortlist, not a forecast.
 - **A public record:** every country's probability is locked in a hash-chained file in the repo before the outcome exists. A weekly GitHub Action runs the loop (detect breakouts, resolve titles in Qloo, forecast, build kits and hotspots, lock) and commits the ledger; grading starts when the first four-week horizons close on 15 Nov 2026.
 
-Any MCP agent (Claude Desktop, Claude Code) can call it: `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history`.
+Any MCP agent (Claude Desktop, Claude Code) can call it: `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history`, `ask`.
 
 ## How we built it
 
