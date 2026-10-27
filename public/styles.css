@@ -272,3 +272,20 @@ dd { margin: 0; font-size: 1.1rem; }
 .hs-places { font: 400 0.78rem/1.5 var(--mono); color: var(--ink-soft); margin: 0 0 6px; }
 .hs-places strong { color: var(--ink); font-weight: 500; }
 .hs-credit { font: 400 0.72rem var(--mono); color: var(--ink-soft); margin: 14px 0 0; }
+
+/* ---- home: buyer line and worked example */
+.buyer { font-size: 0.8rem; letter-spacing: 0.02em; color: var(--ink-soft); max-width: 70ch; margin: 24px 0 0; }
+.example { margin-top: 8px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); padding: 4px 0 12px; }
+.example h2 { margin: 12px 0 10px; font-size: 1.3rem; }
+.ex-grid { display: grid; gap: 0; grid-template-columns: 1fr; }
+.ex-step { padding: 8px 0; border-top: 1px solid var(--rule); }
+.ex-step:first-child { border-top: 0; }
+.ex-step p { margin: 0 0 4px; max-width: none; font-size: 0.95rem; }
+.ex-step .ex-k { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
+.ex-step .ex-why { font-size: 0.8rem; color: var(--ink-soft); }
+.ex-link { margin: 8px 0 0; }
+@media (min-width: 900px) {
+  .ex-grid { grid-template-columns: repeat(4, 1fr); gap: 0 20px; }
+  .ex-step { border-top: 0; border-left: 1px solid var(--rule); padding: 4px 0 4px 14px; }
+  .ex-step:first-child { border-left: 0; padding-left: 0; }
+}

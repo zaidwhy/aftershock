@@ -45,13 +45,42 @@ def health():
             "cache_entries": len(list(CACHE_DIR.glob("*.json"))) if CACHE_DIR.exists() else 0}
 
 
+def _hero(items):
+    """Clearest worked example: highest top-forecast probability among storms whose top forecast country has a
+    title-specific launch-kit row with at least one hotspot place. None when no storm qualifies."""
+    best = None
+    for item in items:
+        summ, detail = item["summary"], item["detail"]
+        top = summ.get("top_forecast")
+        if not top:
+            continue
+        row = next((r for r in detail.get("launch_kit", []) if r.get("code") == top["code"]), None)
+        places = ((row or {}).get("hotspots") or {}).get("places") or []
+        if not row or row.get("generic") or not places or not any((row.get("kit") or {}).values()):
+            continue
+        if best is None or top["probability"] > best[0]:
+            best = (top["probability"], summ, row, top, places)
+    if best is None:
+        return None
+    _, summ, row, top, places = best
+
+    def fresh(domain, n):
+        seen = {c.casefold() for c in (row.get("control") or {}).get(domain, [])}
+        return [e["name"] for e in (row["kit"].get(domain) or []) if e["name"].casefold() not in seen][:n]
+
+    return {"id": summ["id"], "title": summ["title"], "origin_countries": summ["origin_countries"],
+            "country": top["name"], "code": top["code"], "probability": top["probability"], "why": top.get("why"),
+            "artists": fresh("artist", 3), "brands": fresh("brand", 2), "places": places[:3],
+            "specificity": row.get("specificity")}
+
+
 @app.get("/api/storms")
 def storms():
     data = _load(PRIVATE / "storms.json")
     def kit_rows(s):
         return [r for r in s["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())]
 
-    return {"week": data["week"], "storms": [
+    return {"week": data["week"], "hero": _hero(data["storms"]), "storms": [
         s["summary"] | {"has_kit": bool(kit_rows(s)), "kit_specific": any(not r.get("generic") for r in kit_rows(s))}
         for s in data["storms"]]}
 

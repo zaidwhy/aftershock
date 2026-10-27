@@ -45,6 +45,7 @@ export function renderHome(root, isCurrent) {
   setTitle("");
   const chartBox = h("div", { class: "hero-chart" });
   const stormBox = h("div", null);
+  const heroBox = h("div", null);
   const proof = h("aside", { class: "proof", "aria-label": "Evidence at a glance" });
   const stormsP = getStorms();
   add(root,
@@ -53,16 +54,19 @@ export function renderHome(root, isCurrent) {
         h("div", { class: "hero-copy" },
           h("p", { class: "eyebrow" }, "A Qloo taste agent for breakout shows"),
           h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next, and what travels with it?")),
-          h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to do there: the artists, shows, films and brands that title's audience over-indexes on in each country, and the cities where that audience lives. Every forecast is locked in a public ledger before the outcome exists."),
+          h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to pair it with there: the artists and brands that title's audience loves in each country, and the cities where that audience lives. Every forecast is locked publicly before the outcome exists."),
           h("ul", { class: "hero-links" },
-            h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's storms")),
+            h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")),
             h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find artists from outside a show's generation")),
             h("li", null, h("a", { href: "#/try" }, "Try it - explore songs placed in any show")))),
         proof),
+      h("p", { class: "buyer mono" }, "For local distributors, music publishers and promoters: know where a breakout goes next and what to pair it with there, before the competition does."),
+      heroBox,
       chartBox),
     mockNote(),
     h("section", { "aria-labelledby": "live-h" },
       h("h2", { id: "live-h" }, "Live storms this week"),
+      h("p", { class: "muted" }, "Storms: titles that just broke out in 1 to 3 countries."),
       stormBox));
 
   Promise.all([getScorecard(), stormsP]).then(([sc, st]) => {
@@ -71,7 +75,7 @@ export function renderHome(root, isCurrent) {
     const kits = st.storms.filter((x) => x.has_kit).length;
     const locked = (sc.spillover?.locked ?? 0) + (sc.ripple?.locked ?? 0);
     const items = [
-      ["Forecasts locked", whole(locked), "in a public, hash-chained ledger"],
+      ["Forecasts locked", whole(locked), "forecasts locked publicly before the outcome"],
       bt.spillover?.history_auc != null ? ["Backtest AUC", plain2(bt.spillover.history_auc), `on ${whole(bt.spillover.test_breakouts)} breakouts`] : null,
       ["Storms with a Qloo kit", String(kits), `of ${st.storms.length} this week`],
       ["Breakouts this week", String(st.storms.length), `week of ${st.week}`],
@@ -79,6 +83,22 @@ export function renderHome(root, isCurrent) {
     proof.append(...items.map(([k, v, note]) => h("div", { class: "proof-item" },
       h("p", { class: "proof-k" }, k), h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, note))));
   }).catch(() => { proof.hidden = true; });
+
+  stormsP.then((st) => {
+    const x = st.hero;
+    if (!isCurrent() || !x) return;
+    const join = (a) => a.join(", ");
+    const step = (label, ...kids) => h("div", { class: "ex-step" }, h("p", { class: "ex-k mono" }, label), ...kids);
+    heroBox.append(h("section", { class: "example", "aria-labelledby": "ex-h" },
+      h("h2", { id: "ex-h" }, `This week's clearest example: ${x.title}`),
+      h("div", { class: "ex-grid" },
+        step("1 Breakout", h("p", null, `Broke out in ${origins(x.origin_countries)}`)),
+        step("2 Likely next", h("p", null, `Likely next: `, h("strong", null, x.country), " ", h("span", { class: "mono" }, pct(x.probability))),
+          x.why ? h("p", { class: "ex-why" }, x.why) : null),
+        step("3 Pair it with", h("p", null, `Qloo: this audience in ${x.country} loves ${join(x.artists)}`, x.brands.length ? `; brands ${join(x.brands)}` : "")),
+        step("4 Start in", h("p", null, `Start in ${join(x.places)}`))),
+      h("p", { class: "ex-link" }, h("a", { href: `#/storm/${encodeURIComponent(x.id)}` }, "See the full forecast"))));
+  }).catch(() => {});
 
   load(chartBox, "the replay", isCurrent, getReplays, ({ replays }) => {
     if (!replays?.length) { chartBox.append(h("p", { class: "status" }, "No replays are published yet.")); return; }
@@ -100,10 +120,12 @@ export function renderHome(root, isCurrent) {
 
   load(stormBox, "this week's storms", isCurrent, () => stormsP.catch(() => getStorms()), ({ week, storms }) => {
     if (!storms.length) { add(stormBox, h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
-    const ranked = [...storms].sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
+    const grp = (s) => (s.kit_specific ? 0 : s.has_kit ? 1 : 2);
+    const ranked = [...storms].sort((a, b) => grp(a) - grp(b) || (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
     const maxP = Math.max(0.0001, ...ranked.map((s) => s.top_forecast?.probability ?? 0));
     add(stormBox,
       h("p", { class: "muted" }, `Week of ${week}. Titles that entered Netflix's Top 10 in 1 to 3 countries, most likely to spread first.`),
+      h("p", { class: "muted" }, "Qloo kit: what this title's audience loves in each forecast country. Countrywide: Qloo had little title-specific signal, so the kit mostly shows the country's general taste."),
       h("ul", { class: "storm-list" }, ranked.map((s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
@@ -418,7 +440,17 @@ export function renderMethod(root) {
         h("li", null, h("strong", null, "Wikimedia pageviews API"), ": daily views per article. The song test outcome and its prior-views context."),
         h("li", null, h("strong", null, "MusicBrainz"), ": official soundtrack track lists (CC0), the song test's ground truth."),
         h("li", null, h("strong", null, "Qloo Insights"), ": entity search and demographics (age bands) for the age gap, the partners list, launch kit and heatmaps for each title's audience in each country."))),
-    h("p", null, "The Qloo key stays on the server; this page only talks to AFTERSHOCK's own API."));
+    h("p", null, "The Qloo key stays on the server; this page only talks to AFTERSHOCK's own API."),
+    h("section", null, h("h2", null, "Data and terms"),
+      h("ul", { class: "plain-list" },
+        h("li", null, h("strong", null, "Netflix Top 10"), ": public download from Netflix's Top 10 site."),
+        h("li", null, h("strong", null, "Qloo API"), ": hackathon key. Results are shown in the app; raw responses are never published in the repo. Audiences are aggregates, not individuals."),
+        h("li", null, h("strong", null, "Wikimedia Pageviews API"), "."),
+        h("li", null, h("strong", null, "MusicBrainz"), " (CC0): soundtrack songs."),
+        h("li", null, h("strong", null, "OpenStreetMap Nominatim"), ": place names, credited to OpenStreetMap contributors."),
+        h("li", null, h("strong", null, "Gemini"), ": only for the pre-registered comparison.")),
+      h("p", null, "An earlier song dataset collected from Tunefind was deleted after we read its terms; nothing derived from it is used."),
+      h("p", null, "AFTERSHOCK is not affiliated with Netflix or Qloo.")));
 }
 
 export function renderNotFound(root) {

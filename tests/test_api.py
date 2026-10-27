@@ -127,3 +127,24 @@ def test_ripple_response_has_no_raw_qloo_values(monkeypatch):
     assert not {"fit", "artist_age", "show_age"} & set(song)
     assert song["leans"][0] == "45_to_54" or song["leans"][0] == "35_to_44"
     assert song["score"] == 0.6
+
+
+def _item(sid, prob, generic=False, places=("Lyon",)):
+    row = {"code": "FR", "generic": generic, "specificity": 0.8,
+           "kit": {"artist": [{"name": "A"}, {"name": "Common"}, {"name": "B"}, {"name": "C"}], "brand": [{"name": "X"}]},
+           "control": {"artist": ["common"]}, "hotspots": {"places": list(places)}}
+    return {"summary": {"id": sid, "title": sid.title(), "origin_countries": [{"code": "KR", "name": "South Korea"}],
+                        "top_forecast": {"code": "FR", "name": "France", "probability": prob, "why": "w"}},
+            "detail": {"launch_kit": [row]}}
+
+
+def test_hero_picks_highest_qualifying_storm():
+    hero = api._hero([_item("low", 0.1), _item("generic", 0.9, generic=True), _item("noplace", 0.8, places=()),
+                      _item("best", 0.4)])
+    assert hero["id"] == "best" and hero["probability"] == 0.4
+    assert hero["artists"] == ["A", "B", "C"] and hero["places"] == ["Lyon"]
+
+
+def test_hero_none_when_nothing_qualifies():
+    assert api._hero([_item("g", 0.9, generic=True), _item("p", 0.5, places=())]) is None
+    assert api._hero([]) is None
