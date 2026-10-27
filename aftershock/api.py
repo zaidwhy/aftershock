@@ -230,6 +230,17 @@ def _take_live_slot(request):
     _daily["count"] += 1
 
 
+def qloo_failure(err):
+    """Status code and visitor-facing message for a failed live Qloo lookup. A refused key will not
+    recover by retrying, so it says so and points at the parts of the site that need no live call."""
+    if err.status in (401, 403):
+        return 503, ("Live Qloo lookups are switched off right now (Qloo refused the API key). The weekly "
+                     "forecasts, launch kits, hotspots and map on this site still work.")
+    if err.status == 429:
+        return 503, "Qloo is rate-limiting live lookups; try again in a few minutes."
+    return 502, "Qloo did not answer this request; try again in a minute"
+
+
 @app.get("/api/ripple")
 def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX_FIELD),
            songs: str = Query(..., min_length=3, max_length=MAX_SONGS * (2 * MAX_FIELD + 2)),
@@ -242,7 +253,7 @@ def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX
         return public_ripple(score_placements(Qloo(call_budget=40), show, placements, as_of=as_of))
     except QlooError as err:
         log.warning("ripple scoring failed: %s", err)
-        raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err
+        raise HTTPException(*qloo_failure(err)) from err
 
 
 @app.get("/api/scout")
@@ -256,7 +267,7 @@ def sync_scout(request: Request, show: str = Query(..., min_length=1, max_length
         return scout(Qloo(call_budget=MAX_QLOO_CALLS), name)
     except QlooError as err:
         log.warning("sync scout failed: %s", err)
-        raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err
+        raise HTTPException(*qloo_failure(err)) from err
 
 
 class _Live:
@@ -276,14 +287,14 @@ class _Live:
             return public_ripple(score_placements(Qloo(call_budget=40), show, songs))
         except QlooError as err:
             log.warning("ask: ripple scoring failed: %s", err)
-            raise ask_agent.LiveError("Qloo did not answer this request; try again in a minute") from err
+            raise ask_agent.LiveError(qloo_failure(err)[1]) from err
 
     def scout(self, show):
         try:
             return scout(Qloo(call_budget=MAX_QLOO_CALLS), show)
         except QlooError as err:
             log.warning("ask: sync scout failed: %s", err)
-            raise ask_agent.LiveError("Qloo did not answer this request; try again in a minute") from err
+            raise ask_agent.LiveError(qloo_failure(err)[1]) from err
 
 
 def ask_context(live=None):

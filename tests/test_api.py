@@ -316,3 +316,16 @@ def test_week_map_chance_of_at_least_one_and_top_titles(tmp_path, monkeypatch):
     first = body["map"]["countries"][0]
     assert first["code"] == "bd" and first["chance"] == round(1 - 0.6 * 0.7, 4)
     assert [t["id"] for t in first["top"]] == ["a", "b"] and first["top"][0]["p"] == 0.4
+
+
+@pytest.mark.parametrize("status, code, says", [(401, 503, "refused the API key"), (403, 503, "refused the API key"),
+                                                (429, 503, "rate-limiting"), (500, 502, "did not answer")])
+def test_live_lookup_failures_say_what_happened(monkeypatch, status, code, says):
+    from aftershock.qloo import QlooError
+
+    def refuse(*a, **k):
+        raise QlooError(f"{status} on /search", status=status)
+    _stub_scoring(monkeypatch)
+    monkeypatch.setattr(api, "score_placements", refuse)
+    resp = client.get("/api/ripple", params={"show": "X", "songs": "A|B"})
+    assert resp.status_code == code and says in resp.json()["detail"]

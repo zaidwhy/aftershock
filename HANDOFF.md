@@ -45,6 +45,10 @@ Measured, not assumed: axe-core 4.9.1 on 8 live pages, light and dark, plus the 
 
 Measured cold (no cache) at phone width on a throttled 1.6 Mbps / 150 ms connection: headline 1.7 s, worked example about 1.9 s, map about 2.5-2.8 s, 197 KB in 24 requests. Added `modulepreload` for the 13 front-end modules and a preconnect to the d3 CDN: every module now starts downloading at about 0.27 s together instead of one import level at a time, and charts.js finishes about 0.65 s earlier (1.39 s to 0.74 s). Time to the worked example barely moves (bounded by the data fetch). One run in eight stalled for about 30 s on the throttled link, which looked like a network outlier; not reproduced.
 
+## Failure path: Qloo down or key refused (28 Oct)
+
+Tested with a local server given an invalid key: read-only pages (storms, map, kits, scorecard, ledger) need no live call and keep working; live lookups failed with "try again in a minute", which is wrong for a refused key. Now `QlooError` carries Qloo's status and `api.qloo_failure` maps 401/403 to 503 "Live Qloo lookups are switched off right now (Qloo refused the API key). The weekly forecasts, launch kits, hotspots and map on this site still work.", 429 to a rate-limit message, anything else to the old one; the page shows the server's sentence without the URL and status code. Tests for all four cases. If the hackathon key expires during judging, this is what judges see.
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.

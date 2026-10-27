@@ -14,7 +14,10 @@ async function getJson(url) {
   if (!res.ok) {
     let detail = "";
     try { const j = await res.json(); detail = j.detail || j.error || ""; } catch { /* body not JSON */ }
-    throw new Error(`${url} returned HTTP ${res.status}${detail ? ": " + detail : ""}`);
+    // Our own errors are written as sentences for visitors; show those alone. Anything else (a
+    // validation list, an HTML error page) keeps the technical form so it can still be reported.
+    if (typeof detail === "string" && detail) throw Object.assign(new Error(detail), { status: res.status });
+    throw Object.assign(new Error(`${url} returned HTTP ${res.status}`), { status: res.status });
   }
   try { return await res.json(); } catch { throw new Error(`${url} sent a response that was not JSON.`); }
 }

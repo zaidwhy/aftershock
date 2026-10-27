@@ -29,7 +29,9 @@ TIMEOUT_S = 20.0
 
 
 class QlooError(RuntimeError):
-    pass
+    def __init__(self, message, status=None):
+        super().__init__(message)
+        self.status = status  # Qloo's HTTP status when it answered with an error, else None
 
 
 class Qloo:
@@ -67,7 +69,7 @@ class Qloo:
             if "remaining" in name.lower() and "month" in name.lower():
                 self.month_remaining = value
         if resp.status_code != 200:
-            raise QlooError(f"{resp.status_code} on {path}: {resp.text[:300]}")
+            raise QlooError(f"{resp.status_code} on {path}: {resp.text[:300]}", status=resp.status_code)
         body = resp.json()
         cached.write_text(json.dumps(body), encoding="utf-8")
         return body
