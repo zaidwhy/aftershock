@@ -30,10 +30,17 @@ SPILLOVER forecast for one breakout. Probabilities come from Netflix history onl
    "forecasts": [{"code": "KR", "name": "South Korea", "probability": 0.21,
                   "why": "South Korea joined 23 of 100 past breakouts that started in Japan"}],
    "locked_at": "2026-10-30T10:00:00Z", "ledger_id": "sha-prefix"},
- "partners": [{"code": "KR", "artists": ["Example Artist A", "Example Artist B"]}]
+ "partners": [{"code": "KR", "artists": ["Example Artist A", "Example Artist B"]}],
+ "launch_kit": [{"code": "KR", "kit": {
+   "artist": [{"name": "Example Artist A", "entity_id": "uuid"}],
+   "tv_show": [{"name": "Example Show A", "entity_id": "uuid"}],
+   "movie": [{"name": "Example Film A", "entity_id": "uuid"}],
+   "brand": [{"name": "Example Brand A", "entity_id": "uuid"}]}}]
 }
 ```
 `partners` is the one place Qloo appears here: artists the title's audience over-indexes on in each forecast country. It does not change the probabilities (Qloo gave no AUC lift in the backtest).
+
+`launch_kit` covers the same top three forecast countries. Per country, `kit` maps a domain (`artist`, `tv_show`, `movie`, `brand`) to up to five entities the title's audience there over-indexes on, in Qloo's order; a domain that returned nothing is omitted, and a country with no results is omitted. No affinity values are exposed. The MCP tool `launch_kit(storm_id, country)` returns one country's kit from the same data.
 
 ## GET /api/ripple?show=Example%20Show&songs=Song%20One|Artist%20One;Song%20Two|Artist%20Two
 Live scoring for any show and up to 8 songs, with an optional `as_of=YYYY-MM-DD` (between 2015-08-01 and today). `as_of` changes only the Wikipedia context window; Qloo audiences are today's. Limits: 10 scorings per hour per visitor (first address in `X-Forwarded-For`, else the socket peer) and 300 per day per server process; either returns HTTP 429 with the limit named.

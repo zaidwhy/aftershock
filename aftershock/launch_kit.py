@@ -1,0 +1,63 @@
+"""Launch kit: what a title's audience in one country over-indexes on, across Qloo domains.
+
+SPILLOVER says where a title will chart next; the kit says what to do there. Each domain is one
+`/v2/insights` call with the title as the interest signal and the country as the location.
+
+Domains were chosen by probing 4 titles x 2 countries (data/results/launch_kit_probe.json):
+- kept: artist, tv_show, movie, brand. They returned five results every time, differed between
+  titles in the same country, and were sensible for the country.
+- dropped: podcast (70% of results identical across different titles in one country, so it ignores
+  the title), book (manga volumes and children's books for unrelated films), place (venues from other
+  countries, e.g. Tokyo shops for Taiwan, Paris and Barcelona for Luxembourg).
+Qloo's order within a response is the only use of affinity; values are not kept or shown.
+"""
+import logging
+
+import httpx
+
+from aftershock.qloo import QlooError
+
+log = logging.getLogger(__name__)
+
+# Output key -> Qloo entity type, in display order.
+DOMAINS = {
+    "artist": "urn:entity:artist",
+    "tv_show": "urn:entity:tv_show",
+    "movie": "urn:entity:movie",
+    "brand": "urn:entity:brand",
+}
+PER_DOMAIN = 5
+
+
+def domain_picks(client, entity_id, country_name, entity_type):
+    """Up to PER_DOMAIN entities of one type the title's audience in a country over-indexes on."""
+    body = client.get("/v2/insights", {"filter.type": entity_type, "signal.interests.entities": entity_id,
+                                       "signal.location.query": country_name, "take": PER_DOMAIN})
+    picks = []
+    for entity in body.get("results", {}).get("entities", []):
+        if not entity.get("name"):
+            continue
+        pick = {"name": entity["name"]}
+        if entity.get("entity_id"):
+            pick["entity_id"] = entity["entity_id"]
+        picks.append(pick)
+        if len(picks) == PER_DOMAIN:
+            break
+    return picks
+
+
+def launch_kit(client, entity_id, country_name, domains=DOMAINS):
+    """{domain: [{name, entity_id?}, ...]} for the domains that returned something. An unresolved
+    title or a failed domain call gives a smaller kit, never an error."""
+    if not entity_id:
+        return {}
+    kit = {}
+    for domain, entity_type in domains.items():
+        try:
+            picks = domain_picks(client, entity_id, country_name, entity_type)
+        except (QlooError, httpx.HTTPError) as err:
+            log.warning("launch kit %s failed for %s: %s", domain, country_name, err)
+            continue
+        if picks:
+            kit[domain] = picks
+    return kit

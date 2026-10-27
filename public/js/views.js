@@ -108,11 +108,7 @@ export function renderStorm(root, id, isCurrent) {
         mapBox,
         h("p", { class: "legend" }, h("span", { class: "key key-origin" }), "Origin countries (outlined)", h("span", { class: "key key-ramp" }), "Darker = higher probability"),
         fc.length ? forecastTable(fc) : h("p", { class: "status" }, "No forecast rows for this title.")),
-      st.partners?.some((p) => p.artists?.length) ? h("section", { "aria-labelledby": "par-h" },
-        h("h2", { id: "par-h" }, "Who this audience already loves there"),
-        h("p", { class: "muted" }, "From Qloo: artists the title's audience over-indexes on in each forecast country, as partners for a local launch. This list does not change the probabilities."),
-        h("ul", { class: "partners" }, st.partners.filter((p) => p.artists?.length).map((p) => h("li", null,
-          h("strong", null, countryName(p.code)), " ", h("span", null, p.artists.join(", ")))))) : null,
+      kitSection(st),
       h("p", { class: "locked mono" }, st.spillover?.locked_at ? `Locked at ${dateLabel(st.spillover.locked_at)} | ledger id ${st.spillover.ledger_id}` : "Not locked yet."));
     forecastMap(fc, st.origin_countries).then((svg) => {
       if (isCurrent()) mapBox.replaceChildren(svg);
@@ -120,6 +116,26 @@ export function renderStorm(root, id, isCurrent) {
       if (isCurrent()) mapBox.replaceChildren(errorBox("the map", err), h("p", { class: "muted" }, "The table below has the same data."));
     });
   });
+}
+
+const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
+
+function kitSection(st) {
+  const rows = (st.launch_kit || []).filter((r) => r.kit && Object.values(r.kit).some((v) => v?.length));
+  if (!rows.length) {
+    // Older data has only the artist partners list.
+    return st.partners?.some((p) => p.artists?.length) ? h("section", { "aria-labelledby": "par-h" },
+      h("h2", { id: "par-h" }, "Who this audience already loves there"),
+      h("ul", { class: "partners" }, st.partners.filter((p) => p.artists?.length).map((p) => h("li", null,
+        h("strong", null, countryName(p.code)), " ", h("span", null, p.artists.join(", ")))))) : null;
+  }
+  return h("section", { "aria-labelledby": "par-h" },
+    h("h2", { id: "par-h" }, "Launch kit: what this audience loves there"),
+    h("p", { class: "muted" }, "From Qloo: what the title's audience over-indexes on in each forecast country, as a starting point for a local launch. Netflix history says where; this says what to do there. It does not change the probabilities."),
+    rows.map((r) => h("div", { class: "kit" },
+      h("h3", null, countryName(r.code)),
+      h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", null,
+        h("dt", null, KIT_LABELS[d]), h("dd", null, r.kit[d].map((e) => e.name).join(", "))))))));
 }
 
 /* ----------------------------------------------------------------- ripple */

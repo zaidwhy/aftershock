@@ -53,6 +53,24 @@ def spillover_forecast(storm_id: str) -> dict:
     return {"error": f"no storm with id {storm_id!r}; call list_storms first"}
 
 
+@server.tool(description="Launch kit for one forecast country of a breakout, by storm id from list_storms and a "
+                         "country code or name from its spillover forecasts: what the title's audience there "
+                         "over-indexes on in Qloo's artist, tv_show, movie and brand domains (up to 5 names each, "
+                         "in Qloo's order). It does not change the probabilities.")
+def launch_kit(storm_id: str, country: str) -> dict:
+    for storm in _storms():
+        if storm["summary"]["id"] != storm_id:
+            continue
+        wanted = country.strip().lower()
+        names = {f["code"].lower(): f["name"] for f in storm["detail"]["spillover"]["forecasts"]}
+        for row in storm["detail"].get("launch_kit") or []:
+            if wanted in (row["code"].lower(), names.get(row["code"].lower(), "").lower()):
+                return {"title": storm["summary"]["title"], "country": names.get(row["code"].lower(), row["code"]),
+                        "launch_kit": row["kit"]}
+        return {"error": f"no launch kit for {country!r}; kits cover the top three forecast countries with Qloo data"}
+    return {"error": f"no storm with id {storm_id!r}; call list_storms first"}
+
+
 @server.tool(description=f"RIPPLE: score up to {MAX_SONGS} songs placed in a show or film. The score is the Qloo "
                          "age gap in [0,1]: how far each artist's audience sits from the show's by age band. Prior "
                          "Wikipedia views and taste fit are returned as context only. songs is a list of [song, artist] "

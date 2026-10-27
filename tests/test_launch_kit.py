@@ -1,0 +1,46 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from aftershock.launch_kit import DOMAINS, PER_DOMAIN, launch_kit  # noqa: E402
+from aftershock.qloo import QlooError  # noqa: E402
+
+
+class FakeInsights:
+    def __init__(self, by_type):
+        self.by_type = by_type
+        self.calls = []
+
+    def get(self, path, params):
+        self.calls.append(params)
+        result = self.by_type[params["filter.type"]]
+        if isinstance(result, Exception):
+            raise result
+        return {"results": {"entities": result}}
+
+
+def entities(prefix, n):
+    return [{"name": f"{prefix} {i}", "entity_id": f"id-{prefix}-{i}"} for i in range(n)]
+
+
+def test_empty_domains_dropped_and_failures_skipped():
+    client = FakeInsights({"urn:entity:artist": entities("Artist", 3), "urn:entity:tv_show": [],
+                           "urn:entity:movie": QlooError("boom"), "urn:entity:brand": entities("Brand", 1)})
+    kit = launch_kit(client, "title-id", "Japan")
+    assert list(kit) == ["artist", "brand"]
+    assert kit["brand"] == [{"name": "Brand 0", "entity_id": "id-Brand-0"}]
+
+
+def test_at_most_five_per_domain_and_query_shape():
+    client = FakeInsights({t: entities(d, 9) for d, t in DOMAINS.items()})
+    kit = launch_kit(client, "title-id", "Japan")
+    assert set(kit) == set(DOMAINS)
+    assert all(len(v) == PER_DOMAIN == 5 for v in kit.values())
+    assert all(c["signal.interests.entities"] == "title-id" and c["signal.location.query"] == "Japan" for c in client.calls)
+
+
+def test_missing_title_returns_empty_without_calls():
+    client = FakeInsights({})
+    assert launch_kit(client, None, "Japan") == {}
+    assert client.calls == []

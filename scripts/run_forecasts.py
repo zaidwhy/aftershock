@@ -23,6 +23,7 @@ from aftershock import ledger, wiki  # noqa: E402
 from aftershock.netflix import (  # noqa: E402
     HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
+from aftershock.launch_kit import launch_kit  # noqa: E402
 from aftershock.qloo import Qloo, QlooError, norm  # noqa: E402
 from aftershock.ripple import score_placements  # noqa: E402
 
@@ -76,17 +77,6 @@ def resolve_title(client, event):
         if norm(hit.get("name", "")) == norm(event["title"][0]):
             return hit["entity_id"]
     return None
-
-
-def partners(client, entity_id, country_name):
-    """Artists this title's audience in one country over-indexes on."""
-    try:
-        body = client.get("/v2/insights", {"filter.type": "urn:entity:artist", "signal.interests.entities": entity_id,
-                                           "signal.location.query": country_name, "take": 3})
-        return [e["name"] for e in body.get("results", {}).get("entities", [])]
-    except QlooError as err:
-        log.warning("partners failed: %s", err)
-        return []
 
 
 def live_placements():
@@ -226,7 +216,10 @@ def main():
         # (it had a value for 1.8% of title-country pairs), so Qloo's job here is the partners list.
         forecasts = [{"code": c, "name": names[c], "probability": round(probabilities[c], 4),
                       "why": why_text(model, event, c, names)} for c in ranked]
-        partner_rows = [{"code": c, "artists": partners(client, entity_id, names[c])} for c in ranked[:3]] if entity_id else []
+        # The kit's artist list is the partners list (top 3), so partners cost no separate call.
+        kits = [(c, launch_kit(client, entity_id, names[c])) for c in ranked[:3]] if entity_id else []
+        partner_rows = [{"code": c, "artists": [a["name"] for a in kit.get("artist", [])[:3]]} for c, kit in kits]
+        kit_rows = [{"code": c, "kit": kit} for c, kit in kits if kit]
         storm_id = slug(event["title"])
         summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
                    "category": event["category"], "origin_week": str(event["origin_week"]),
@@ -234,7 +227,7 @@ def main():
                    "qloo_entity": entity_id,
                    "top_forecast": forecasts[0] if forecasts else None}
         storms.append({"netflix_title": list(event["title"]), "summary": summary, "detail": {**summary, "spillover": {"horizon_weeks": HORIZON, "forecasts": forecasts},
-                                                      "partners": partner_rows}})
+                                                      "partners": partner_rows, "launch_kit": kit_rows}})
         # Every candidate country is locked, not just the top rows, so AUC and calibration can be graded.
         to_lock += [{"kind": "spillover", "title": list(event["title"]), "origin_week": str(event["origin_week"]),
                      "target": c, "probability": round(probabilities[c], 4)} for c in sorted(candidates)]

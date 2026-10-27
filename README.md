@@ -16,6 +16,8 @@ Distributors, dubbing studios, music publishers and catalog owners react to brea
 
 **SPILLOVER (countries).** For a title that broke out in countries A, the probability that country B charts it within four weeks is how often B followed past breakouts that started in A, smoothed toward B's rate for the same category, which is smoothed toward B's overall rate (`aftershock/netflix.py`). Qloo's job here is the partners list: `GET /v2/insights?filter.type=urn:entity:artist&signal.interests.entities=<title>&signal.location.query=<country>`, the artists the title's audience over-indexes on in each forecast country.
 
+**Launch kit (what to do there).** For each storm's top three forecast countries, the same call is repeated for `urn:entity:tv_show`, `urn:entity:movie` and `urn:entity:brand` (four calls per country, about 330 added calls per weekly run), giving up to five names per domain in Qloo's order (`aftershock/launch_kit.py`). We probed seven domains and kept the four that were title-specific and local; podcasts (identical across titles), books and places (from other countries) were dropped, see `data/results/launch_kit_probe.json`. Like partners, the kit does not change the probabilities.
+
 **RIPPLE (songs).** Score = the Qloo age gap in [0, 1]: the artist's age-band over-index, weighted by the bands the show's audience over-indexes on, mapped so that 1 means the artist's audience sits entirely outside the show's (`aftershock/ripple.py`). Calls:
 
 | Step | Qloo call | Note |

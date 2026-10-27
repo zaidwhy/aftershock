@@ -1,0 +1,57 @@
+{
+  "probe": "4 resolved storm titles x 2 forecast countries (8 title-country pairs), take=5, one call per domain",
+  "qloo_calls_spent": "about 57 (56 probe pairs plus one repeat after a timeout)",
+  "note": "Every domain returned five results for every pair, so non-empty rate does not separate them. Selection used title-specificity and locality, judged by reading results (names not recorded here).",
+  "specificity": "overlap = mean share of the 5 results shared; cross-title is two different titles in the same country (lower = title-specific); cross-country is the same title in two countries",
+  "domains": {
+    "artist": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.0,
+      "cross_country_overlap": 0.3,
+      "distinct_of_40": 34,
+      "verdict": "kept"
+    },
+    "tv_show": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.0,
+      "cross_country_overlap": 0.2,
+      "distinct_of_40": 36,
+      "verdict": "kept"
+    },
+    "movie": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.2,
+      "cross_country_overlap": 0.55,
+      "distinct_of_40": 27,
+      "verdict": "kept (films and shows of the right region)"
+    },
+    "brand": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.0,
+      "cross_country_overlap": 0.33,
+      "distinct_of_35": 30,
+      "verdict": "kept (regional brands, airlines for a European country)"
+    },
+    "podcast": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.7,
+      "cross_country_overlap": 0.75,
+      "distinct_of_40": 20,
+      "verdict": "dropped: ignores the title, the same few shows everywhere"
+    },
+    "book": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.0,
+      "cross_country_overlap": 0.6,
+      "distinct_of_40": 28,
+      "verdict": "dropped: manga volumes and children's books for unrelated films, not local"
+    },
+    "place": {
+      "nonempty": "8/8",
+      "cross_title_overlap": 0.0,
+      "cross_country_overlap": 0.3,
+      "distinct_of_40": 34,
+      "verdict": "dropped: venues in other countries (Tokyo for Taiwan, Paris and Barcelona for Luxembourg)"
+    }
+  }
+}
