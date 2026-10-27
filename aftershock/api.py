@@ -157,7 +157,19 @@ def ripple_title(ripple_id: str):
 
 @app.get("/api/scorecard")
 def scorecard():
-    return _load(PRIVATE / "scorecard.json")
+    body = _load(PRIVATE / "scorecard.json")
+    experiment = ROOT / "data" / "results" / "kit_experiment.json"
+    if experiment.exists():
+        body = {**body, "kit_experiment": _kit_experiment(json.loads(experiment.read_text(encoding="utf-8")))}
+    return body
+
+
+def _kit_experiment(raw):
+    """The pre-registered Qloo-versus-LLM kit result, reduced to what the scorecard shows."""
+    spec, ground = raw.get("title_specificity") or {}, raw.get("llm_grounding") or {}
+    return {"verdict": spec.get("verdict"), "qloo": spec.get("qloo"), "llm": spec.get("llm"),
+            "p_qloo_greater": spec.get("p_qloo_greater"), "scored_pairs": raw.get("scored_pairs"),
+            "grounding_share": ground.get("share_resolving_in_qloo"), "model": raw.get("model")}
 
 
 @app.get("/api/replays")

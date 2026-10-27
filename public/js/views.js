@@ -266,6 +266,31 @@ function forecastTable(fc) {
 export { renderTry, renderScout } from "./audience.js";
 
 /* -------------------------------------------------------------- scorecard */
+const GITHUB_EXPERIMENT = "https://github.com/zaidwhy/aftershock/blob/main/docs/EXPERIMENT_KITS.md";
+
+function kitCheckSection(sc) {
+  const kc = sc.kit_check, ex = sc.kit_experiment;
+  if (!kc) return null;
+  const example = (label, e) => (e ? h("li", null, `${label}: `, h("a", { href: `#/storm/${encodeURIComponent(e.id)}` }, `${e.title} in ${e.country}`),
+    h("span", { class: "mono" }, ` (${Math.round(e.specificity * 100)}% specific)`)) : null);
+  const share = (n) => (n == null ? "n/a" : `${Math.round(n * 100)}%`);
+  const slot = ex
+    ? h("div", { class: "kit-exp" },
+      h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} title-country pairs.` : "."),
+      h("p", null, `Title-specificity: Qloo ${share(ex.qloo)}, LLM ${share(ex.llm)}. Share of the LLM's picks that Qloo recognises as the right kind of entity: ${share(ex.grounding_share)}.`),
+      h("p", null, h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "How it was registered and scored")))
+    : h("p", { class: "muted" }, "Registered on 27 Oct before any data was collected; results will appear here. ",
+      h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "Read the registration"));
+  return h("section", { "aria-labelledby": "kitcheck-h" },
+    h("h2", { id: "kitcheck-h" }, "Is Qloo's launch kit about the title?"),
+    h("p", null, h("strong", { class: "mono" }, `${kc.specific} of ${kc.kits}`), ` launch kits this week are title-specific; ${kc.generic} are mostly countrywide taste. Mean specificity is `,
+      h("span", { class: "mono" }, `${Math.round(kc.mean_specificity * 100)}%`), "."),
+    h("p", { class: "muted" }, "For every kit we also ask Qloo what the whole country likes, with no title. A kit counts as countrywide when most of its picks repeat that country-only list, and as title-specific when they do not."),
+    h("ul", { class: "kit-examples" }, example("Title-specific", kc.example_specific), example("Countrywide", kc.example_generic)),
+    h("h3", null, "Qloo versus an LLM (pre-registered)"),
+    slot);
+}
+
 export function renderScorecard(root, isCurrent) {
   setTitle("Scorecard");
   const box = h("div", null);
@@ -310,6 +335,7 @@ export function renderScorecard(root, isCurrent) {
       rp.graded_releases ? dl([["Graded releases", rp.graded_releases], ["Pending releases", rp.pending_releases], ["Mean Spearman", plain2(rp.mean_spearman)]]) : null);
     add(box,
       evidence,
+      kitCheckSection(sc),
       h("h2", null, "Placebo check"),
       h("p", { class: "muted" }, "Mean within-show Spearman against the real spike and against a placebo spike measured entirely before release. A score that predicts the placebo is picking up regression to the mean, not the show."),
       h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Placebo check, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),

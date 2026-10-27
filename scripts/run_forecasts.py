@@ -261,6 +261,29 @@ def llm_baseline_fields(llm):
             "llm": {k: pick(v) for k, v in (llm.get("llm") or {}).items()}}
 
 
+def kit_check(storms):
+    """How title-specific this week's Qloo launch kits are, from the storms just built: counts of title-specific
+    and countrywide kits (the generic flag), mean specificity, and the clearest example of each."""
+    rows = []
+    for storm in storms:
+        for row in storm["detail"]["launch_kit"]:
+            if row.get("specificity") is not None and any((row.get("kit") or {}).values()):
+                rows.append({"id": storm["summary"]["id"], "title": storm["summary"]["title"], "code": row["code"],
+                             "country": next((f["name"] for f in storm["detail"]["spillover"]["forecasts"]
+                                              if f["code"] == row["code"]), row["code"]),
+                             "specificity": row["specificity"], "generic": bool(row["generic"])})
+    if not rows:
+        return None
+    best = max((r for r in rows if not r["generic"]), key=lambda r: r["specificity"], default=None)
+    worst = min((r for r in rows if r["generic"]), key=lambda r: r["specificity"], default=None)
+    example = lambda r: None if r is None else {k: r[k] for k in ("id", "title", "code", "country", "specificity")}  # noqa: E731
+    return {"kits": len(rows), "generic": sum(r["generic"] for r in rows),
+            "specific": sum(not r["generic"] for r in rows),
+            "mean_specificity": round(sum(r["specificity"] for r in rows) / len(rows), 3),
+            "generic_at_or_below": GENERIC_AT_OR_BELOW,
+            "example_specific": example(best), "example_generic": example(worst)}
+
+
 def earliest_spillover_origin(records):
     weeks = [r["origin_week"] for r in records if r["kind"] == "spillover"]
     return min(weeks) if weeks else None
@@ -396,6 +419,7 @@ def main():
                        "placebo": controls,
                        "llm_baseline": llm_baseline_fields(llm_baseline)},
         },
+        "kit_check": kit_check(storms),
         "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl",
         "ledger_intact": ledger.verify() is None,
         "data_week": str(last_week),

@@ -347,3 +347,6 @@ dd { margin: 0; font-size: 1.1rem; }
 .timeline { list-style: none; margin: 4px 0 8px; padding: 0; columns: 2 220px; column-gap: 28px; }
 .timeline li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--rule); break-inside: avoid; font-size: 0.92rem; }
 .on-netflix .btn-small { margin: 4px 8px 0 0; }
+.kit-examples { margin: 8px 0 12px; padding-left: 20px; }
+.kit-examples li { margin: 4px 0; }
+.kit-exp p { margin: 4px 0; }
