@@ -48,7 +48,9 @@ def health():
 @app.get("/api/storms")
 def storms():
     data = _load(PRIVATE / "storms.json")
-    return {"week": data["week"], "storms": [s["summary"] for s in data["storms"]]}
+    return {"week": data["week"], "storms": [
+        s["summary"] | {"has_kit": any(r.get("kit") and any(r["kit"].values()) for r in s["detail"].get("launch_kit", []))}
+        for s in data["storms"]]}
 
 
 @app.get("/api/storms/{storm_id}")

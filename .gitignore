@@ -10,3 +10,6 @@ data/raw/
 .vercel/
 data/private/
 *.log
+
+# static export of the read endpoints (Qloo-derived; never commit)
+public/data/

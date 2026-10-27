@@ -1,4 +1,4 @@
-let cfg = { mock: false, apiBase: "/api", mockBase: "mock" };
+let cfg = { mock: false, apiBase: "/api", dataBase: "/data", mockBase: "mock" };
 export const setConfig = (c) => { cfg = c; };
 export const isMock = () => cfg.mock;
 
@@ -15,12 +15,15 @@ async function getJson(url) {
   try { return await res.json(); } catch { throw new Error(`${url} sent a response that was not JSON.`); }
 }
 
-export const getStorms = () => getJson(cfg.mock ? `${cfg.mockBase}/storms.json` : `${cfg.apiBase}/storms`);
-export const getStorm = (id) => getJson(cfg.mock ? `${cfg.mockBase}/storm-${encodeURIComponent(id)}.json` : `${cfg.apiBase}/storms/${encodeURIComponent(id)}`);
-export const getScorecard = () => getJson(cfg.mock ? `${cfg.mockBase}/scorecard.json` : `${cfg.apiBase}/scorecard`);
-export const getRipples = () => getJson(cfg.mock ? `${cfg.mockBase}/ripples.json` : `${cfg.apiBase}/ripples`);
-export const getRipple = (id) => getJson(cfg.mock ? `${cfg.mockBase}/ripple-${encodeURIComponent(id)}.json` : `${cfg.apiBase}/ripples/${encodeURIComponent(id)}`);
-export const getReplays = () => getJson(cfg.mock ? `${cfg.mockBase}/replays.json` : `${cfg.apiBase}/replays`);
+// Read-only data is exported to static files (scripts/export_static.py), so it needs no function cold start.
+// Only the live Qloo calls (/api/ripple, /api/scout) go to the API.
+const stat = (name, mockName) => getJson(cfg.mock ? `${cfg.mockBase}/${mockName ?? name}.json` : `${cfg.dataBase}/${name}.json`);
+export const getStorms = () => stat("storms");
+export const getStorm = (id) => stat(`storms/${encodeURIComponent(id)}`, `storm-${encodeURIComponent(id)}`);
+export const getScorecard = () => stat("scorecard");
+export const getRipples = () => stat("ripples");
+export const getRipple = (id) => stat(`ripples/${encodeURIComponent(id)}`, `ripple-${encodeURIComponent(id)}`);
+export const getReplays = () => stat("replays");
 
 export async function scoutShow(show) {
   if (cfg.mock) throw new Error("Sync Scout needs the live API; mock mode has no scout data.");

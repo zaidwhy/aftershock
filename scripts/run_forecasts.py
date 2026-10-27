@@ -249,6 +249,21 @@ def run_ripple_only(args):
              len(fresh) if not args.no_lock else 0, dict(reasons), client.live_calls if client else 0)
 
 
+def llm_baseline_fields(llm):
+    """The Qloo-versus-LLM age-gap comparison, read from ripple_llm_baseline.json."""
+    def pick(block):
+        return {"real_spearman": block.get("real_spearman"), "placebo_spearman": block.get("placebo_spearman"),
+                "p_real_minus_placebo": block.get("p_real_minus_placebo"), "n_shows": block.get("n_shows")}
+    return {"model": llm.get("model"), "model_name": llm.get("model_display_name"),
+            "qloo": {k: pick(v) for k, v in (llm.get("qloo_matched_to_llm_set") or {}).items()},
+            "llm": {k: pick(v) for k, v in (llm.get("llm") or {}).items()}}
+
+
+def earliest_spillover_origin(records):
+    weeks = [r["origin_week"] for r in records if r["kind"] == "spillover"]
+    return min(weeks) if weeks else None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-refresh", action="store_true")
@@ -339,12 +354,14 @@ def main():
     qloo_test = _read_json(RESULTS / "spillover_qloo_test.json")
     ripple_test = _read_json(RESULTS / "ripple_test_artist.json")
     controls = _read_json(RESULTS / "ripple_controls.json")
+    llm_baseline = _read_json(RESULTS / "ripple_llm_baseline.json")
     metric = lambda table, name: next((m["auc"] for m in table.get("metrics", []) if m["model"] == name), None)  # noqa: E731
     records = ledger.read()
     recent = ripple_test.get("2024_plus", {})
     scorecard = {
         "spillover": {"locked": sum(1 for r in records if r["kind"] == "spillover"), "graded": len(graded),
-                      "hits": hits, "pending": pending,
+                      "hits": hits, "pending": pending, "horizon_weeks": HORIZON,
+                      "earliest_origin_week": earliest_spillover_origin(records),
                       "auc": roc_auc([g["probability"] for g in graded], [int(g["hit"]) for g in graded])
                       if graded and 0 < hits < len(graded) else None,
                       "so_far": {"forecasts": len(so_far), "hits": so_far_hits,
@@ -363,7 +380,8 @@ def main():
                        "gap_2024_plus_p": recent.get("gap", {}).get("p_value"),
                        "fit_2024_plus": recent.get("fit", {}).get("mean_spearman"),
                        "obscurity_2024_plus": recent.get("obscurity", {}).get("mean_spearman"),
-                       "placebo": controls},
+                       "placebo": controls,
+                       "llm_baseline": llm_baseline_fields(llm_baseline)},
         },
         "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl",
         "ledger_intact": ledger.verify() is None,

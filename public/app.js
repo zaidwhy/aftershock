@@ -3,6 +3,7 @@ const USE_MOCK = new URLSearchParams(location.search).has("mock");
 export const CONFIG = {
   mock: USE_MOCK,
   apiBase: "/api",
+  dataBase: "/data",
   mockBase: "mock",
 };
 
