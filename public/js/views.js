@@ -67,13 +67,16 @@ export function renderHome(root, isCurrent) {
           heroBox)),
       proof,
       mapBox,
-      lookupBox(isCurrent),
-      chartBox),
+      lookupBox(isCurrent)),
     mockNote(),
     h("section", { "aria-labelledby": "live-h" },
       h("h2", { id: "live-h" }, "Live storms this week"),
       h("p", { class: "muted" }, "Storms: titles that just broke out in 1 to 3 countries."),
-      stormBox));
+      stormBox),
+    h("section", { "aria-labelledby": "lift-h" },
+      h("h2", { id: "lift-h" }, "How a show can lift an old song"),
+      h("p", { class: "muted" }, "Not a forecast. A replay of one known case: how a show's placement moved a song's English Wikipedia pageviews."),
+      chartBox));
 
   Promise.all([getScorecard(), stormsP]).then(([sc, st]) => {
     if (!isCurrent()) return;

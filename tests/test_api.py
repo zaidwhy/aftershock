@@ -269,6 +269,15 @@ def test_title_lookup_prefers_newest_season_and_tolerates_typos(title_files):
     assert client.get("/api/title", params={"name": "Squid Gam"}).json()["show"] == "Squid Game"
 
 
+def test_title_lookup_rejects_weak_fuzzy_matches(title_files, tmp_path):
+    # "The Sopranos" vs "The Orphans" is ratio 0.78: shares "the" and letters, but is not the same title
+    rows = [_row("US", "2026-10-11", "The Orphans")]
+    index = titles.build_index(rows, _StubModel(), ["US"], {"US": "United States"}, date(2026, 10, 18), set(), 4)
+    (tmp_path / "titles.json").write_text(json.dumps(index), encoding="utf-8")
+    assert client.get("/api/title", params={"name": "The Sopranos"}).status_code == 404
+    assert client.get("/api/title", params={"name": "Orphans"}).json()["show"] == "The Orphans"  # whole word
+
+
 def test_title_lookup_storm_and_forecast(title_files):
     storm = client.get("/api/title", params={"name": "Fukrey Returns"}).json()
     assert storm["storm_id"] == "fukrey-returns" and storm["still_spreading"] is True and "forecast" not in storm
@@ -281,7 +290,7 @@ def test_title_lookup_storm_and_forecast(title_files):
 
 def test_title_lookup_not_found_and_limits(title_files):
     missing = client.get("/api/title", params={"name": "Zzzz Nothing"})
-    assert missing.status_code == 404 and "Not in Netflix's Top 10 since 2024" in missing.json()["detail"]
+    assert missing.status_code == 404 and "No close match in Netflix's Top 10 since 2024" in missing.json()["detail"]
     assert client.get("/api/title", params={"name": "Old Hit"}).status_code == 404
     assert client.get("/api/title", params={"name": "x" * 81}).status_code == 422
     assert client.get("/api/title", params={"name": ""}).status_code == 422

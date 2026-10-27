@@ -13,6 +13,7 @@ INDEX_SINCE = date(2024, 1, 1)
 BASE = date(2020, 1, 1)  # the file stores weeks as days since this date, grouped by week, to stay small
 MAX_OTHERS = 4
 NEXT_COUNTRIES = 8
+MIN_RATIO = 0.85  # fuzzy matches below this similarity are rejected ("The Sopranos" must not find "The Orphans")
 SEASON_WORDS = re.compile(r"\b(season|series|part|volume|vol|book|chapter)\s+\d+\b|\blimited series\b")
 _cache = {}
 
@@ -127,7 +128,8 @@ def _pick_season(records, wanted):
 
 
 def lookup(loaded, name):
-    """(best record, [other records]) for a typed name, or (None, []). Substring and fuzzy matches allowed."""
+    """(best record, [other records]) for a typed name, or (None, []). Allowed: exact, whole-word substring, or
+    a fuzzy match with difflib ratio >= MIN_RATIO on the normalised title."""
     _, by_show = loaded
     wanted_season = season_number(name)
     query = strip_seasons(name)
@@ -138,9 +140,8 @@ def lookup(loaded, name):
         ordered.append(query)
     else:
         loose = [k for k in by_show if len(query) >= 3 and f" {query} " in f" {k} "]
-        loose += [k for k in by_show if len(query) >= 3 and k.startswith(query) and k not in loose]
         ordered += sorted(loose, key=lambda k: (not k.startswith(query), len(k)))
-    for k in difflib.get_close_matches(query, list(by_show), n=MAX_OTHERS + 2, cutoff=0.75):
+    for k in difflib.get_close_matches(query, list(by_show), n=MAX_OTHERS + 2, cutoff=MIN_RATIO):
         if k not in ordered:
             ordered.append(k)
     if not ordered:

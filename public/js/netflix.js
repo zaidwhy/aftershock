@@ -23,13 +23,14 @@ export function titlePanel(rec, typed, pick) {
   return h("section", { class: "on-netflix", "aria-label": `${rec.title} on Netflix` },
     h("h3", null, "On Netflix ", h("span", { class: "tag" }, rec.kind === "film" ? "Film" : "TV")),
     close ? h("p", { class: "muted" }, `Closest match to "${typed}":`) : null,
-    h("p", { class: "plain" }, h("strong", null, rec.title), ` first entered a Netflix Top 10 on ${day(rec.first_week)} in ${first.length > 6 ? `${first.length} countries at once` : list(first)}.`),
+    h("p", { class: "plain" }, h("strong", null, rec.title), ` first entered a Netflix Top 10 on ${day(rec.first_week)}`,
+      first.length > 6 ? ` and entered the Top 10 in ${first.length} countries in its first week.` : ` in ${list(first)}.`),
     later.length
-      ? [h("p", { class: "plain" }, `It has since charted in ${later.length} ${later.length === 1 ? "country" : "countries"}:`),
+      ? [h("p", { class: "plain" }, `${first.length > 6 ? "Countries it added afterwards" : "It has since charted in"} (${later.length}):`),
          h("ul", { class: "timeline" }, later.slice(0, SHOWN).map(([c, w]) => h("li", null, h("span", null, name(c)), h("span", { class: "muted mono" }, day(w))))),
          later.length > SHOWN ? h("p", { class: "muted" }, `and ${later.length - SHOWN} more`) : null]
-      : first.length > 6 ? null : h("p", { class: "plain" }, "It has not charted anywhere else yet."),
-    rec.storm_id ? h("p", { class: "plain" }, "It is one of this week's breakouts. ", h("a", { href: `#/storm/${encodeURIComponent(rec.storm_id)}` }, "See this week's full forecast")) : null,
+      : h("p", { class: "plain" }, first.length > 6 ? "No later additions." : "It has not charted anywhere else yet."),
+    rec.storm_id ? h("p", { class: "plain" }, "It is one of this week's breakouts. ", h("a", { href: `#/storm/${encodeURIComponent(rec.storm_id)}` }, "See its storm page and forecast")) : null,
     next.length ? [
       h("p", { class: "plain" }, "Likely next:"),
       h("ul", { class: "timeline" }, next.map((n) => h("li", null, h("span", null, n.name), h("span", { class: "mono" }, pct(n.probability))))),
@@ -63,7 +64,7 @@ export function lookupBox(isCurrent) {
       if (!isCurrent()) return;
       out.replaceChildren();
       add(out, rec ? titlePanel(rec, typed, run)
-        : h("p", { class: "status" }, `We could not find "${typed}" in Netflix's Top 10 since 2024 in any country. Check the spelling, or try the title as Netflix lists it.`));
+        : h("p", { class: "status" }, "No close match in Netflix's Top 10 since 2024. Check the spelling, or try the title as Netflix lists it."));
     }).catch((err) => { if (isCurrent()) out.replaceChildren(errorBox("the title lookup", err)); })
       .finally(() => { btn.disabled = false; });
   };

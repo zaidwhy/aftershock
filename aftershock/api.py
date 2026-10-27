@@ -138,7 +138,7 @@ def title_history(name):
     storms = _load(PRIVATE / "storms.json")["storms"] if (PRIVATE / "storms.json").exists() else []
     found = title_index.history(loaded, name, storms)
     if found is None:
-        raise HTTPException(404, f"Not in Netflix's Top 10 since {loaded[0]['since'][:4]} in any country")
+        raise HTTPException(404, f"No close match in Netflix's Top 10 since {loaded[0]['since'][:4]}")
     return found
 
 
