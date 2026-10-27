@@ -10,7 +10,7 @@ const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
 
 const countryName = (code) => ISO[code]?.[1] ?? code;
 
-const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - forecast where a breakout show spreads"; };
+const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - a Qloo taste agent for breakout shows"; };
 const mockNote = () => (isMock() ? h("p", { class: "mock-flag" }, "Mock data (?mock=1). Numbers are placeholders, except the replay pageviews.") : null);
 /** "song | artist" (first "|"), else "song by artist" split on the last " by ". Mirrors the API. */
 function parseSongLine(line) {
@@ -46,9 +46,13 @@ export function renderHome(root, isCurrent) {
   const watchBox = h("div", null);
   add(root, 
     h("section", { class: "hero" },
-      h("p", { class: "eyebrow" }, "Breakout forecasting"),
-      h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next?")),
-      h("p", { class: "pitch" }, "SPILLOVER: for a title that broke out in 1 to 3 countries, the probability each other country charts it within 4 weeks, from Netflix history. RIPPLE: for songs placed in a show, a ranking by the age gap between the artist's audience and the show's, from Qloo. Every forecast is locked in a public ledger before the outcome is known."),
+      h("p", { class: "eyebrow" }, "A Qloo taste agent for breakout shows"),
+      h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next, and what travels with it?")),
+      h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to do there: the artists, shows, films and brands that title's audience over-indexes on in each country, and which songs could carry it to a new generation. Every forecast is locked in a public ledger before the outcome exists."),
+      h("ul", { class: "hero-links" },
+        h("li", null, h("a", { href: "#/", onclick: (e) => { e.preventDefault(); document.getElementById("live-h")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); } }, "This week's storms")),
+        h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find songs from outside a show's generation")),
+        h("li", null, h("a", { href: "#/try" }, "Try it - score songs placed in any show"))),
       chartBox),
     mockNote(),
     h("section", { "aria-labelledby": "watch-h" },
@@ -299,7 +303,7 @@ export function renderScorecard(root, isCurrent) {
         scoreBlock("Ripple", "graded by Wikipedia pageviews, per release", rp.locked, undefined,
           [["Graded releases", rp.graded_releases], ["Pending releases", rp.pending_releases], ["Mean Spearman", plain2(rp.mean_spearman)]])),
       h("h2", null, "Backtests on past events"),
-      h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Backtest results"),
+      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Backtest results, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Backtest results"),
         h("thead", null, h("tr", null, ["Measure", "Value"].map((t) => h("th", { scope: "col" }, t)))),
         h("tbody", null,
           row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)),
@@ -307,15 +311,15 @@ export function renderScorecard(root, isCurrent) {
           row(`Spillover: same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc)),
           row("Ripple: Qloo age gap, 2024+ releases (Spearman)", gapCell),
           row("Ripple: Qloo taste fit, 2024+", plain2(br.fit_2024_plus)),
-          row("Ripple: obscurity, 2024+ (mostly regression to the mean, see placebo)", plain2(br.obscurity_2024_plus)))),
+          row("Ripple: obscurity, 2024+ (mostly regression to the mean, see placebo)", plain2(br.obscurity_2024_plus))))),
       h("p", { class: "muted" }, `Ripple backtest: ${br.n_artists ?? "n/a"} artists placed in ${br.n_shows ?? "n/a"} shows (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
       h("h2", null, "Placebo check"),
       h("p", { class: "muted" }, "Mean within-show Spearman against the real spike and against a placebo spike measured entirely before release. A score that predicts the placebo is picking up regression to the mean, not the show."),
-      h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),
+      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Placebo check, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),
         h("thead", null, h("tr", null, ["Score", `Real, 2024+ (${pl["2024_plus"]?.n_shows ?? "n/a"} shows)`, "Placebo, 2024+", `Real, all (${pl.all?.n_shows ?? "n/a"} shows)`, "Placebo, all"].map((t, i) => h("th", { scope: "col", class: i ? "num" : null }, t)))),
         h("tbody", null,
           placeboRow("Obscurity", "obscurity", "real: obscurity", "placebo: obscurity (its own pre-window)"),
-          placeboRow("Age gap", "gap", "real: gap", "placebo: gap"))),
+          placeboRow("Age gap", "gap", "real: gap", "placebo: gap")))),
       h("p", { class: "muted" }, `Real minus placebo for the age gap: permutation p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])} on 2024+ releases, ${plain2(pl.all?.["p: gap real minus gap placebo"])} on all.`),
       h("p", null, sc.ledger_url ? h("a", { class: "btn", href: sc.ledger_url, rel: "noopener" }, "Open the public ledger") : null,
         sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? " Ledger hash chain verified." : " Ledger hash chain FAILED verification."),
