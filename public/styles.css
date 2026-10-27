@@ -350,3 +350,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .kit-examples { margin: 8px 0 12px; padding-left: 20px; }
 .kit-examples li { margin: 4px 0; }
 .kit-exp p { margin: 4px 0; }
+.brief { margin: 12px 0 4px; }
+.brief-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brief-fallback { margin-top: 10px; }
+.brief-fallback[hidden] { display: none; }

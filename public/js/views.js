@@ -6,6 +6,7 @@ import { seismograph, ageLean, forecastMap, dumbbell, hotspotMap } from "./chart
 import { ISO } from "./iso.js";
 import { lookupBox } from "./netflix.js";
 import { weekMapSection } from "./weekmap.js";
+import { launchBrief } from "./brief.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -194,6 +195,29 @@ function hotspotBlock(r) {
 
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 
+/** "Copy launch brief": clipboard write inside the click; if it is refused, show the text selected in a box. */
+function briefControl(st, rows) {
+  const status = h("span", { class: "muted", role: "status" });
+  const fallback = h("div", { class: "brief-fallback", hidden: true });
+  const btn = h("button", { type: "button", class: "btn btn-small" }, "Copy launch brief");
+  btn.addEventListener("click", () => {
+    const text = launchBrief(st, location.href, rows);
+    const showBox = () => {
+      const area = h("textarea", { rows: "10", readonly: "", "aria-label": "Launch brief" });
+      area.value = text;
+      fallback.replaceChildren(h("p", { class: "muted" }, "Copying was blocked. The brief is selected below; press Ctrl+C."), area);
+      status.textContent = "";
+      fallback.hidden = false;
+      area.focus();
+      area.select();
+    };
+    const done = () => { status.textContent = "Copied"; setTimeout(() => { status.textContent = ""; }, 2500); };
+    if (!navigator.clipboard?.writeText) return showBox();
+    navigator.clipboard.writeText(text).then(() => { fallback.hidden = true; done(); }, showBox);
+  });
+  return h("div", { class: "brief" }, h("div", { class: "brief-row" }, btn, status), fallback);
+}
+
 function kitSection(st) {
   const rows = kitRows(st);
   if (!rows.length) {
@@ -214,6 +238,7 @@ function kitSection(st) {
   return h("section", { "aria-labelledby": "par-h" },
     h("h2", { id: "par-h" }, "Launch kit: what this audience loves there"),
     h("p", { class: "muted" }, "From Qloo: what the title's audience over-indexes on in each forecast country, as a starting point for a local launch. Netflix history says where; this says what to do there. It does not change the probabilities."),
+    briefControl(st, rows),
     anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "muted"), ": what the whole country likes anyway (Qloo, no title)") : null,
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
       h("h3", null, countryName(r.code)), specific(r),
