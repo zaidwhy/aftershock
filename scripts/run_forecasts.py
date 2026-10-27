@@ -212,9 +212,6 @@ def run_ripple_only(args):
     """Daily job: refresh live placements, score the releases still inside their lock window that are
     not in the ledger yet, lock the eligible ones. Spillover and Netflix data are not touched."""
     today = date.today()
-    if not args.no_collect:
-        import collect_live_placements
-        collect_live_placements.run_daily(today)
     titles = live_placements()
     locked = ledger_keys()
     reasons, pending = Counter(), {}
