@@ -2,17 +2,7 @@
 
 **A Qloo taste agent for breakout shows: where a show lands next, and what travels with it.**
 
-Every week AFTERSHOCK reads Netflix's public per-country Top 10 and finds titles that just broke out in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph does the rest: in each forecast country it names the artists, shows, films and brands that title's audience over-indexes on (the launch kit); for songs placed in a show it measures how far each artist's audience sits from the show's audience by age, the one signal that survived our placebo control and that an LLM guessing the same audiences could not reproduce; and Sync Scout runs that signal in reverse, finding on-taste artists from outside a show's generation for a music supervisor. Every forecast goes into a hash-chained ledger graded against later public data: Netflix's weekly charts and **Does Qloo beat an LLM guessing the same thing?** (`scripts/test_llm_baseline.py` -> `ripple_llm_baseline.json`). We asked Gemini (gemini-3.5-flash, temperature 0) for the age-band shares of the same 195 artists and 24 shows, given only the names (never the song, the placement or any outcome), converted them to the same over-index form and ran the identical test:
-
-| | Qloo age gap | LLM-guessed age gap |
-|---|---|---|
-| Real spike, all / 2024+ | 0.08 / 0.28 | 0.05 / 0.03 |
-| Placebo spike, all / 2024+ | -0.13 / -0.11 | -0.10 / -0.12 |
-| Real minus placebo, permutation p, all / 2024+ | 0.04 / 0.03 | 0.13 / 0.23 |
-
-The LLM's guesses agree only loosely with Qloo's measured audiences (Spearman 0.33 across artists) and do not carry the signal. That is one model and one prompt, and an LLM trained after these releases may already know which songs went viral, which favours the LLM; it still loses.
-
-Wikipedia's daily pageviews.
+Every week AFTERSHOCK reads Netflix's public per-country Top 10 and finds titles that just broke out in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to do there: in each forecast country, the artists, shows, films and brands that title's audience over-indexes on (the launch kit) and the cities where that audience concentrates (Hotspots). Sync Scout uses Qloo to find on-taste artists whose audience sits outside a show's own age groups, for a music supervisor. Every forecast goes into a hash-chained ledger graded against later public data: Netflix's weekly charts and Wikipedia's daily pageviews.
 
 The inspiration: in 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a new, younger audience, and its English Wikipedia page went from about 10,000 views a month to 909,926 in June 2022 (`data/public/replays.json`). We wanted to know whether that kind of jump can be seen coming, and we report what we found, including where it cannot.
 
@@ -30,7 +20,7 @@ Distributors, dubbing studios, music publishers and catalog owners react to brea
 
 **Hotspots (which cities).** For the same three countries, one `GET /v2/insights?filter.type=urn:heatmap&signal.interests.entities=<title>&filter.location.query=<country>` call returns about 1,800 geohash cells with an affinity rank; the top 120 are kept as `[lat, lon, weight]`. The three strongest cells that are at least 60 km apart are named by reverse geocoding with OpenStreetMap Nominatim (one request per second, cached under `.cache/nominatim/`, at most eight tries per country), so a promo or touring team sees where in the country to start (`aftershock/hotspots.py`). If either call fails the storm keeps whatever was gathered. Place names are © OpenStreetMap contributors.
 
-**Sync Scout (songs to place).** The RIPPLE signal in reverse, for a music supervisor: one call gets the 50 artists the show's audience over-indexes on (`urn:entity:artist` with the show as the signal), one `urn:demographics` call per artist gets their audience, and the list is ranked by age gap, so the top picks are on-taste artists whose audience sits outside the show's generation (`aftershock/sync_scout.py`, at most 60 calls per scout). It ranks artists, not scenes.
+**Sync Scout (songs to place).** A discovery tool for a music supervisor: one call gets the 50 artists the show's audience over-indexes on (`urn:entity:artist` with the show as the signal), one `urn:demographics` call per artist gets their audience, and the list is ranked by age gap, so the top picks are on-taste artists whose audience sits outside the show's generation (`aftershock/sync_scout.py`, at most 60 calls per scout). It ranks artists, not scenes, and the age gap it ranks by did not predict song spikes in our test (section 3), so it is a way to find candidates, not a forecast.
 
 **RIPPLE (songs).** Score = the Qloo age gap in [0, 1]: the artist's age-band over-index, weighted by the bands the show's audience over-indexes on, mapped so that 1 means the artist's audience sits entirely outside the show's (`aftershock/ripple.py`). Calls:
 
@@ -57,30 +47,28 @@ Every number here comes from a script in this repo and a file in `data/results/`
 
 Does Qloo help? `scripts/test_spillover_qloo.py` added each title's location-conditioned Qloo affinity as features on a 200-breakout subset (1,432 Qloo calls): AUC 0.8188 history-only vs 0.8182 with Qloo, so no lift. Qloo returned an in-country value for only about 1.8% of title-country pairs. The country forecast is therefore history-only.
 
-**RIPPLE.** Ground truth: 516 placements from 44 titles collected with source URLs (`data/placements.csv`, reproducible with `scripts/scrape_placements.py`), with Wikipedia spikes in `data/ripple_truth.csv`. Main test (`scripts/test_ripple.py --outcome artist` -> `ripple_test_artist.json`): one row per artist per show, artists without a Qloo audience profile excluded, 195 artists in 24 shows with at least 4 scored artists. Mean within-show Spearman with the log spike, one-sided permutation p-value:
+**RIPPLE.** Ground truth: 490 songs from the official song soundtracks of 34 titles in MusicBrainz (`scripts/build_placements_musicbrainz.py` -> `data/placements.csv`; release and source per title in `data/placements_sources.csv`), with Wikipedia spikes in `data/ripple_truth.csv`. A placement here means "on the title's official song soundtrack", which is broader than "used in a scene". Main test (`scripts/test_ripple.py --outcome artist` -> `ripple_test_artist.json`): one row per artist per show, artists without a Qloo audience profile excluded, 229 artists in 24 shows with at least 4 scored artists. Mean within-show Spearman with the log spike, one-sided permutation p-value:
 
-| Predictor | All 24 shows | 9 shows released 2024 or later |
+| Predictor | All 24 shows | 4 shows released 2024 or later |
 |---|---|---|
-| Qloo age gap (shipped) | 0.08 (p 0.16) | 0.28 (p 0.02) |
-| Qloo taste fit | 0.00 (p 0.48) | -0.01 (p 0.50) |
-| obscurity (few Wikipedia views before release) | 0.27 (p 0.001) | 0.29 (p 0.01) |
+| Qloo age gap | 0.02 (p 0.40) | 0.18 (p 0.22) |
+| Qloo taste fit | 0.04 (p 0.29) | -0.27 (p 0.87) |
+| obscurity (few Wikipedia views before release) | 0.22 (p 0.003) | 0.48 (p 0.03) |
 
-Obscurity looks strongest, so we tested whether it is real (`scripts/test_ripple_controls.py` -> `ripple_controls.json`). The spike is a ratio over the pre-release baseline, and obscurity is that same baseline, so a noisy, low baseline can produce a high ratio by itself. The placebo is the same ratio measured entirely before release (days -60..-8 over days -120..-68), when the show cannot have caused anything:
+Placebo control (`scripts/test_ripple_controls.py` -> `ripple_controls.json`): the same ratio measured entirely before release (days -60..-8 over days -120..-68), when the show cannot have caused anything. A predictor that also "predicts" the placebo is picking up regression to the mean, because the spike is a ratio over the same pre-release baseline that obscurity measures.
 
 | | Real spike, all / 2024+ | Placebo spike, all / 2024+ |
 |---|---|---|
-| obscurity | 0.27 / 0.29 | 0.19 / 0.28 |
-| Qloo age gap | 0.08 / 0.28 | -0.13 / -0.11 |
+| obscurity | 0.22 / 0.48 | 0.11 / 0.01 |
+| Qloo age gap | 0.02 / 0.18 | -0.13 / -0.20 |
 
-Obscurity "predicts" the placebo almost as well as the real thing, so it is mostly regression to the mean; it is shown as context, never scored. The age gap does not predict the placebo, and its real-minus-placebo difference is significant (permutation p 0.04 on all shows, 0.03 on 2024+). Holding obscurity fixed, the gap's partial correlation is 0.06 overall (p 0.28) and 0.20 on 2024+ (p 0.12): directional, not proven. Older releases are weaker for a known reason: Qloo's data is a current snapshot, so a song that already spiked has since gained the younger audience it reached, which shrinks its measured gap.
+What this says: no Qloo signal predicts which soundtrack songs spike on this data. The age gap points the right way (real above placebo) but is not significant (real minus placebo p 0.14 on all shows, 0.15 on the 4 recent ones), and taste fit predicts nothing. Obscurity does beat its placebo here, so part of its effect may be real attention from the show, not only regression to the mean.
 
-Choosing the 2024+ subset and the artist-page outcome came after looking at the data, and all of this is in-sample on 24 shows. Read it as evidence for one mechanism, not as a validated model. The ledger is the out-of-sample test.
-
-Worked example (`scripts/example_wednesday.py` -> `example_wednesday.json`): Wednesday Season 1, the five placed songs with a Wikipedia article, scored as of release day 2022-11-23. By age gap: Space Song 0.61, Non, je ne regrette rien 0.57, Physical 0.54, Don't Worry, Be Happy 0.48, In Dreams 0.42. Measured spikes: 4.2x, 2.1x, 1.1x, 0.8x, 1.3x. The top two by gap were the two biggest spikes. That is one show, an illustration rather than evidence.
+How we got here, for the record: an earlier version of this test used placement lists collected from Tunefind and showed a significant age-gap effect on releases from 2024 on. We then found that Tunefind's terms do not permit automated collection, discarded that data and everything computed from it, and rebuilt the ground truth from MusicBrainz (CC0). The effect did not replicate. The song score is therefore shown as an explorer, not a predictor, and nothing in the product claims otherwise.
 
 ## 4. The ledger
 
-`ledger/forecasts.jsonl` holds one line per forecast, each chained to the previous line's hash (`aftershock.ledger.verify()` checks the chain). For each breakout, every candidate country's probability is locked, not only the top rows, so AUC and calibration can be graded once its 4-week horizon passes. A RIPPLE forecast is locked only before the release's outcome window opens (release + 7 days) and only if at least 4 songs are scorable; releases found later are shown as an early read with the reason they were not locked. A daily job (`.github/workflows/ripple-daily.yml`, `run_forecasts.py --ripple-only`) collects each new episode's song list dated by its air date, so weekly shows can be locked inside that window; a release is never locked twice. The chain proves the file was not edited line by line; the public timestamp comes from the git history on GitHub. Before its first push the ledger was rebuilt twice, after a scoring bug fix and after the locking rules above were tightened.
+`ledger/forecasts.jsonl` holds one line per forecast, each chained to the previous line's hash (`aftershock.ledger.verify()` checks the chain). For each breakout, every candidate country's probability is locked, not only the top rows, so AUC and calibration can be graded once its 4-week horizon passes. A RIPPLE forecast is locked only before the release's outcome window opens (release + 7 days) and only if at least 4 songs are scorable; releases found later are shown as an early read with the reason they were not locked. The chain proves the file was not edited line by line; the public timestamp comes from the git history on GitHub. Before its first push the ledger was rebuilt twice, after a scoring bug fix and after the locking rules above were tightened.
 
 ## 5. Run it
 
@@ -97,17 +85,15 @@ cp .env.example .env    # then put your Qloo hackathon key after QLOO_API_KEY=
 
 From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with five tools, `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score` and `sync_scout`. Add it to Claude Desktop or Claude Code with the command `.venv/Scripts/python -m aftershock.mcp_server`, run from the repo folder. The Qloo key stays in that process's environment.
 
-Automation: `.github/workflows/forecast.yml` runs the forecast job every Tuesday after Netflix publishes, and `.github/workflows/ripple-daily.yml` locks song forecasts for new episodes daily; both commit the ledger (they need the `QLOO_API_KEY` repo secret). The LLM comparison needs `GEMINI_API_KEY`.
+Automation: `.github/workflows/forecast.yml` runs the forecast job every Tuesday after Netflix publishes and commits the ledger (it needs the `QLOO_API_KEY` repo secret). Read-only pages are served as static JSON: run `scripts/export_static.py` before `vercel deploy --prod`.
 
 API contract: `docs/API.md`.
 
 ## 6. Limits: what the results do not establish
 
 - The country probability uses no Qloo data (Qloo added no lift in our test); Qloo's role there is the launch kit, which we have not validated against outcomes.
-- The LLM comparison is one model, one prompt, in-sample.
-- RIPPLE's evidence is in-sample, on 24 shows, with the strongest result in a subset chosen after looking. The gap's effect beyond obscurity is directional, not significant.
-- The score does not see how a show uses a song. It would not have picked Running Up That Hill, which was already well known before Stranger Things 4; the spike came from the scene.
-- Many 2026 titles and new artists have no Qloo audience profile yet, so live RIPPLE covers fewer songs than the placements list.
+- No Qloo signal we tested predicts which soundtrack songs spike (section 3). Sync Scout and the song score are discovery tools, not forecasts.
+- Many 2026 titles and new artists have no Qloo audience profile yet.
 - Wikipedia pageviews measure attention to an article, not streams or sales, and only notable songs and artists have one.
-- Placements come from Tunefind and Wikipedia; a listed placement that the show cut would add noise.
+- Placements are songs on official soundtrack albums (MusicBrainz), which can include songs a show barely used.
 - Qloo describes the taste of groups, never of a person. No personal data is sent to Qloo, and Qloo responses are cached privately (`.cache/`, and the deployment's bundled data), never committed.
