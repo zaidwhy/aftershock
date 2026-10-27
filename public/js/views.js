@@ -2,7 +2,7 @@ import { h } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm, getScorecard, getReplays, scoreSongs, scoutShow, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
-import { seismograph, ripplePanel, generationGap, forecastMap, dumbbell } from "./charts.js";
+import { seismograph, ripplePanel, generationGap, forecastMap, dumbbell, hotspotMap } from "./charts.js";
 import { ISO } from "./iso.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
@@ -156,6 +156,18 @@ function answerLine(st, fc) {
     n ? h("a", { href: "#/", onclick: scrollTo("par-h") }, `Qloo launch kit for ${n} ${n === 1 ? "country" : "countries"} below`) : null);
 }
 
+/** Hotspot map and place names for one kit country; nothing when the data is missing. */
+function hotspotBlock(r) {
+  const hs = r.hotspots;
+  if (!hs || (!hs.cells?.length && !hs.places?.length)) return null;
+  const box = h("div", { class: "hs" });
+  if (hs.cells?.length) {
+    hotspotMap(r.code, hs.cells).then((svg) => { if (svg) box.prepend(svg); }).catch(() => {});
+  }
+  if (hs.places?.length) box.append(h("p", { class: "hs-places" }, "Hotspots: ", h("strong", null, hs.places.join(", "))));
+  return box;
+}
+
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 
 function kitSection(st) {
@@ -185,7 +197,10 @@ function kitSection(st) {
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
       h("h3", null, countryName(r.code)),
       h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", null,
-        h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d)))))))));
+        h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
+      hotspotBlock(r)))),
+    rows.some((r) => r.hotspots?.cells?.length || r.hotspots?.places?.length)
+      ? h("p", { class: "hs-credit" }, "Hotspots: Qloo heatmap; place names © OpenStreetMap contributors.") : null);
 }
 
 /* ----------------------------------------------------------------- ripple */
@@ -351,7 +366,7 @@ export function renderScorecard(root, isCurrent) {
     const rippleSection = h("section", { class: "score-block", "aria-label": "Ripple" },
       h("h2", null, "Ripple"),
       h("p", { class: "state" }, h("strong", { class: "mono" }, whole(rp.locked) ?? "n/a"), " releases locked.",
-        rp.locked ? "" : " No fresh release with 4 or more Qloo-scorable songs has appeared yet, and a forecast counts only if locked before the outcome window opens. A daily job keeps checking."),
+        rp.locked ? "" : " Song forecasts are locked only before a release's outcome window opens, with at least 4 Qloo-scorable songs; none has qualified yet."),
       rp.graded_releases ? dl([["Graded releases", rp.graded_releases], ["Pending releases", rp.pending_releases], ["Mean Spearman", plain2(rp.mean_spearman)]]) : null);
     add(box,
       evidence,

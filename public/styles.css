@@ -107,6 +107,8 @@ nav a[aria-current="page"] { border-bottom-color: var(--accent); }
 .storm-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.1; }
 .storm-meta, .storm-next { font-size: 0.92rem; color: var(--ink-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .storm-next strong { color: var(--ink); }
+.storm-next { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 4px 14px; align-items: center; }
+@media (max-width: 480px) { .storm-next { grid-template-columns: minmax(0, 1fr) 72px; } .pbar { width: 72px; } }
 @media (min-width: 720px) {
   .storm-link { grid-template-columns: 1.4fr 1fr 1fr; align-items: baseline; }
 }
@@ -237,14 +239,14 @@ dd { margin: 0; font-size: 1.1rem; }
 .kit-cap { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 4px 0 0; }
 
 /* ---- scorecard */
-.db-box { width: 100%; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); background: var(--paper-2); padding: 10px 12px 8px; max-width: 720px; }
-.db-box .legend { margin: 0 0 4px; }
-.dumbbell { display: block; width: 100%; height: auto; }
+.db-box { width: 100%; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); background: var(--paper-2); padding: 10px 12px 8px; }
+.db-box .legend { margin: 0 0 8px; }
+.dumbbell { display: block; width: 100%; height: auto; overflow: visible; }
 .db-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
 .db-zero { stroke: var(--ink); stroke-width: 1.2; }
-.db-label { fill: var(--ink); font: 500 15px var(--mono); }
-.db-vals { fill: var(--ink-soft); font: 400 13px var(--mono); }
-.db-tick { font-size: 13px; }
+.db-label { fill: var(--ink); font: 500 0.8rem var(--mono); letter-spacing: 0.02em; }
+.db-vals { fill: var(--ink-soft); font: 400 0.75rem var(--mono); }
+.db-tick { font-size: 0.7rem; }
 .db-link { stroke: var(--ink-soft); stroke-width: 1.5; }
 .db-real { fill: var(--accent); stroke: var(--ink); stroke-width: 1; }
 .db-placebo { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
@@ -257,3 +259,12 @@ dd { margin: 0; font-size: 1.1rem; }
 .ledger-row .muted { font-size: 0.9rem; }
 .early-note { font: 400 0.72rem var(--mono); color: var(--ink-soft); }
 .db-wrap { position: relative; overflow: hidden; }
+
+/* ---- hotspot maps */
+.hs-map { display: block; width: 100%; max-width: 260px; height: auto; margin: 14px 0 4px; }
+.hs-outline { fill: var(--paper-2); stroke: var(--ink-soft); stroke-width: 0.8; }
+.hs-frame { fill: none; stroke: var(--rule); stroke-width: 1; }
+.hs-dot { fill: var(--accent); stroke: none; }
+.hs-places { font: 400 0.78rem/1.5 var(--mono); color: var(--ink-soft); margin: 0 0 6px; }
+.hs-places strong { color: var(--ink); font-weight: 500; }
+.hs-credit { font: 400 0.72rem var(--mono); color: var(--ink-soft); margin: 14px 0 0; }

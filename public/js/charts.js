@@ -169,34 +169,90 @@ export async function forecastMap(forecasts, origins) {
   return svg.node();
 }
 
-/** Dumbbell chart: per row, a real-spike marker and a placebo-spike marker on one shared axis with a zero line. */
+/** Dumbbell chart: per row, a real-spike marker and a placebo-spike marker on one shared axis with a zero line.
+ *  Drawn at the container's pixel width (viewBox equals the width), so text keeps its CSS size; redrawn on resize. */
 export function dumbbell(rows, label) {
-  const W = 500, padL = 24, padR = 24, rowH = 58, top = 8, axisH = 30;
+  const f2 = (v) => (v >= 0 ? v.toFixed(2) : "-" + Math.abs(v).toFixed(2));
   const vals = rows.flatMap((r) => [r.real, r.placebo]);
   const lo = Math.min(-0.2, Math.floor(Math.min(...vals) * 10) / 10);
   const hi = Math.max(0.4, Math.ceil(Math.max(...vals) * 10) / 10);
-  const x = (v) => padL + ((v - lo) / (hi - lo)) * (W - padL - padR);
-  const H = top + rows.length * rowH + axisH;
   const ticks = [];
   for (let v = lo; v <= hi + 1e-9; v += 0.1) ticks.push(Math.round(v * 10) / 10);
-  const f2 = (v) => (v >= 0 ? v.toFixed(2) : "-" + Math.abs(v).toFixed(2));
-  const g = [];
-  ticks.forEach((v) => {
-    g.push(s("line", { x1: x(v), x2: x(v), y1: top, y2: H - axisH, class: v === 0 ? "db-zero" : "db-grid" }),
-      s("text", { x: x(v), y: H - 8, class: "ax-label db-tick", "text-anchor": "middle" }, f2(v)));
-  });
-  rows.forEach((r, i) => {
-    const y = top + i * rowH + 36;
-    g.push(
-      s("text", { x: padL, y: top + i * rowH + 18, class: "db-label" }, r.label),
-      s("text", { x: W - padR, y: top + i * rowH + 18, class: "db-vals", "text-anchor": "end" }, `${f2(r.real)} real, ${f2(r.placebo)} placebo`),
-      s("line", { x1: x(r.real), x2: x(r.placebo), y1: y, y2: y, class: "db-link" }),
-      s("circle", { cx: x(r.placebo), cy: y, r: 6, class: "db-placebo" }, s("title", null, `${r.label}, placebo spike: ${f2(r.placebo)}`)),
-      s("circle", { cx: x(r.real), cy: y, r: 6.5, class: "db-real" }, s("title", null, `${r.label}, real spike: ${f2(r.real)}`)));
-  });
-  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "dumbbell", role: "img", "aria-label": label }, g);
+  const draw = (W) => {
+    const wide = W >= 560;
+    const labelW = wide ? 200 : 0, valsW = wide ? 190 : 0, pad = 10;
+    const x0 = labelW + pad, x1 = W - valsW - pad;
+    const x = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0);
+    const rowH = wide ? 46 : 74, top = 6, axisH = 26;
+    const H = top + rows.length * rowH + axisH;
+    const g = [];
+    ticks.forEach((v) => {
+      g.push(s("line", { x1: x(v), x2: x(v), y1: top, y2: H - axisH, class: v === 0 ? "db-zero" : "db-grid" }),
+        s("text", { x: x(v), y: H - 8, class: "ax-label db-tick", "text-anchor": "middle" }, f2(v)));
+    });
+    rows.forEach((r, i) => {
+      const t = top + i * rowH;
+      const y = wide ? t + rowH / 2 : t + 56;
+      const vals = `${f2(r.real)} real, ${f2(r.placebo)} placebo`;
+      g.push(wide
+        ? s("text", { x: 0, y: y + 4, class: "db-label" }, r.label)
+        : s("text", { x: 0, y: t + 16, class: "db-label" }, r.label),
+        wide ? s("text", { x: W, y: y + 4, class: "db-vals", "text-anchor": "end" }, vals)
+          : s("text", { x: 0, y: t + 34, class: "db-vals" }, vals),
+        s("line", { x1: x(r.real), x2: x(r.placebo), y1: y, y2: y, class: "db-link" }),
+        s("circle", { cx: x(r.placebo), cy: y, r: 6, class: "db-placebo" }, s("title", null, `${r.label}, placebo spike: ${f2(r.placebo)}`)),
+        s("circle", { cx: x(r.real), cy: y, r: 6.5, class: "db-real" }, s("title", null, `${r.label}, real spike: ${f2(r.real)}`)));
+    });
+    return s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: "dumbbell", role: "img", "aria-label": label }, g);
+  };
   const table = h("table", { class: "sr-only" }, h("caption", null, label),
     h("thead", null, h("tr", null, ["Signal", "Real spike", "Placebo spike"].map((t) => h("th", { scope: "col" }, t)))),
     h("tbody", null, rows.map((r) => h("tr", null, h("th", { scope: "row" }, r.label), h("td", null, f2(r.real)), h("td", null, f2(r.placebo))))));
-  return h("div", { class: "db-wrap" }, svg, table);
+  const wrap = h("div", { class: "db-wrap" });
+  const holder = h("div", { class: "db-svg" });
+  wrap.append(holder, table);
+  let last = 0;
+  const render = () => {
+    const w = Math.round(holder.clientWidth);
+    if (!w || w === last) return;
+    last = w;
+    holder.replaceChildren(draw(w));
+  };
+  if (window.ResizeObserver) new ResizeObserver(render).observe(holder);
+  else window.addEventListener("resize", render);
+  requestAnimationFrame(render);
+  return wrap;
+}
+
+/** Small per-country map of where the title's audience concentrates: outline fitted to the box,
+ *  one dot per heatmap cell (opacity by weight). Territories with no 110m outline fit the cells' bounds. */
+export async function hotspotMap(code, cells) {
+  if (!window.d3 || !window.topojson || !cells?.length) return null;
+  const { d3, topojson } = window;
+  if (!hotspotMap.world) hotspotMap.world = fetch(WORLD_URL).then((r) => { if (!r.ok) throw new Error("atlas"); return r.json(); });
+  const world = await hotspotMap.world;
+  const W = 260, H = 180, pad = 8;
+  const numeric = ISO[code]?.[0];
+  const feat = topojson.feature(world, world.objects.countries).features.find((f) => +f.id === numeric);
+  const points = { type: "MultiPoint", coordinates: cells.map((c) => [c[1], c[0]]) };
+  const proj = d3.geoMercator();
+  const path = d3.geoPath(proj);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("class", "hs-map").attr("role", "img")
+    .attr("aria-label", `Map of the ${cells.length} strongest audience cells in ${ISO[code]?.[1] || code}.`);
+  if (feat) {
+    // Keep only the polygons that hold cells, so far-flung parts (Alaska, French Guiana) do not shrink the outline.
+    const g = feat.geometry;
+    const polys = g.type === "MultiPolygon" ? g.coordinates : [g.coordinates];
+    const used = polys.filter((p) => cells.some((c) => d3.geoContains({ type: "Polygon", coordinates: p }, [c[1], c[0]])));
+    const shape = { type: "MultiPolygon", coordinates: used.length ? used : polys };
+    proj.fitExtent([[pad, pad], [W - pad, H - pad]], shape);
+    svg.append("path").attr("d", path(shape)).attr("class", "hs-outline");
+  } else {
+    proj.fitExtent([[pad + 10, pad + 10], [W - pad - 10, H - pad - 10]], points);
+    svg.append("rect").attr("x", 0.5).attr("y", 0.5).attr("width", W - 1).attr("height", H - 1).attr("class", "hs-frame");
+  }
+  svg.append("g").selectAll("circle").data(cells.filter((c) => proj([c[1], c[0]]))).join("circle")
+    .attr("cx", (c) => proj([c[1], c[0]])[0]).attr("cy", (c) => proj([c[1], c[0]])[1])
+    .attr("r", 2.6).attr("class", "hs-dot").attr("fill-opacity", (c) => (0.15 + 0.8 * c[2]).toFixed(2));
+  return svg.node();
 }
