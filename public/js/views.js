@@ -90,7 +90,8 @@ export function renderHome(root, isCurrent) {
     const locked = (sc.spillover?.locked ?? 0) + (sc.ripple?.locked ?? 0);
     const items = [
       ["Forecasts locked", whole(locked), "forecasts locked publicly before the outcome"],
-      bt.spillover?.history_auc != null ? ["Backtest AUC", plain2(bt.spillover.history_auc), `on ${whole(bt.spillover.test_breakouts)} breakouts`] : null,
+      sc.top_pick?.breakouts > 0 ? ["Top picks already charted", `${sc.top_pick.top_pick_hits} of ${sc.top_pick.breakouts}`, `expected ${sc.top_pick.expected_hits} if calibrated`]
+        : bt.spillover?.history_auc != null ? ["Backtest AUC", plain2(bt.spillover.history_auc), `on ${whole(bt.spillover.test_breakouts)} breakouts`] : null,
       ["Storms with a Qloo kit", String(kits), `of ${st.storms.length} this week`],
       ["Breakouts this week", String(st.storms.length), `week of ${st.week}`],
     ].filter(Boolean);
@@ -411,6 +412,11 @@ export function renderScorecard(root, isCurrent) {
         tableOf("Country backtest", row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)))),
       h("section", { "aria-labelledby": "ledger-h" },
         h("h2", { id: "ledger-h" }, "Live ledger"),
+        sc.top_pick?.breakouts > 0 ? h("div", { class: "score-block", "aria-label": "Early read" },
+          h("h3", null, "Early read: last week's top picks"),
+          h("p", null, `${sc.top_pick.top_pick_hits} of ${sc.top_pick.breakouts} top picks have already charted. If the forecasts were exactly calibrated we would expect ${sc.top_pick.expected_hits}. Always picking the country that charts the most titles (${sc.top_pick.baseline_country}) gets ${sc.top_pick.baseline_hits}.`),
+          h("p", { class: "muted" }, "Defined before the data existed, reported every week whichever way it goes. The 4-week result is the real grade. ",
+            h("a", { href: "https://github.com/zaidwhy/aftershock/blob/main/docs/EARLY_GRADE.md", rel: "noopener" }, "How it is defined"))) : null,
         h("div", { class: "grid2" }, spillSection, rippleSection),
         h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),
           sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? "Ledger hash chain verified." : "Ledger hash chain FAILED verification."),

@@ -187,6 +187,44 @@ def grade(rows, last_week):
     return graded, so_far, pending
 
 
+def top_pick_grade(rows, last_week):
+    """Early read, registered in docs/EARLY_GRADE.md: for each locked breakout (origin week before the
+    latest Netflix week) take its highest-probability country (ties: first in ledger order) and count
+    those that already charted the title within the horizon, against the sum of their probabilities
+    and against a baseline that picks the country charting the most titles overall."""
+    first = first_entries(rows)
+    volume = Counter(iso for by_country in first.values() for iso in by_country)
+    groups = {}
+    for record in ledger.read():
+        if record.get("kind") == "spillover":
+            groups.setdefault((tuple(record["title"]), record["origin_week"]), []).append(record)
+    breakouts = hits = baseline_hits = 0
+    expected = 0.0
+    picks = Counter()
+
+    def joined(title, origin, country):
+        week = first.get(title, {}).get(country)
+        return bool(week) and origin < week <= origin + timedelta(weeks=HORIZON)
+
+    for (title, origin_week), records in groups.items():
+        origin = date.fromisoformat(origin_week)
+        if not origin < last_week:
+            continue
+        top = records[0]
+        for record in records[1:]:
+            if record["probability"] > top["probability"]:
+                top = record
+        base = max(records, key=lambda r: (volume[r["target"]], -records.index(r)))["target"]
+        breakouts += 1
+        expected += top["probability"]
+        hits += joined(title, origin, top["target"])
+        baseline_hits += joined(title, origin, base)
+        picks[base] += 1
+    return {"breakouts": breakouts, "top_pick_hits": hits, "expected_hits": round(expected, 2),
+            "baseline_hits": baseline_hits, "baseline_country": picks.most_common(1)[0][0] if picks else None,
+            "as_of_week": str(last_week)}
+
+
 def ripple_lock_status(release_date, scored_songs, today):
     """(lockable, not_locked_reason). A ripple forecast counts only if locked before the outcome
     window opens (release + wiki.AFTER_FROM days) and it ranks at least MIN_RIPPLE_SONGS songs."""
@@ -295,7 +333,7 @@ def _day(d):
 
 
 def agent_run_log(started, args, refresh, week, n_countries, n_rows, found, resolved, missing, forecasts, new, storms, indexed,
-                  graded, hits, so_far, so_far_hits, live_calls):
+                  graded, hits, so_far, so_far_hits, live_calls, top_pick=None):
     """What the agent did this run, as plain sentences with a count each (public/data/agent_run.json feeds #/agent)."""
     kits = [r for st in storms for r in st["detail"]["launch_kit"] if r.get("kit") and any(r["kit"].values())]
     generic = sum(1 for r in kits if r.get("generic"))
@@ -329,6 +367,10 @@ def agent_run_log(started, args, refresh, week, n_countries, n_rows, found, reso
                                 else "No forecast has reached its 4-week horizon yet, so none is graded") +
              (f". Another {so_far:,} are still open ({so_far_hits:,} hits so far)." if so_far else "."), hits=hits, of=graded),
     ]
+    if top_pick and top_pick["breakouts"] > 0:
+        steps.append(step("top_picks", top_pick["top_pick_hits"],
+                          f"Checked last week's top picks: {top_pick['top_pick_hits']} of {top_pick['breakouts']} already charted "
+                          f"(calibrated forecasts would expect {top_pick['expected_hits']})", **top_pick))
     return {"started": started.isoformat(timespec="seconds"), "finished": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "netflix_week": str(week), "dry_run": bool(args.no_lock), "qloo_live_calls": live_calls,
             "summary": {"breakouts": found, "forecasts_locked": locked, "launch_kits": len(kits)}, "steps": steps}
@@ -436,6 +478,7 @@ def main():
     hits = sum(g["hit"] for g in graded)
     so_far_hits = sum(g["hit"] for g in so_far)
     ripple_graded = grade_ripples(date.today())
+    top_pick = top_pick_grade(rows, last_week)
     backtest = _read_json(RESULTS / "spillover_backtest.json")
     qloo_test = _read_json(RESULTS / "spillover_qloo_test.json")
     ripple_test = _read_json(RESULTS / "ripple_test_artist.json")
@@ -454,6 +497,7 @@ def main():
                                  "auc": roc_auc([g["probability"] for g in so_far], [int(g["hit"]) for g in so_far])
                                  if so_far and 0 < so_far_hits < len(so_far) else None}},
         "ripple": {"locked": sum(1 for r in records if r["kind"] == "ripple"), **ripple_graded},
+        "top_pick": top_pick,
         "backtest": {
             "spillover": {"history_auc": metric(backtest, "history baseline"),
                           "test_breakouts": backtest.get("test_events"),
@@ -490,7 +534,7 @@ def main():
     run_log = agent_run_log(started, args, refresh, last_week, len(countries), len(rows),
                             len([e for e in events if e["origin_week"] == last_week]),
                             None if client is None else len(storms_now) - len(missing), missing, len(spill), fresh_spill, storms,
-                            len(index["titles"]), len(graded), hits, len(so_far), so_far_hits, client.live_calls if client else 0)
+                            len(index["titles"]), len(graded), hits, len(so_far), so_far_hits, client.live_calls if client else 0, top_pick)
     (PRIVATE / "agent_run.json").write_text(json.dumps(run_log, indent=1, ensure_ascii=False), encoding="utf-8")
     log.info("wrote %d storms; locked %d new forecasts; graded %d (hits %d); qloo live calls %s",
              len(storms), len(fresh) if not args.no_lock else 0, len(graded), hits, client.live_calls if client else 0)
