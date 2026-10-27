@@ -16,6 +16,19 @@ Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (
 3. Rotate the Gemini key (it was printed once in an agent's terminal during the LLM test; never written to a file). The code now sends it as a header.
 4. Deploy steps: `.venv/Scripts/python scripts/run_forecasts.py`, then `.venv/Scripts/python scripts/export_static.py` (read-only pages are served as static JSON from public/data/, gitignored), then `vercel deploy --prod`. Git auto-deploy stays disconnected.
 
+## Overnight 27-28 Oct: state and decisions taken for Zaid
+
+Live: https://aftershock-qloo.vercel.app (118 tests). New since the evening: Ask the agent (deterministic router over the site's tools, every step shown, no LLM), #/agent run log, #/ledger readable ledger, weekly map with "chance at least one arrives", title lookup, Song check (renamed from Try it) with crowd verdicts from age bands, Qloo title metadata on storm pages, Copy launch brief, Scorecard led by what Qloo adds.
+
+Decisions taken (change them if you disagree):
+- The GitHub weekly Action could not be paused (classifier). Tonight's local watcher (`projects/aftershock-team/netflix_watch.sh`) waits until 22:30 UTC, fast-forwards to whatever the Action locked, then runs; locking skips titles already in the ledger, so there is one writer at a time. Log: `projects/aftershock-team/netflix_watch.log`.
+- The kit experiment is pinned to `data/private/storms_2026-10-18.json` (the registered week) so the new Netflix week cannot change its pairs. `projects/aftershock-team/experiment_watch.sh` runs it at 07:15 UTC 28 Oct, commits `data/results/kit_experiment.json`, re-exports and redeploys. If it fails again, rerun `.venv/Scripts/python scripts/experiment_kits.py` after Gemini's quota resets; report whatever it shows.
+- Brands stay in the kits even when odd (Lamborghini for Bangladesh): they are Qloo's output, hiding them would be cherry-picking; they are shown last and lighter.
+- LinkedIn: drafts only (your standing rule that you approve public posts). GitHub profile README was updated and pushed (pre-approved).
+- The FLAKE LAUNDERING section another session added to the GitHub profile links to a private repo (404 for visitors): make that repo public or remove the section; left for you.
+
+After both watchers finish: put the experiment verdict into README section 3, docs/DEVPOST.md (replace the bracketed placeholder) and the LinkedIn draft placeholder; re-record the video if the scorecard caption should mention it.
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.

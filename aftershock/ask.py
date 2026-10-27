@@ -430,6 +430,13 @@ def answer(question, ctx):
         note = f"{title} is not one of this week's breakouts, so there is no launch kit for it. Here is its Netflix history and forecast instead."
         return _done("launch_kit", steps, _title_answer(found["history"], country, steps, note=note))
 
+    # A pairing question naming a place we do not know ("in Narnia") would otherwise be answered as if the
+    # place had not been asked about; say so in the steps before falling back to the forecast.
+    unknown_place = re.search(r"\bin\s+([A-Za-z][A-Za-z .'-]{1,40})$", raw) if wants_kit and found and not country else None
+    if unknown_place:
+        steps.append(_step("understand", unknown_place.group(1), False,
+                           f"I don't know a country called {unknown_place.group(1)}, so here is the forecast for every country instead."))
+
     # d) next countries, spread, forecast, or where a title has charted
     if found:
         title = _title_of(found)
