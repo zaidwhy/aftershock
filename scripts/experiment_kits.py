@@ -25,7 +25,7 @@ from aftershock.llm_baseline import generate, calls as llm_calls  # noqa: E402
 from aftershock.qloo import Qloo, QlooError, resolve  # noqa: E402
 
 log = logging.getLogger("experiment_kits")
-STORMS = ROOT / "data" / "private" / "storms.json"
+STORMS = ROOT / "data" / "private" / "storms_2026-10-18.json"  # the registered week (docs/EXPERIMENT_KITS.md), pinned so a new weekly run cannot change the pairs
 OUT = ROOT / "data" / "results" / "kit_experiment.json"
 MODEL = "gemini-3.5-flash"
 PAIRS_PER_CALL = 20
