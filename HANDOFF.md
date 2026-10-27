@@ -16,6 +16,12 @@ Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (
 3. Rotate the Gemini key (it was printed once in an agent's terminal during the LLM test; never written to a file). The code now sends it as a header.
 4. Deploy steps: `.venv/Scripts/python scripts/run_forecasts.py`, then `.venv/Scripts/python scripts/export_static.py` (read-only pages are served as static JSON from public/data/, gitignored), then `vercel deploy --prod`. Git auto-deploy stays disconnected.
 
+## Submission assets (28 Oct, ready for Zaid)
+
+- Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.
+- Walkthrough video: `projects/aftershock-team/video/AFTERSHOCK-walkthrough.mp4` (96 s, captioned, recorded from the live site). Optional per the rules but judges may judge from text, images and video alone: upload to YouTube as unlisted and paste the link into Devpost's video field. Re-record after the Qloo-vs-LLM result lands if the scorecard caption should mention it.
+- LinkedIn drafts: `projects/career/linkedin-refresh-2026-10-28.md` (nothing posted).
+
 ## Data licensing (27 Oct, done)
 
 - Tunefind terms forbid automated collection. Tunefind scraper, collector, daily workflow and all Tunefind-derived CSVs removed from HEAD; songs rebuilt from MusicBrainz (scripts/build_placements_musicbrainz.py, 490 songs, 34 titles, data/placements_sources.csv). Git history still contains the old CSVs (Zaid decision, see Still to do 1).
