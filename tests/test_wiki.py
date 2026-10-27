@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+from aftershock import wiki
 from aftershock.wiki import artist_title_matches, mentions_artist, spike_from_series, title_matches
 
 RELEASE = date(2022, 5, 27)
