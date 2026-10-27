@@ -39,6 +39,6 @@ def test_scorecard_matches_api(out):
     assert _file(out, "scorecard.json") == client.get("/api/scorecard").json()
 
 
-def test_ripples_and_replays_match_api(out):
-    assert _file(out, "ripples.json") == client.get("/api/ripples").json()
+def test_replays_match_api_and_ripples_not_exported(out):
+    assert not (out / "ripples.json").exists() and not (out / "ripples").exists()
     assert _file(out, "replays.json") == client.get("/api/replays").json()

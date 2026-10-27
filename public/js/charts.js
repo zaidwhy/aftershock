@@ -1,6 +1,6 @@
 import { h, s } from "./dom.js";
 import { BANDS, monthLabel, views, pct } from "./format.js";
-import { ISO, NUMERIC_TO_CODE } from "./iso.js";
+import { ISO, NUMERIC_TO_CODE, MICRO_LONLAT } from "./iso.js";
 
 const WORLD_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json";
 
@@ -147,5 +147,56 @@ export async function forecastMap(forecasts, origins) {
     const name = ISO[code]?.[1] || d.properties?.name || "Unlisted";
     return originSet.has(code) ? `${name}: origin country` : f ? `${name}: ${pct(f.probability)}` : `${name}: no forecast`;
   });
+  // Outlines that project to a few pixels (or have no 110m outline at all) get a dot at their centroid.
+  const SMALL_AREA = 150;
+  const dots = [];
+  const seen = new Set();
+  feats.forEach((d) => {
+    const code = NUMERIC_TO_CODE[+d.id];
+    if (!byCode.has(code) || originSet.has(code) || path.area(d) >= SMALL_AREA) return;
+    seen.add(code);
+    dots.push([code, proj(d3.geoCentroid(d))]);
+  });
+  forecasts.forEach((f) => {
+    if (!seen.has(f.code) && MICRO_LONLAT[f.code] && !originSet.has(f.code)) dots.push([f.code, proj(MICRO_LONLAT[f.code])]);
+  });
+  svg.append("g").attr("class", "fc-dots").selectAll("circle").data(dots.filter(([, xy]) => xy)).join("circle")
+    .attr("cx", ([, xy]) => xy[0]).attr("cy", ([, xy]) => xy[1])
+    .attr("r", ([c]) => 3.5 + (byCode.get(c).probability / maxP) * 4.5)
+    .attr("class", "fc-dot")
+    .attr("style", ([c]) => `fill:color-mix(in srgb, var(--accent) ${Math.round(12 + (byCode.get(c).probability / maxP) * 88)}%, var(--map-base))`)
+    .append("title").text(([c]) => `${ISO[c]?.[1] || c}: ${pct(byCode.get(c).probability)}`);
   return svg.node();
+}
+
+/** Dumbbell chart: per row, a real-spike marker and a placebo-spike marker on one shared axis with a zero line. */
+export function dumbbell(rows, label) {
+  const W = 500, padL = 24, padR = 24, rowH = 58, top = 8, axisH = 30;
+  const vals = rows.flatMap((r) => [r.real, r.placebo]);
+  const lo = Math.min(-0.2, Math.floor(Math.min(...vals) * 10) / 10);
+  const hi = Math.max(0.4, Math.ceil(Math.max(...vals) * 10) / 10);
+  const x = (v) => padL + ((v - lo) / (hi - lo)) * (W - padL - padR);
+  const H = top + rows.length * rowH + axisH;
+  const ticks = [];
+  for (let v = lo; v <= hi + 1e-9; v += 0.1) ticks.push(Math.round(v * 10) / 10);
+  const f2 = (v) => (v >= 0 ? v.toFixed(2) : "-" + Math.abs(v).toFixed(2));
+  const g = [];
+  ticks.forEach((v) => {
+    g.push(s("line", { x1: x(v), x2: x(v), y1: top, y2: H - axisH, class: v === 0 ? "db-zero" : "db-grid" }),
+      s("text", { x: x(v), y: H - 8, class: "ax-label db-tick", "text-anchor": "middle" }, f2(v)));
+  });
+  rows.forEach((r, i) => {
+    const y = top + i * rowH + 36;
+    g.push(
+      s("text", { x: padL, y: top + i * rowH + 18, class: "db-label" }, r.label),
+      s("text", { x: W - padR, y: top + i * rowH + 18, class: "db-vals", "text-anchor": "end" }, `${f2(r.real)} real, ${f2(r.placebo)} placebo`),
+      s("line", { x1: x(r.real), x2: x(r.placebo), y1: y, y2: y, class: "db-link" }),
+      s("circle", { cx: x(r.placebo), cy: y, r: 6, class: "db-placebo" }, s("title", null, `${r.label}, placebo spike: ${f2(r.placebo)}`)),
+      s("circle", { cx: x(r.real), cy: y, r: 6.5, class: "db-real" }, s("title", null, `${r.label}, real spike: ${f2(r.real)}`)));
+  });
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "dumbbell", role: "img", "aria-label": label }, g);
+  const table = h("table", { class: "sr-only" }, h("caption", null, label),
+    h("thead", null, h("tr", null, ["Signal", "Real spike", "Placebo spike"].map((t) => h("th", { scope: "col" }, t)))),
+    h("tbody", null, rows.map((r) => h("tr", null, h("th", { scope: "row" }, r.label), h("td", null, f2(r.real)), h("td", null, f2(r.placebo))))));
+  return h("div", { class: "db-wrap" }, svg, table);
 }

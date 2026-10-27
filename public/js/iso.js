@@ -29,3 +29,9 @@ export const ISO = {
   VE: [862, "Venezuela"], VN: [704, "Vietnam"], ZA: [710, "South Africa"],
 };
 export const NUMERIC_TO_CODE = Object.fromEntries(Object.entries(ISO).map(([c, [n]]) => [n, c]));
+
+// [lon, lat] for the territories world-atlas 110m has no outline for, so the map can still mark them.
+export const MICRO_LONLAT = {
+  BH: [50.55, 26.07], GP: [-61.55, 16.25], HK: [114.17, 22.32], MQ: [-61.0, 14.64], MT: [14.38, 35.9],
+  MU: [57.55, -20.35], MV: [73.5, 4.2], RE: [55.53, -21.12], SG: [103.82, 1.35],
+};

@@ -21,8 +21,6 @@ const stat = (name, mockName) => getJson(cfg.mock ? `${cfg.mockBase}/${mockName 
 export const getStorms = () => stat("storms");
 export const getStorm = (id) => stat(`storms/${encodeURIComponent(id)}`, `storm-${encodeURIComponent(id)}`);
 export const getScorecard = () => stat("scorecard");
-export const getRipples = () => stat("ripples");
-export const getRipple = (id) => stat(`ripples/${encodeURIComponent(id)}`, `ripple-${encodeURIComponent(id)}`);
 export const getReplays = () => stat("replays");
 
 export async function scoutShow(show) {
