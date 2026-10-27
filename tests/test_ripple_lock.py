@@ -40,3 +40,13 @@ def test_locking_is_idempotent(tmp_path):
     ledger.append(second, path)
     assert len(second) == 5 and len(ledger.read(path)) == 10
     assert ledger.verify(path) is None
+
+
+def test_grade_counts_a_country_that_joined_within_the_horizon(monkeypatch):
+    # first_entries returns date objects; grading must not re-parse them (it crashed on the first hit)
+    record = {"kind": "spillover", "title": ["Show", "TV"], "origin_week": "2026-10-18",
+              "target": "BD", "probability": 0.4}
+    monkeypatch.setattr(rf.ledger, "read", lambda: [record])
+    monkeypatch.setattr(rf, "first_entries", lambda rows: {("Show", "TV"): {"BD": date(2026, 10, 25)}})
+    graded, so_far, pending = rf.grade([], date(2026, 10, 25))
+    assert pending == 1 and so_far == [{"probability": 0.4, "hit": True}] and graded == []

@@ -174,7 +174,9 @@ def grade(rows, last_week):
             continue
         origin = date.fromisoformat(record["origin_week"])
         joined_week = first.get(tuple(record["title"]), {}).get(record["target"])
-        joined = joined_week and origin < date.fromisoformat(joined_week) <= origin + timedelta(weeks=HORIZON)
+        if isinstance(joined_week, str):
+            joined_week = date.fromisoformat(joined_week)
+        joined = joined_week and origin < joined_week <= origin + timedelta(weeks=HORIZON)
         row = {"probability": record["probability"], "hit": bool(joined)}
         if origin + timedelta(weeks=HORIZON) <= last_week:
             graded.append(row)
