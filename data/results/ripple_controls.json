@@ -1,24 +1,24 @@
 {
   "all": {
     "n_shows": 24,
-    "real: obscurity": 0.267,
-    "real: gap": 0.084,
-    "placebo: obscurity (its own pre-window)": 0.189,
-    "placebo: gap": -0.134,
-    "real: gap controlling for obscurity (partial)": 0.06,
-    "p: gap partial (shuffle gap within show)": 0.2784,
-    "p: gap real minus gap placebo": 0.042,
-    "real: obscurity controlling for gap (partial)": 0.199
+    "real: obscurity": 0.221,
+    "real: gap": 0.017,
+    "placebo: obscurity (its own pre-window)": 0.105,
+    "placebo: gap": -0.125,
+    "real: gap controlling for obscurity (partial)": 0.03,
+    "p: gap partial (shuffle gap within show)": 0.3708,
+    "p: gap real minus gap placebo": 0.1369,
+    "real: obscurity controlling for gap (partial)": 0.186
   },
   "2024_plus": {
-    "n_shows": 9,
-    "real: obscurity": 0.285,
-    "real: gap": 0.282,
-    "placebo: obscurity (its own pre-window)": 0.277,
-    "placebo: gap": -0.108,
-    "real: gap controlling for obscurity (partial)": 0.203,
-    "p: gap partial (shuffle gap within show)": 0.1159,
-    "p: gap real minus gap placebo": 0.0325,
-    "real: obscurity controlling for gap (partial)": 0.163
+    "n_shows": 4,
+    "real: obscurity": 0.48,
+    "real: gap": 0.183,
+    "placebo: obscurity (its own pre-window)": 0.007,
+    "placebo: gap": -0.202,
+    "real: gap controlling for obscurity (partial)": 0.423,
+    "p: gap partial (shuffle gap within show)": 0.07,
+    "p: gap real minus gap placebo": 0.1534,
+    "real: obscurity controlling for gap (partial)": 0.427
   }
 }
