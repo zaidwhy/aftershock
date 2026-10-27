@@ -1,12 +1,14 @@
-# Demo video script (about 2 minutes 30)
+# Demo video
 
-Optional: the rules do not require a video. If you make one for the Devpost gallery, record https://aftershock-qloo.vercel.app at 1280 wide. Say it in your own words; the lines are a guide. Check the rules page for the maximum length before recording.
+The rules do not require a video, but judges may judge from the text, images and video alone, so there is one: a 96-second captioned tour recorded automatically from the live site (`projects/aftershock-team/video/AFTERSHOCK-walkthrough.mp4` on Zaid's machine, not in this repo). Upload it to YouTube as unlisted and paste the link into Devpost.
 
-1. **Hook (0:00-0:15), landing page.** Let the seismograph draw Running Up That Hill. "In 2022 Stranger Things put a 1985 Kate Bush song in front of a new generation, and its Wikipedia page went from 10,000 views a month to 900,000. AFTERSHOCK is a Qloo taste agent that watches for the next breakout, says where it lands and what travels with it, and grades itself in public."
-2. **A storm and its launch kit (0:15-0:50).** Open a storm with a launch kit. "Every week the agent reads Netflix's Top 10 in 94 countries and finds titles that just broke out in one to three. Netflix history says where it charts next." Point at the top country. "Qloo says what to do there: the artists, shows, films and brands this title's audience over-indexes on in that country." Mention every country's probability is locked in the ledger before the outcome.
-3. **Sync Scout (0:50-1:15).** Type Stranger Things (run it once before recording so it loads from cache). "For a music supervisor: Qloo finds the artists this show's audience loves, ranked by how far their audience sits outside the show's generation. That gap is the Running Up That Hill mechanism."
-4. **Hotspots (1:15-1:35).** On the same storm, the small map per country. "And where in the country: Qloo's heatmap shows the cities this audience concentrates in, so a promo or touring team knows where to start."
-5. **Honesty (1:35-2:05), scorecard.** "We tested every signal before using it. Qloo did not improve the country probability, so that is history only. For songs, our first data showed a strong Qloo effect, but it came from a site whose terms did not allow our collection, so we threw it away and rebuilt from MusicBrainz. The effect did not replicate, and the site says so. What is locked in the ledger is graded in public from 15 November."
-6. **Agentic close (2:05-2:30).** Claude Desktop with the AFTERSHOCK MCP server: ask "What broke out this week and what should we do in the top country?" and let it call `list_storms`, `spillover_forecast` and `launch_kit`. "Every forecast is locked before its outcome exists, a weekly and a daily job run the loop, and Netflix and Wikipedia do the grading."
+What it shows, in order, with the captions it carries:
 
-Before recording: run each live call once so it is cached, and have the MCP server added in Claude Desktop (README section 5).
+1. **Home (0:00-0:17).** "A show breaks out in one country. AFTERSHOCK forecasts where it charts next, and uses Qloo to say what travels with it." Then this week's worked example: Fukrey Returns broke out in Pakistan; Bangladesh is likely next at 38% because Bangladesh joined 19 of 47 past Pakistani breakouts; Qloo says what that audience loves and where it lives.
+2. **Ask the agent (0:17-0:40).** The question "What should Fukrey Returns pair with in Bangladesh?" is typed; the answer shows the forecast, the Qloo launch kit (97% specific to the title) and the cities; then "How the agent answered", step by step.
+3. **The weekly map (0:40-0:47).** Where this week's breakouts are heading, rebuilt from Netflix's public data.
+4. **Song check (0:47-1:05).** Stranger Things with three songs: Psycho Killer by Talking Heads is a new crowd (the show's viewers are under 35; the band's listeners are 55+).
+5. **Scorecard (1:05-1:12).** Qloo's kit was title-specific in 48 of 81 countries; the Qloo-versus-LLM test was registered before any data.
+6. **Ledger and Agent (1:12-1:36).** Every forecast locked before its outcome exists, graded by Netflix from 15 November; the agent runs on its own every week, and any AI agent can call its tools over MCP.
+
+If you record your own voice-over instead, read the captions above in your own words. Re-record once the Qloo-versus-LLM result and the first early grades are on the Scorecard, so the video shows them.
