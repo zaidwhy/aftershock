@@ -318,12 +318,24 @@ export { renderTry, renderScout } from "./audience.js";
 /* -------------------------------------------------------------- scorecard */
 const GITHUB_EXPERIMENT = "https://github.com/zaidwhy/aftershock/blob/main/docs/EXPERIMENT_KITS.md";
 
+const share = (n) => (n == null ? "n/a" : `${Math.round(n * 100)}%`);
+
 function kitCheckSection(sc) {
-  const kc = sc.kit_check, ex = sc.kit_experiment;
+  const kc = sc.kit_check;
   if (!kc) return null;
   const example = (label, e) => (e ? h("li", null, `${label}: `, h("a", { href: `#/storm/${encodeURIComponent(e.id)}` }, `${e.title} in ${e.country}`),
     h("span", { class: "mono" }, ` (${Math.round(e.specificity * 100)}% specific)`)) : null);
-  const share = (n) => (n == null ? "n/a" : `${Math.round(n * 100)}%`);
+  return h("section", { "aria-labelledby": "kitcheck-h" },
+    h("h2", { id: "kitcheck-h" }, "What Qloo adds: is the launch kit about the title?"),
+    h("p", null, h("strong", { class: "mono" }, `${kc.specific} of ${kc.kits}`), ` launch kits this week are title-specific; ${kc.generic} are mostly countrywide taste. Mean specificity is `,
+      h("span", { class: "mono" }, `${Math.round(kc.mean_specificity * 100)}%`), "."),
+    h("p", { class: "muted" }, "For every kit we also ask Qloo what the whole country likes, with no title. A kit counts as countrywide when most of its picks repeat that country-only list, and as title-specific when they do not."),
+    h("ul", { class: "kit-examples" }, example("Title-specific", kc.example_specific), example("Countrywide", kc.example_generic)));
+}
+
+/** The pre-registered Qloo-versus-LLM result; an honest empty slot until the scored run exists. */
+function llmSection(sc) {
+  const ex = sc.kit_experiment;
   const slot = ex
     ? h("div", { class: "kit-exp" },
       h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} title-country pairs.` : "."),
@@ -331,14 +343,7 @@ function kitCheckSection(sc) {
       h("p", null, h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "How it was registered and scored")))
     : h("p", { class: "muted" }, "Registered on 27 Oct before any data was collected; results will appear here. ",
       h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "Read the registration"));
-  return h("section", { "aria-labelledby": "kitcheck-h" },
-    h("h2", { id: "kitcheck-h" }, "Is Qloo's launch kit about the title?"),
-    h("p", null, h("strong", { class: "mono" }, `${kc.specific} of ${kc.kits}`), ` launch kits this week are title-specific; ${kc.generic} are mostly countrywide taste. Mean specificity is `,
-      h("span", { class: "mono" }, `${Math.round(kc.mean_specificity * 100)}%`), "."),
-    h("p", { class: "muted" }, "For every kit we also ask Qloo what the whole country likes, with no title. A kit counts as countrywide when most of its picks repeat that country-only list, and as title-specific when they do not."),
-    h("ul", { class: "kit-examples" }, example("Title-specific", kc.example_specific), example("Countrywide", kc.example_generic)),
-    h("h3", null, "Qloo versus an LLM (pre-registered)"),
-    slot);
+  return h("section", { "aria-labelledby": "llm-h" }, h("h2", { id: "llm-h" }, "Qloo versus an LLM (pre-registered)"), slot);
 }
 
 export function renderScorecard(root, isCurrent) {
@@ -358,8 +363,8 @@ export function renderScorecard(root, isCurrent) {
       ["Qloo age gap", recent["real: gap"], recent["placebo: gap"]],
       ["Obscurity", recent["real: obscurity"], recent["placebo: obscurity (its own pre-window)"]],
     ].filter((r) => r && r[1] != null && r[2] != null).map(([label, real, placebo]) => ({ label, real, placebo }));
-    const evidence = rows.length ? h("section", { "aria-labelledby": "why-h" },
-      h("h2", { id: "why-h" }, "What we tested"),
+    const evidence = rows.length ? h("div", { class: "evidence" },
+      h("h3", null, "Real spike versus placebo spike"),
       h("div", { class: "db-box" },
         h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Real spike", h("span", { class: "dot dot-placebo" }), "Placebo spike, measured before release"),
         dumbbell(rows, `Within-show Spearman with the artist's Wikipedia spike on 2024+ releases, real spike versus placebo spike. ${rows.map((r) => `${r.label}: real ${plain2(r.real)}, placebo ${plain2(r.placebo)}`).join("; ")}.`)),
@@ -383,36 +388,50 @@ export function renderScorecard(root, isCurrent) {
       h("p", { class: "state" }, h("strong", { class: "mono" }, whole(rp.locked) ?? "n/a"), " releases locked.",
         rp.locked ? "" : " Song forecasts are locked only before a release's outcome window opens, with at least 4 Qloo-scorable songs; none has qualified yet."),
       rp.graded_releases ? dl([["Graded releases", rp.graded_releases], ["Pending releases", rp.pending_releases], ["Mean Spearman", plain2(rp.mean_spearman)]]) : null);
+    const scored = bs.history_auc;
+    const ratio = scored == null ? null : Math.round(scored * 10);
+    const tableOf = (label, rows) => h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": `${label}, scrolls sideways on narrow screens` }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, label),
+      h("thead", null, h("tr", null, ["Measure", "Value"].map((t) => h("th", { scope: "col" }, t)))),
+      h("tbody", null, rows)));
     add(box,
-      evidence,
       kitCheckSection(sc),
-      h("h2", null, "Placebo check"),
-      h("p", { class: "muted" }, "Mean within-show Spearman against the real spike and against a placebo spike measured entirely before release. A score that predicts the placebo is picking up regression to the mean, not the show."),
-      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Placebo check, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),
-        h("thead", null, h("tr", null, ["Score", `Real, 2024+ (${pl["2024_plus"]?.n_shows ?? "n/a"} shows)`, "Placebo, 2024+", `Real, all (${pl.all?.n_shows ?? "n/a"} shows)`, "Placebo, all"].map((t, i) => h("th", { scope: "col", class: i ? "num" : null }, t)))),
-        h("tbody", null,
-          placeboRow("Obscurity", "real: obscurity", "placebo: obscurity (its own pre-window)"),
-          placeboRow("Qloo age gap", "real: gap", "placebo: gap")))),
-      h("p", { class: "muted" }, `Real minus placebo for the Qloo age gap: permutation p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])} on 2024+ releases, ${plain2(pl.all?.["p: gap real minus gap placebo"])} on all.`),
-      h("h2", null, "Backtests on past events"),
-      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Backtest results, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Backtest results"),
-        h("thead", null, h("tr", null, ["Measure", "Value"].map((t) => h("th", { scope: "col" }, t)))),
-        h("tbody", null,
-          row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)),
-          row(`Spillover: same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
-          row(`Spillover: same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc)),
+      llmSection(sc),
+      h("section", { "aria-labelledby": "bt-h" },
+        h("h2", { id: "bt-h" }, "Where a breakout goes next: the country backtest"),
+        ratio == null ? h("p", { class: "muted" }, "The backtest has not been generated yet.")
+          : h("p", null, h("strong", null, `Right ${ratio} times in 10`), ` at ranking where a breakout goes next, on ${whole(bs.test_breakouts)} past breakouts (ROC AUC ${plain2(scored)}).`),
+        h("p", { class: "muted" }, "Netflix history only: how often each country followed past breakouts from the same origins. Mar-Oct 2026 breakouts the model had not seen. The country forecast uses no Qloo data."),
+        tableOf("Country backtest", row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)))),
+      h("section", { "aria-labelledby": "ledger-h" },
+        h("h2", { id: "ledger-h" }, "Live ledger"),
+        h("div", { class: "grid2" }, spillSection, rippleSection),
+        h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),
+          sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? "Ledger hash chain verified." : "Ledger hash chain FAILED verification."),
+          sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null)),
+      h("section", { "aria-labelledby": "dnw-h" },
+        h("h2", { id: "dnw-h" }, "What did not work"),
+        h("h3", null, "Qloo added nothing to the country forecast"),
+        tableOf("No lift from Qloo", [
+          row(`Same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
+          row(`Same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc))]),
+        h("h3", null, "The song tests"),
+        h("p", { class: "muted" }, `We collected 490 songs from 34 soundtracks. ${br.n_artists ?? "n/a"} artists in ${br.n_shows ?? "n/a"} of those shows had enough Qloo audience profiles to be scored (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
+        tableOf("Song test results", [
           row("Ripple: Qloo age gap, 2024+ releases (Spearman)", gapCell),
           row("Ripple: Qloo taste fit, 2024+", plain2(br.fit_2024_plus)),
-          row("Ripple: obscurity, 2024+ (see placebo)", plain2(br.obscurity_2024_plus))))),
-      h("p", { class: "muted" }, `Ripple backtest: ${br.n_artists ?? "n/a"} artists placed in ${br.n_shows ?? "n/a"} shows (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
-      h("h2", null, "Live ledger"),
-      h("div", { class: "grid2" }, spillSection, rippleSection),
-      h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),
-        sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? "Ledger hash chain verified." : "Ledger hash chain FAILED verification."),
-        sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null),
+          row("Ripple: obscurity, 2024+ (see placebo)", plain2(br.obscurity_2024_plus))]),
+        evidence,
+        h("h3", null, "Placebo check"),
+        h("p", { class: "muted" }, "Mean within-show Spearman against the real spike and against a placebo spike measured entirely before release. A score that predicts the placebo is picking up regression to the mean, not the show."),
+        h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Placebo check, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),
+          h("thead", null, h("tr", null, ["Score", `Real, 2024+ (${pl["2024_plus"]?.n_shows ?? "n/a"} shows)`, "Placebo, 2024+", `Real, all (${pl.all?.n_shows ?? "n/a"} shows)`, "Placebo, all"].map((t, i) => h("th", { scope: "col", class: i ? "num" : null }, t)))),
+          h("tbody", null,
+            placeboRow("Obscurity", "real: obscurity", "placebo: obscurity (its own pre-window)"),
+            placeboRow("Qloo age gap", "real: gap", "placebo: gap")))),
+        h("p", { class: "muted" }, `Real minus placebo for the Qloo age gap: permutation p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])} on 2024+ releases, ${plain2(pl.all?.["p: gap real minus gap placebo"])} on all.`)),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
-        h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test covers 229 artists in 24 shows (4 released 2024 or later), where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+        h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test collected 490 songs from 34 soundtracks; 229 artists in 24 of those shows (4 released 2024 or later) had enough Qloo audience profiles to be scored, where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
   });
 }
 
@@ -456,10 +475,10 @@ export function renderMethod(root) {
       h("p", null, "For each storm's top three forecast countries, Qloo is asked which shows, films, brands and artists the title's audience over-indexes on there, and where in the country that audience lives (a heatmap, reduced to its three strongest places and named with OpenStreetMap). Neither changes the probabilities, and neither has been validated against outcomes."),
       h("p", null, "Sync Scout is a discovery tool: it ranks the artists a show's audience likes by the age gap between the artist's audience and the show's. It ranks artists, not scenes.")),
     h("section", null, h("h2", null, "RIPPLE: the song score, tested"),
-      h("p", null, "The score is the Qloo age gap, from 0 to 1: how far outside the show's generation an artist's audience sits. We tested whether it, Qloo taste fit or obscurity predicts which soundtrack songs spike on Wikipedia, using 490 songs from the official soundtracks of 34 titles in MusicBrainz (CC0)."),
+      h("p", null, "The score is the Qloo age gap, from 0 to 1: how far outside the show's generation an artist's audience sits. We tested whether it, Qloo taste fit or obscurity predicts which soundtrack songs spike on Wikipedia, using 490 songs from the official soundtracks of 34 titles in MusicBrainz (CC0). Only artists with a Qloo audience profile can be scored, and a show needs at least 4 of them: 229 artists in 24 of the 34 titles qualified."),
       h("p", null, "Result: no Qloo signal predicts the spike. Within-show Spearman for the age gap is 0.02 (p 0.40) on 24 shows and 0.18 (p 0.22) on the 4 released from 2024 on; real minus placebo p is 0.14, and taste fit is 0.04. Obscurity is 0.22 against 0.11 on a placebo spike measured before release."),
       h("p", null, "An earlier version used placement lists from Tunefind and showed a significant effect. Tunefind's terms do not permit automated collection, so that data and everything computed from it was discarded, and the effect did not replicate on MusicBrainz. The song score is an explorer, not a predictor."),
-      h("p", null, "Known miss: the score would not have picked Kate Bush's Running Up That Hill for Stranger Things 4. Her page views rose from about 10k a month to 909k in June 2022 because of how the scene used the song, which neither Qloo nor Wikipedia sees.")),
+      h("p", null, "Known miss: the score would not have picked Kate Bush's Running Up That Hill for Stranger Things 4. Her page views rose from about 10k a month to 910k in June 2022 because of how the scene used the song, which neither Qloo nor Wikipedia sees.")),
     h("section", null, h("h2", null, "Data sources"),
       h("ul", { class: "plain-list" },
         h("li", null, h("strong", null, "Netflix Top 10"), ": the public weekly TSV, by country. Defines storms, supplies the SPILLOVER history and grades it."),
