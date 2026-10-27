@@ -389,3 +389,6 @@ dd { margin: 0; font-size: 1.1rem; }
   .hero-top .pitch { order: 4; }
   .hero-top .hero-links { order: 5; }
 }
+.storm-facts { flex-basis: 100%; color: var(--ink); }
+.ledger-stats > div { display: block; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+.ledger-stats dt, .ledger-stats dd { display: block; text-align: left; }

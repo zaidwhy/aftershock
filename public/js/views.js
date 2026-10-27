@@ -142,8 +142,8 @@ export function renderHome(root, isCurrent) {
       h("ul", { class: "storm-list" }, ranked.map((s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
-          s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-meta" }, yearGenres(s.meta.year, s.meta.genres)) : null,
-          h("span", { class: "storm-meta" }, `Origin: ${origins(s.origin_countries)}`, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null),
+          h("span", { class: "storm-meta" }, s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-facts" }, yearGenres(s.meta.year, s.meta.genres)) : null,
+            `Origin: ${origins(s.origin_countries)}`, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
