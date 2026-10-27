@@ -293,7 +293,7 @@ def test_title_lookup_uses_no_live_slot(title_files):
     assert not any(api._ripple_hits.values())
 
 
-def test_week_map_sums_forecasts_and_lists_top_titles(tmp_path, monkeypatch):
+def test_week_map_chance_of_at_least_one_and_top_titles(tmp_path, monkeypatch):
     def storm(sid, title, origin, fcs):
         return {"netflix_title": [title, "N/A"], "summary": {"id": sid, "title": title, "origin_countries": [{"code": origin, "name": origin}],
                                                               "top_forecast": None},
@@ -305,5 +305,5 @@ def test_week_map_sums_forecasts_and_lists_top_titles(tmp_path, monkeypatch):
     body = api.storms()
     assert body["map"]["origins"] == ["JP", "KR"]
     first = body["map"]["countries"][0]
-    assert first["code"] == "bd" and first["expected"] == 0.7
+    assert first["code"] == "bd" and first["chance"] == round(1 - 0.6 * 0.7, 4)
     assert [t["id"] for t in first["top"]] == ["a", "b"] and first["top"][0]["p"] == 0.4

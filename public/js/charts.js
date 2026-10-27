@@ -166,7 +166,7 @@ export async function forecastMap(forecasts, origins) {
   return svg.node();
 }
 
-/** This week's map: each country shaded by the expected number of this week's breakouts to reach it.
+/** This week's map: each country shaded by the chance that at least one of this week's breakouts reaches it.
  *  `pick(code)` is called on hover and tap; the returned `select(code)` marks the chosen country. */
 export async function weekMap(map, pick) {
   if (!window.d3 || !window.topojson) throw new Error("d3 or topojson-client did not load from cdn.jsdelivr.net.");
@@ -180,10 +180,10 @@ export async function weekMap(map, pick) {
   const path = d3.geoPath(proj);
   const byCode = new Map(map.countries.map((c) => [c.code, c]));
   const originSet = new Set(map.origins);
-  const max = Math.max(0.01, ...map.countries.map((c) => c.expected));
-  const shade = (c) => `fill:color-mix(in srgb, var(--accent) ${Math.round(12 + (c.expected / max) * 88)}%, var(--map-base))`;
+  const max = Math.max(0.01, ...map.countries.map((c) => c.chance));
+  const shade = (c) => `fill:color-mix(in srgb, var(--accent) ${Math.round(12 + (c.chance / max) * 88)}%, var(--map-base))`;
   const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("class", "world").attr("role", "img")
-    .attr("aria-label", `World map shaded by how many of this week's breakouts are likely to reach each country. Darkest: ${map.countries.slice(0, 3).map((c) => c.name).join(", ")}. A list of the top countries follows.`);
+    .attr("aria-label", `World map shaded by the chance that at least one of this week's breakouts reaches each country. Darkest: ${map.countries.slice(0, 3).map((c) => c.name).join(", ")}. A list of the top countries follows.`);
   svg.append("path").attr("d", path({ type: "Sphere" })).attr("class", "map-sphere");
   const listen = (sel, codeOf) => sel.on("mouseenter", (e, d) => pick(codeOf(d))).on("click", (e, d) => pick(codeOf(d)));
   listen(svg.append("g").selectAll("path").data(feats).join("path").attr("d", path)
@@ -208,11 +208,12 @@ export async function weekMap(map, pick) {
   });
   listen(svg.append("g").attr("class", "fc-dots").selectAll("circle").data(dots.filter(([, xy]) => xy)).join("circle")
     .attr("cx", ([, xy]) => xy[0]).attr("cy", ([, xy]) => xy[1])
-    .attr("r", ([c]) => 3.5 + (byCode.get(c).expected / max) * 4.5).attr("data-code", ([c]) => c)
+    .attr("r", ([c]) => 3.5 + (byCode.get(c).chance / max) * 4.5).attr("data-code", ([c]) => c)
     .attr("class", "fc-dot").attr("style", ([c]) => shade(byCode.get(c))), ([c]) => c);
   const node = svg.node();
+  const names = new Map(feats.map((d) => [NUMERIC_TO_CODE[+d.id], d.properties?.name]).filter(([c, n]) => c && n));
   const select = (code) => node.querySelectorAll("[data-code]").forEach((el) => el.classList.toggle("is-selected", el.dataset.code === code));
-  return { node, select };
+  return { node, select, names };
 }
 
 /** Dumbbell chart: per row, a real-spike marker and a placebo-spike marker on one shared axis with a zero line.

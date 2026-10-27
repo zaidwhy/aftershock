@@ -80,19 +80,20 @@ MAP_TOP_TITLES = 3
 
 
 def _week_map(items):
-    """Per country, the expected number of this week's breakouts to arrive (sum of the forecast probabilities over
+    """Per country, the chance that at least one of this week's breakouts arrives (1 - product of (1 - p) over
     storms) and the 3 likeliest. Only each storm's published forecast rows count, so it is a floor."""
-    expected, top, origins = defaultdict(float), defaultdict(list), set()
+    none, top, origins = defaultdict(lambda: 1.0), defaultdict(list), set()
     for item in items:
         summ = item["summary"]
         origins.update(o["code"] for o in summ["origin_countries"])
         for fc in item["detail"].get("spillover", {}).get("forecasts", []):
-            expected[fc["code"]] += fc["probability"]
+            none[fc["code"]] *= 1 - fc["probability"]
             top[fc["code"]].append((fc["probability"], summ["id"], summ["title"], fc["name"]))
     countries = []
-    for code in sorted(expected, key=lambda c: -expected[c]):
+    chance = {code: 1 - q for code, q in none.items()}
+    for code in sorted(chance, key=lambda c: -chance[c]):
         best = sorted(top[code], key=lambda t: -t[0])[:MAP_TOP_TITLES]
-        countries.append({"code": code, "name": best[0][3], "expected": round(expected[code], 2),
+        countries.append({"code": code, "name": best[0][3], "chance": round(chance[code], 4),
                           "top": [{"id": i, "title": t, "p": p} for p, i, t, _ in best]})
     return {"origins": sorted(origins), "countries": countries}
 
