@@ -2,22 +2,10 @@
 import { h, loading, errorBox, add } from "./dom.js";
 import { scoreSongs, scoutShow, isMock } from "./api.js";
 import { BANDS } from "./format.js";
+import { bandText, crowd, gapNote } from "./crowd.js";
 import { attachTitlePanel } from "./netflix.js";
 
-/** Age-gap cut points for the verdict chip. The gap is 0 (same age groups) to 1 (opposite); these are
- *  presentation words only. The gap did not predict which songs spike (README section 3). */
-export const VERDICTS = [
-  { max: 0.45, label: "Same crowd", cls: "v-same" },
-  { max: 0.6, label: "Partly new crowd", cls: "v-part" },
-  { max: Infinity, label: "New crowd", cls: "v-new" },
-];
-export const verdict = (gap) => VERDICTS.find((v) => gap <= v.max);
-
 const SHORT = { "24_and_younger": "under 25", "25_to_29": "25-29", "30_to_34": "30-34", "35_to_44": "35-44", "45_to_54": "45-54", "55_and_older": "55+" };
-const bandText = (leans) => {
-  const l = (leans || []).map((k) => SHORT[k]).filter(Boolean);
-  return l.length < 2 ? l[0] ?? "no clear age group" : `${l.slice(0, -1).join(", ")} and ${l[l.length - 1]}`;
-};
 const HONEST = "This compares audiences. It does not predict whether a song will take off: we tested that and it did not hold (see Scorecard).";
 
 /** Possessive that does not double the s: Things' not Things's. */
@@ -38,7 +26,7 @@ const joinLine = (p) => (p.sep === "|" ? `${p.song} | ${p.artist}` : `${p.song} 
 
 const steps = (items) => h("ol", { class: "steps" }, items.map((t, i) => h("li", null, h("span", { class: "step-n mono", "aria-hidden": "true" }, i + 1), h("span", null, t))));
 
-const chip = (gap) => { const v = verdict(gap); return h("span", { class: `verdict ${v.cls}` }, v.label); };
+const chip = (showLeans, artistLeans) => { const v = crowd(showLeans, artistLeans); return v ? h("span", { class: `verdict ${v.cls}` }, v.label) : null; };
 
 /** Two labelled rows of six band cells; a filled cell means that audience leans to that age group. */
 function bandStrip(showLeans, artistLeans, who) {
@@ -72,14 +60,15 @@ function songRow(x, showName, showLeans, fix) {
   const differs = matched.trim().toLowerCase() !== x.artist.trim().toLowerCase();
   const head = h("div", { class: "song-head" },
     h("div", null, h("strong", null, x.song), ` by ${matched}`, differs ? h("span", { class: "mono matched" }, ` matched in Qloo (you typed: ${x.artist})`) : null),
-    x.age_gap != null ? chip(x.age_gap) : null);
+    x.age_gap != null ? chip(showLeans, x.leans) : null);
   if (x.age_gap == null) {
     return h("li", { class: "song song-bad" }, head,
       h("p", { class: "not-found" }, `Qloo knows ${matched} but has no audience data for them yet, so we can't compare.`));
   }
-  const v = verdict(x.age_gap);
+  const v = crowd(showLeans, x.leans);
   return h("li", { class: "song" }, head,
-    h("p", { class: "plain" }, `${poss(showName)} viewers lean ${bandText(showLeans)}. ${poss(matched)} listeners lean ${bandText(x.leans)}. `, REACH[v.cls]),
+    h("p", { class: "plain" }, `${poss(showName)} viewers lean ${bandText(showLeans)}. ${poss(matched)} listeners lean ${bandText(x.leans)}. `,
+      gapNote(matched, showLeans, x.leans) ? `${gapNote(matched, showLeans, x.leans)} ` : null, v ? REACH[v.cls] : null),
     bandStrip(showLeans, x.leans, matched),
     details(`Age gap ${x.age_gap.toFixed(2)}: how far apart the two audiences' age groups sit, from 0 (same) to 1 (opposite).`,
       x.prior_daily_views != null
@@ -147,8 +136,7 @@ export function renderTry(root, isCurrent) {
         submit();
       };
       add(out, h("h2", null, `How these songs compare with ${r.show}`),
-        h("ol", { class: "songs" }, r.songs.map((x) => songRow(x, r.show, r.show_leans, fix))),
-        h("p", { class: "honest" }, HONEST));
+        h("ol", { class: "songs" }, r.songs.map((x) => songRow(x, r.show, r.show_leans, fix))));
     }).catch((err) => { if (isCurrent()) out.replaceChildren(failBox(err, "the comparison")); })
       .finally(() => { btn.disabled = false; });
   };
@@ -166,20 +154,19 @@ export function renderTry(root, isCurrent) {
     steps(["You type a show and some songs (songs already in it, or ones you are thinking of placing).",
       "We look up who watches the show and who listens to each artist, using Qloo's audience data.",
       "You see whether each song's listeners are the same crowd as the show's, or a different age group the show could reach."]),
-    mockNote(), examples(TRY_EXAMPLES.map((e) => [e[0], fill(e)])), form, netflix, out);
+    mockNote(), examples(TRY_EXAMPLES.map((e) => [e[0], fill(e)])), form, netflix, out, h("p", { class: "honest" }, HONEST));
 }
 
 /* ----------------------------------------------------------- sync scout */
 const SCOUT_EXAMPLES = ["Stranger Things", "Wednesday", "Squid Game"];
 
-function scoutRow(a, showName, showLeans, of) {
+function scoutRow(a, showLeans, of, showName) {
   return h("li", { class: "song" },
-    h("div", { class: "song-head" }, h("strong", null, a.name), chip(a.gap)),
-    h("p", { class: "plain" }, `Fans of ${showName} like this artist. The artist's own listeners lean ${bandText(a.leans)}; the show's viewers lean ${bandText(showLeans)}.`),
+    h("div", { class: "song-head" }, h("strong", null, a.name), chip(showLeans, a.leans)),
+    h("p", { class: "plain" }, `Listeners lean ${bandText(a.leans)}. `, gapNote(a.name, showLeans, a.leans)),
     bandStrip(showLeans, a.leans, a.name),
-    h("p", { class: "rank mono" }, `#${a.taste_rank} of ${of} on Qloo's list of what this show's fans like`),
-    details(`Age gap ${a.gap.toFixed(2)}: how far apart the two audiences' age groups sit, from 0 (same) to 1 (opposite).`,
-      `Rank #${a.taste_rank}: where Qloo places this artist among the ${of} artists it says ${poss(showName)} fans like most (1 is the closest match). It is context only and does not change the order here.`));
+    details(`Age gap ${a.gap.toFixed(2)}: how far apart the two audiences' age groups sit, from 0 (same) to 1 (opposite). Artists are listed with the biggest gap first.`,
+      `Rank #${a.taste_rank} of ${of}: where Qloo places this artist among the ${of} artists it says ${poss(showName)} fans like most (1 is the closest match). It is context only and does not change the order here.`));
 }
 
 export function renderScout(root, isCurrent) {
@@ -204,8 +191,8 @@ export function renderScout(root, isCurrent) {
       if (!r.artists?.length) { add(out, h("p", { class: "status" }, `Qloo returned no artists with audience data for ${r.show}.`)); return; }
       add(out, h("h2", null, `Artists who could bring ${r.show} a new audience`),
         h("p", { class: "muted" }, `The ${r.artists.length} best candidates, from the ${r.candidates} artists Qloo says ${poss(r.show)} fans like. Artists whose own fans are a different age group come first.${r.truncated ? " The lookup limit ran out, so the list is partial." : ""}`),
-        h("ol", { class: "songs scout-list" }, r.artists.map((a) => scoutRow(a, r.show, r.show_leans, r.candidates))),
-        h("p", { class: "honest" }, HONEST));
+        h("p", { class: "plain" }, `Each artist below is liked by ${poss(r.show)} fans; the label says whether the artist's own listeners are the same age groups as the show's viewers (who lean ${bandText(r.show_leans)}).`),
+        h("ol", { class: "songs scout-list" }, r.artists.map((a) => scoutRow(a, r.show_leans, r.candidates, r.show))));
     }).catch((err) => { if (isCurrent()) out.replaceChildren(failBox(err, "the artist list")); })
       .finally(() => { btn.disabled = false; });
   };
@@ -216,5 +203,5 @@ export function renderScout(root, isCurrent) {
   add(root, h("h1", null, "Find artists who could bring a show a new audience"),
     steps(["You type a show.", "Qloo lists the artists that show's fans love.",
       "We sort them so artists whose own fans are a different age group come first: candidates that could bring the show new listeners."]),
-    mockNote(), examples(SCOUT_EXAMPLES.map((n) => [n, () => { show.value = n; submit(); }])), form, netflix, out);
+    mockNote(), examples(SCOUT_EXAMPLES.map((n) => [n, () => { show.value = n; submit(); }])), form, netflix, out, h("p", { class: "honest" }, HONEST));
 }

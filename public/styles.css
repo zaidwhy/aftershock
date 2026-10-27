@@ -313,7 +313,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .matched { font-size: 0.78rem; color: var(--ink-soft); }
 .plain { margin: 0; max-width: 68ch; }
 .rank { margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
-.honest { margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); max-width: 68ch; }
+.honest { margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--ink-soft); max-width: 68ch; }
 .not-found .btn-small { margin-top: 6px; }
 .band-strip { display: grid; grid-template-columns: minmax(5.5rem, 8.5rem) repeat(6, minmax(0, 1fr)); gap: 3px; max-width: 460px; align-items: center; }
 .bs-head { font-size: 0.65rem; color: var(--ink-soft); text-align: center; }
