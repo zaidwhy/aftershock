@@ -64,4 +64,12 @@ AFTERSHOCK is not affiliated with Netflix or Qloo.
 
 ## Testing instructions for judges
 
-No login. The home page opens on this week's clearest example: where a title broke out, where it is likely to chart next, what its audience loves there and which cities to start in; "See the full forecast" opens the storm page with every country's probability, the reasons, and the launch kit and hotspot map for the top three countries. Sync Scout: type a show, for example Stranger Things (about 15 seconds the first time). Try it: enter a show and one song per line as `Song by Artist`, for example Stranger Things with `Running Up That Hill by Kate Bush`. Live scoring is capped per visitor so the shared key lasts through judging.
+No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app:
+
+1. **Home:** the worked example on the right shows this week's clearest case: where a title broke out, where it is likely to chart next and why, what its audience there loves (Qloo), and which cities to start in.
+2. **Ask the agent:** click "What should Fukrey Returns pair with in Bangladesh?" or type your own question. The agent picks its tools and lists every step it took ("How the agent answered").
+3. **The map:** hover a country under "Where this week's breakouts are heading", or use "Look up any title" for any show or film.
+4. **Song check:** click "Stranger Things + 3 songs" to see which songs reach a new crowd (a first run takes about 10 seconds).
+5. **Agent, Scorecard and Ledger:** what the agent did on its weekly run; what we measured, including what did not work and the pre-registered tests; and every locked forecast.
+
+To use it from an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5) exposes the same seven tools. Live lookups are capped per visitor so the shared Qloo key lasts through judging.
