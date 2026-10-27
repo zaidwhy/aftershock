@@ -11,7 +11,7 @@ permissions:
 jobs:
   forecast:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50  # Qloo kits, country controls, hotspots and geocoding are uncached in CI
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
