@@ -59,7 +59,8 @@ def spillover_forecast(storm_id: str) -> dict:
 @server.tool(description="Launch kit for one forecast country of a breakout, by storm id from list_storms and a "
                          "country code or name from its spillover forecasts: what the title's audience there "
                          "over-indexes on in Qloo's artist, tv_show, movie and brand domains (up to 5 names each, "
-                         "in Qloo's order). It does not change the probabilities.")
+                         "in Qloo's order) and hotspot_places, the up-to-three places in that country where the audience "
+                         "concentrates most (OpenStreetMap names). It does not change the probabilities.")
 def launch_kit(storm_id: str, country: str) -> dict:
     for storm in _storms():
         if storm["summary"]["id"] != storm_id:
@@ -69,7 +70,7 @@ def launch_kit(storm_id: str, country: str) -> dict:
         for row in storm["detail"].get("launch_kit") or []:
             if wanted in (row["code"].lower(), names.get(row["code"].lower(), "").lower()):
                 return {"title": storm["summary"]["title"], "country": names.get(row["code"].lower(), row["code"]),
-                        "launch_kit": row["kit"]}
+                        "launch_kit": row["kit"], "hotspot_places": (row.get("hotspots") or {}).get("places", [])}
         return {"error": f"no launch kit for {country!r}; kits cover the top three forecast countries with Qloo data"}
     return {"error": f"no storm with id {storm_id!r}; call list_storms first"}
 

@@ -25,6 +25,7 @@ from aftershock import ledger, wiki  # noqa: E402
 from aftershock.netflix import (  # noqa: E402
     HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
+from aftershock.hotspots import hotspots  # noqa: E402
 from aftershock.launch_kit import launch_kit  # noqa: E402
 from aftershock.qloo import Qloo, QlooError, norm  # noqa: E402
 from aftershock.ripple import score_placements  # noqa: E402
@@ -310,7 +311,7 @@ def main():
         # The kit's artist list is the partners list (top 3), so partners cost no separate call.
         kits = [(c, launch_kit(client, entity_id, names[c])) for c in ranked[:3]] if entity_id else []
         partner_rows = [{"code": c, "artists": [a["name"] for a in kit.get("artist", [])[:3]]} for c, kit in kits]
-        kit_rows = [{"code": c, "kit": kit} for c, kit in kits if kit]
+        kit_rows = [{"code": c, "kit": kit, "hotspots": hotspots(client, entity_id, names[c])} for c, kit in kits if kit]
         storm_id = slug(event["title"])
         summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
                    "category": event["category"], "origin_week": str(event["origin_week"]),

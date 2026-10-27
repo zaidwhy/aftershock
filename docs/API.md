@@ -35,12 +35,14 @@ SPILLOVER forecast for one breakout. Probabilities come from Netflix history onl
    "artist": [{"name": "Example Artist A", "entity_id": "uuid"}],
    "tv_show": [{"name": "Example Show A", "entity_id": "uuid"}],
    "movie": [{"name": "Example Film A", "entity_id": "uuid"}],
-   "brand": [{"name": "Example Brand A", "entity_id": "uuid"}]}}]
+   "brand": [{"name": "Example Brand A", "entity_id": "uuid"}]},
+   "hotspots": {"cells": [[37.5665, 126.978, 1.0], [35.1796, 129.0756, 0.992]],
+                "places": ["Example City A", "Example City B", "Example City C"]}}]
 }
 ```
 `partners` is the one place Qloo appears here: artists the title's audience over-indexes on in each forecast country. It does not change the probabilities (Qloo gave no AUC lift in the backtest).
 
-`launch_kit` covers the same top three forecast countries. Per country, `kit` maps a domain (`artist`, `tv_show`, `movie`, `brand`) to up to five entities the title's audience there over-indexes on, in Qloo's order; a domain that returned nothing is omitted, and a country with no results is omitted. No affinity values are exposed. The MCP tool `launch_kit(storm_id, country)` returns one country's kit from the same data.
+`launch_kit` covers the same top three forecast countries. Per country, `kit` maps a domain (`artist`, `tv_show`, `movie`, `brand`) to up to five entities the title's audience there over-indexes on, in Qloo's order; a domain that returned nothing is omitted, and a country with no results is omitted. No affinity values are exposed. `hotspots` (same row) is where inside the country the title's audience concentrates: `cells` are up to 120 `[latitude, longitude, weight]` points (weight 1 is the strongest, from Qloo's `urn:heatmap` affinity rank) and `places` are up to three names from OpenStreetMap Nominatim reverse geocoding (place names © OpenStreetMap contributors); either list can be empty. The MCP tool `launch_kit(storm_id, country)` returns one country's kit and its hotspot place names (not the cells) from the same data.
 
 ## GET /api/ripple?show=Example%20Show&songs=Song%20One%20by%20Artist%20One;Song%20Two|Artist%20Two
 Live scoring for any show and up to 8 songs, separated by `;`. Each song is `song|artist` (split on the first `|`) or `song by artist` (split on the last ` by `, case-insensitive, so `Stand by Me by Example Singer` is song `Stand by Me`, artist `Example Singer`); anything else is a 422 naming both formats. Optional an optional `as_of=YYYY-MM-DD` (between 2015-08-01 and today). `as_of` changes only the Wikipedia context window; Qloo audiences are today's. Limits: 10 scorings per hour per visitor (first address in `X-Forwarded-For`, else the socket peer) and 300 per day per server process; either returns HTTP 429 with the limit named.
