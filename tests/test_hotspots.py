@@ -17,12 +17,12 @@ class FakeClient:
         self.calls.append((path, params))
         if self.error:
             raise self.error
-        return {"results": {"entities": self.entities}}
+        return {"results": {"heatmap": self.entities}}
 
 
 def test_top_cells_caps_at_120_and_orders_by_affinity():
-    entities = [cell(i * 0.01, 0.0, i / 1000, 1000 - i) for i in range(300)]
-    cells = hs.top_cells({"results": {"entities": entities}})
+    entities = [cell(i * 0.01, 0.0, i / 1000, i / 1000) for i in range(300)]
+    cells = hs.top_cells({"results": {"heatmap": entities}})
     assert len(cells) == 120
     assert cells[0][0] == 2.99 and cells[0][2] == 1.0
     assert all(0 < c[2] <= 1 for c in cells)
@@ -31,8 +31,8 @@ def test_top_cells_caps_at_120_and_orders_by_affinity():
 
 def test_places_skip_cells_within_60km_and_cap_at_three():
     # A and B are ~11 km apart, C ~110 km from A, D ~220 km, E ~330 km.
-    entities = [cell(10.0, 20.0, 0.9, 1), cell(10.1, 20.0, 0.8, 2), cell(11.0, 20.0, 0.7, 3),
-                cell(12.0, 20.0, 0.6, 4), cell(13.0, 20.0, 0.5, 5)]
+    entities = [cell(10.0, 20.0, 0.9, 0.9), cell(10.1, 20.0, 0.8, 0.8), cell(11.0, 20.0, 0.7, 0.7),
+                cell(12.0, 20.0, 0.6, 0.6), cell(13.0, 20.0, 0.5, 0.5)]
     asked = []
 
     def geocode(lat, lon):
@@ -56,7 +56,7 @@ def test_request_uses_heatmap_filter():
 
 
 def test_geocode_failure_keeps_cells():
-    entities = [cell(10.0, 20.0, 0.9, 1), cell(12.0, 20.0, 0.8, 2)]
+    entities = [cell(10.0, 20.0, 0.9, 0.9), cell(12.0, 20.0, 0.8, 0.8)]
 
     def boom(lat, lon):
         raise httpx.ConnectError("down")
@@ -66,7 +66,7 @@ def test_geocode_failure_keeps_cells():
 
 
 def test_geocode_failure_after_first_name_keeps_it():
-    entities = [cell(10.0, 20.0, 0.9, 1), cell(12.0, 20.0, 0.8, 2)]
+    entities = [cell(10.0, 20.0, 0.9, 0.9), cell(12.0, 20.0, 0.8, 0.8)]
     seen = []
 
     def flaky(lat, lon):

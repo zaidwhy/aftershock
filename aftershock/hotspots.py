@@ -37,9 +37,9 @@ def distance_km(a, b):
 
 
 def top_cells(body, limit=MAX_CELLS):
-    """[[lat, lon, weight 0..1], ...] for the highest-affinity cells; weight 1 is the best cell."""
+    """[[lat, lon, weight 0..1], ...] for the highest-affinity cells; weight 1 is the best cell, falling linearly with position."""
     cells = []
-    for item in body.get("results", {}).get("entities", []) or []:
+    for item in (body.get("results") or {}).get("heatmap") or []:
         loc, query = item.get("location") or {}, item.get("query") or {}
         lat, lon = loc.get("latitude"), loc.get("longitude")
         if lat is None or lon is None:
@@ -47,8 +47,8 @@ def top_cells(body, limit=MAX_CELLS):
         cells.append((float(lat), float(lon), query.get("affinity"), query.get("affinity_rank")))
     if not cells:
         return []
-    # Higher affinity first; affinity_rank (1 = best) breaks ties and covers a missing affinity.
-    cells.sort(key=lambda c: (-(c[2] if c[2] is not None else -1), c[3] if c[3] is not None else 10 ** 9))
+    # Higher affinity first (many cells tie at 1.0); affinity_rank (1 = best) breaks ties.
+    cells.sort(key=lambda c: (-(c[2] if c[2] is not None else -1), -(c[3] if c[3] is not None else -1)))
     cells = cells[:limit]
     n = len(cells)
     return [[round(lat, 4), round(lon, 4), round(1 - i / n, 3)] for i, (lat, lon, _, _) in enumerate(cells)]
