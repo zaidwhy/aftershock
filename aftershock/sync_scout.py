@@ -20,16 +20,25 @@ BAND_LABELS = {"24_and_younger": "24 and younger", "25_to_29": "25 to 29", "30_t
                "35_to_44": "35 to 44", "45_to_54": "45 to 54", "55_and_older": "55 and older"}
 
 
-def top_band(profile):
-    return max(AGE_BANDS, key=lambda b: profile[b])
+def leaning_bands(profile):
+    """Bands the audience over-indexes on, strongest first. Audiences can lean two ways at once
+    (Wednesday's leans both 24 and younger and 55 and older), so naming one band would mislead."""
+    bands = sorted((b for b in AGE_BANDS if profile[b] > 0), key=lambda b: -profile[b])
+    return bands or [max(AGE_BANDS, key=lambda b: profile[b])]
+
+
+def band_list(bands):
+    labels = [BAND_LABELS[b] for b in bands]
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
 
 
 def why(show_age, artist_age):
-    artist_band, show_band = top_band(artist_age), top_band(show_age)
-    if artist_band == show_band:
-        return (f"Audience over-indexes on the same age band as the show's ({BAND_LABELS[show_band]}); "
-                "the gap comes from the rest of the age profile.")
-    return f"Audience over-indexes on ages {BAND_LABELS[artist_band]}; the show's on ages {BAND_LABELS[show_band]}."
+    artist_bands, show_bands = leaning_bands(artist_age), leaning_bands(show_age)
+    shared = [b for b in artist_bands if b in show_bands]
+    text = f"Audience leans {band_list(artist_bands)}; the show's leans {band_list(show_bands)}."
+    if not shared:
+        return text + " No overlap."
+    return text + f" Overlap only at {band_list(shared)}."
 
 
 def candidates(client, show_id):

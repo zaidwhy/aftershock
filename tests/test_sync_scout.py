@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from aftershock.ripple import AGE_BANDS  # noqa: E402
-from aftershock.sync_scout import TOP_N, scout  # noqa: E402
+from aftershock.sync_scout import why, TOP_N, scout  # noqa: E402
 
 
 def demographics(values):
@@ -75,7 +75,17 @@ def test_output_has_no_raw_affinity_or_demographics():
     assert set(row) == {"name", "entity_id", "gap", "taste_rank", "why"}
     text = str(out)
     assert "0.987" not in text and "affinity" not in text and "age_profile" not in text
-    assert "over-indexes on ages 55 and older" in row["why"] and "24 and younger" in row["why"]
+    assert row["why"].startswith("Audience leans 55 and older") and "24 and younger" in row["why"]
+
+
+def test_why_names_every_band_a_two_sided_audience_leans_on():
+    show = {"24_and_younger": 0.75, "25_to_29": -0.3, "30_to_34": -0.6, "35_to_44": -0.4,
+            "45_to_54": 0.0, "55_and_older": 0.8}
+    artist = {"24_and_younger": 0.9, "25_to_29": 0.7, "30_to_34": 0.1, "35_to_44": -0.6,
+              "45_to_54": -0.2, "55_and_older": -0.3}
+    text = why(show, artist)
+    assert "the show's leans 55 and older and 24 and younger" in text
+    assert "Overlap only at 24 and younger" in text
 
 
 def test_returns_at_most_top_n():
