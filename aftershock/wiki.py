@@ -73,6 +73,9 @@ def _cached_get(url: str, params: dict | None = None) -> dict:
     if resp.status_code not in (200, 404):
         raise WikiError(f"{resp.status_code} from {url}: {resp.text[:200]}")
     body = resp.json() if resp.status_code == 200 else None
+    if isinstance(body, dict) and "error" in body:
+        # MediaWiki reports overload ("cirrussearch-too-busy-error") as a 200; caching it would poison reruns
+        raise WikiError(f"API error from {url}: {str(body['error'])[:200]}")
     record = {"status": resp.status_code, "json": body}
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(record), encoding="utf-8")

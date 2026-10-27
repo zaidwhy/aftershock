@@ -95,3 +95,20 @@ def test_artist_title_rejects_non_music_disambiguators_and_other_names():
     assert not artist_title_matches("Journey (song)", "Journey")
     assert not artist_title_matches("Journey Through the Past", "Journey")
     assert not artist_title_matches("Metallica (album)", "Metallica")
+
+
+def test_api_error_body_is_raised_and_not_cached(tmp_path, monkeypatch):
+    class BusyResponse:
+        status_code = 200
+        text = ""
+        def json(self):
+            return {"error": {"code": "cirrussearch-too-busy-error"}}
+    monkeypatch.setattr(wiki, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(wiki, "_pace", lambda: None)
+    monkeypatch.setattr(wiki.httpx, "get", lambda *a, **k: BusyResponse())
+    try:
+        wiki._cached_get("https://en.wikipedia.org/w/api.php", {"q": "x"})
+        raised = False
+    except wiki.WikiError:
+        raised = True
+    assert raised and not list(tmp_path.iterdir())
