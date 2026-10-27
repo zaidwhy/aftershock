@@ -28,7 +28,7 @@ from aftershock.netflix import (  # noqa: E402
 from aftershock.hotspots import hotspots  # noqa: E402
 from aftershock.launch_kit import (  # noqa: E402
     DOMAINS, GENERIC_AT_OR_BELOW, country_picks, launch_kit, specificity)
-from aftershock.qloo import Qloo, QlooError, best_title_match  # noqa: E402
+from aftershock.qloo import Qloo, QlooError, best_title_match, title_meta  # noqa: E402
 from aftershock.ripple import score_placements  # noqa: E402
 
 RAW = ROOT / "data" / "raw" / "all-weeks-countries.tsv"
@@ -77,13 +77,12 @@ def why_text(model, event, target, names):
 
 
 def resolve_title(client, event, take=SEARCH_TAKE):
-    """The Qloo entity for a Netflix title. Several titles can share a name (a 2026 film and an older one
+    """The Qloo search hit for a Netflix title (or None). Several titles can share a name (a 2026 film and an older one
     called "Relatives"), so the hit is chosen by release year against the year it first charted."""
     film = event["category"].startswith("Films")
     entity_type = "urn:entity:movie" if film else "urn:entity:tv_show"
-    hit = best_title_match(client.search(event["title"][0], types=entity_type, take=take), event["title"][0],
-                           event["origin_week"].year, film)
-    return hit["entity_id"] if hit else None
+    return best_title_match(client.search(event["title"][0], types=entity_type, take=take), event["title"][0],
+                            event["origin_week"].year, film)
 
 
 def live_placements():
@@ -323,11 +322,12 @@ def main():
     titles = live_placements()
     storms, to_lock = [], []
     controls = {}  # country code -> {domain: names}, Qloo country-only kit, one fetch per country per run
-    entity_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
+    hit_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
     for event in storms_now:
         candidates = [c for c in countries if c not in event["origin_countries"]]
         probabilities = model.predict(event, candidates)
-        entity_id = entity_of.get(event["title"])
+        hit = hit_of.get(event["title"])
+        entity_id = hit["entity_id"] if hit else None
         ranked = sorted(candidates, key=lambda c: -probabilities[c])[:SHOW_TOP]
         # History only: Qloo's in-country affinity added no AUC in scripts/test_spillover_qloo.py
         # (it had a value for 1.8% of title-country pairs), so Qloo's job here is the partners list.
@@ -351,7 +351,7 @@ def main():
         summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
                    "category": event["category"], "origin_week": str(event["origin_week"]),
                    "origin_countries": [{"code": c, "name": names[c]} for c in event["origin_countries"]],
-                   "qloo_entity": entity_id,
+                   "qloo_entity": entity_id, "meta": title_meta(hit) if hit else {},
                    "top_forecast": forecasts[0] if forecasts else None}
         storms.append({"netflix_title": list(event["title"]), "summary": summary, "detail": {**summary, "spillover": {"horizon_weeks": HORIZON, "forecasts": forecasts},
                                                       "partners": partner_rows, "launch_kit": kit_rows}})

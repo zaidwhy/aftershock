@@ -354,3 +354,10 @@ dd { margin: 0; font-size: 1.1rem; }
 .brief-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .brief-fallback { margin-top: 10px; }
 .brief-fallback[hidden] { display: none; }
+
+/* Title context: poster, year, genres, one-line description */
+.title-head { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 4px 16px; align-items: start; margin: 4px 0 8px; }
+.poster { width: 84px; height: 126px; object-fit: cover; border: 1px solid var(--rule); background: var(--paper-2); display: block; }
+.title-text .meta, .title-text .title-blurb { margin: 0 0 6px; max-width: 68ch; }
+.title-blurb { color: var(--ink); font-size: 1rem; }
+.title-facts { font-weight: 500; }

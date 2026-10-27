@@ -70,7 +70,11 @@ def _hero(items):
         seen = {c.casefold() for c in (row.get("control") or {}).get(domain, [])}
         return [e["name"] for e in (row["kit"].get(domain) or []) if e["name"].casefold() not in seen][:n]
 
+    meta = summ.get("meta") or {}
+    origin_year = int(summ["origin_week"][:4]) if summ.get("origin_week") else None
     return {"id": summ["id"], "title": summ["title"], "origin_countries": summ["origin_countries"],
+            "year": meta.get("year"), "genres": meta.get("genres") or [],
+            "just_added": bool(meta.get("year") and origin_year and origin_year - meta["year"] > 1),
             "country": top["name"], "code": top["code"], "probability": top["probability"], "why": top.get("why"),
             "artists": fresh("artist", 3), "brands": fresh("brand", 2), "places": places[:3],
             "specificity": row.get("specificity")}

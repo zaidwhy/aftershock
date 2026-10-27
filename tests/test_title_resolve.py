@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-from aftershock.qloo import best_title_match, release_year  # noqa: E402
+from aftershock.qloo import title_meta, best_title_match, release_year  # noqa: E402
 import run_forecasts  # noqa: E402
 
 
@@ -56,7 +56,7 @@ def test_resolve_title_uses_the_chart_year_and_asks_for_more_hits():
             C.taken = take
             return [hit("Relatives", "old", 1984), hit("Relatives", "new", 2026)]
     event = {"title": ("Relatives", "N/A"), "category": "Films (English)", "origin_week": date(2026, 10, 19)}
-    assert run_forecasts.resolve_title(C(), event) == "new"
+    assert run_forecasts.resolve_title(C(), event)["entity_id"] == "new"
     assert C.taken > 5
 
 
@@ -64,3 +64,15 @@ def test_film_with_no_hit_in_window_falls_back_to_popularity():
     hits = [{"name": "Housefull", "entity_id": "OBSCURE", "popularity": 0.0, "properties": {"release_year": 2013}},
             {"name": "Housefull", "entity_id": "KNOWN", "popularity": 0.9, "properties": {"release_year": 2010}}]
     assert best_title_match(hits, "Housefull", 2026, film=True)["entity_id"] == "KNOWN"
+
+
+def test_title_meta_year_genres_blurb_and_image():
+    h = {"name": "Fukrey Returns", "tags": [{"name": "Character driven", "type": "urn:tag:plot:qloo"},
+                                            {"name": "Comedy", "type": "urn:tag:genre:media"},
+                                            {"name": "Drama", "type": "urn:tag:genre:media"}],
+         "properties": {"release_year": 2017, "image": {"url": "https://x/y.jpg"},
+                        "description": "Long text. " + "word " * 80,
+                        "short_descriptions": [{"language": "de", "value": "nein"}, {"language": "en", "value": "Four friends run. Second."}]}}
+    assert title_meta(h) == {"year": 2017, "genres": ["Comedy", "Drama"], "blurb": "Four friends run.", "image": "https://x/y.jpg"}
+    long = title_meta({"properties": {"description": "word " * 100}})
+    assert len(long["blurb"]) <= 163 and long["blurb"].endswith("...") and "year" not in long and "genres" not in long

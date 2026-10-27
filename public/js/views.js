@@ -18,6 +18,13 @@ const mockNote = () => (isMock() ? h("p", { class: "mock-flag" }, "Mock data (?m
 const whole = (n) => (n == null ? null : n.toLocaleString("en-US"));
 const scrollTo = (id) => (e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
 const origins = (list) => list.map((c) => c.name).join(", ");
+/** "(2017, comedy)" for a heading, or "2017 | Comedy, Drama" for a meta line; "" when Qloo had neither. */
+const yearGenres = (year, genres, inline) => {
+  const g = (genres || []).map((n) => (inline ? n.toLowerCase() : n));
+  const parts = [year, g.length ? g.join(", ") : null].filter(Boolean);
+  if (!parts.length) return "";
+  return inline ? ` (${parts.join(", ")})` : parts.join(" | ");
+};
 
 /** Run a fetch into a container with loading and error states. */
 function load(container, what, isCurrent, fetcher, render) {
@@ -93,9 +100,10 @@ export function renderHome(root, isCurrent) {
     const join = (a) => a.join(", ");
     const step = (label, ...kids) => h("div", { class: "ex-step" }, h("p", { class: "ex-k mono" }, label), ...kids);
     heroBox.append(h("section", { class: "example", "aria-labelledby": "ex-h" },
-      h("h2", { id: "ex-h" }, `This week's clearest example: ${x.title}`),
+      h("h2", { id: "ex-h" }, `This week's clearest example: ${x.title}${yearGenres(x.year, x.genres, true)}`),
       h("div", { class: "ex-grid" },
-        step("1 Breakout", h("p", null, `Broke out in ${origins(x.origin_countries)}`)),
+        step("1 Breakout", h("p", null, `Broke out in ${origins(x.origin_countries)}`),
+          x.just_added ? h("p", { class: "ex-why" }, `An older title: ${origins(x.origin_countries)} just added it to its Top 10 this week.`) : null),
         step("2 Likely next", h("p", null, `Likely next: `, h("strong", null, x.country), " ", h("span", { class: "mono" }, pct(x.probability))),
           x.why ? h("p", { class: "ex-why" }, x.why) : null),
         step("3 Pair it with", h("p", null, `Qloo: this audience in ${x.country} loves ${join(x.artists)}`, x.brands.length ? `; brands ${join(x.brands)}` : "")),
@@ -131,6 +139,7 @@ export function renderHome(root, isCurrent) {
       h("ul", { class: "storm-list" }, ranked.map((s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
+          s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-meta" }, yearGenres(s.meta.year, s.meta.genres)) : null,
           h("span", { class: "storm-meta" }, `Origin: ${origins(s.origin_countries)}`, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
@@ -150,7 +159,7 @@ export function renderStorm(root, id, isCurrent) {
     add(root, 
       h("p", { class: "crumb" }, h("a", { href: "#/" }, "All storms")),
       h("h1", null, st.title, st.season ? h("span", { class: "h1-sub" }, ` ${st.season}`) : null),
-      h("p", { class: "meta" }, `${st.category || "Title"} | origin week ${st.origin_week} | broke out in `, h("strong", null, origins(st.origin_countries))),
+      titleHead(st),
       answerLine(st, fc),
       mockNote(),
       h("section", { "aria-labelledby": "map-h" },
@@ -166,6 +175,20 @@ export function renderStorm(root, id, isCurrent) {
       if (isCurrent()) mapBox.replaceChildren(errorBox("the map", err), h("p", { class: "muted" }, "The table below has the same data."));
     });
   });
+}
+
+/** Poster (when Qloo has one), year, genres and a one-sentence description, then the origin line. */
+function titleHead(st) {
+  const m = st.meta || {};
+  const facts = yearGenres(m.year, m.genres);
+  const text = h("div", { class: "title-text" },
+    facts ? h("p", { class: "meta title-facts" }, facts) : null,
+    m.blurb ? h("p", { class: "title-blurb" }, m.blurb) : null,
+    h("p", { class: "meta" }, `${st.category || "Title"} | origin week ${st.origin_week} | broke out in `, h("strong", null, origins(st.origin_countries))));
+  if (!m.image) return text;
+  return h("div", { class: "title-head" },
+    h("img", { class: "poster", src: m.image, alt: `Poster or still for ${st.title}`, loading: "lazy", width: "84", height: "126", referrerpolicy: "no-referrer",
+      onerror: (e) => e.target.remove() }), text);
 }
 
 function kitRows(st) {

@@ -120,6 +120,35 @@ def release_year(hit):
     return int(match.group(1)) if match else None
 
 
+GENRE_TAG = "urn:tag:genre:media"
+BLURB_CHARS = 160
+
+
+def _short(text, limit=BLURB_CHARS):
+    """First sentence of `text`, cut at a word boundary with an ellipsis if it is still longer than `limit`."""
+    text = " ".join(str(text or "").split())
+    first = re.match(r".+?[.!?](?=\s|$)", text)
+    text = first.group(0) if first else text
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0].rstrip(",;:- ") + "..."
+
+
+def title_meta(hit):
+    """Display context for a title from a Qloo search hit (no extra call): release year, up to 3 genre names,
+    a one-sentence description and the image url when Qloo gives one. Missing pieces are omitted."""
+    props = hit.get("properties") or {}
+    genres = []
+    for tag in hit.get("tags") or []:
+        name = (tag.get("name") or "").strip()
+        if tag.get("type") == GENRE_TAG and name and name not in genres:
+            genres.append(name)
+    blurb = next((d.get("value") for d in props.get("short_descriptions") or [] if d.get("language") == "en"), None)
+    meta = {"year": release_year(hit), "genres": genres[:3], "blurb": _short(blurb or props.get("description")),
+            "image": (props.get("image") or {}).get("url")}
+    return {k: v for k, v in meta.items() if v}
+
+
 def best_title_match(hits, name, chart_year, film):
     """Among search hits whose name equals `name`, the one that fits the Netflix first-chart year.
     Films: a release within FILM_YEAR_WINDOW years of it, closest first; with none in the window, the
