@@ -2,6 +2,7 @@
 ledger, grade earlier forecasts, and write the files the API serves.
 
 Run: .venv/Scripts/python scripts/run_forecasts.py [--no-refresh] [--no-qloo] [--no-lock]
+     .venv/Scripts/python scripts/run_forecasts.py --ripple-only [--no-collect] [--no-lock]
 """
 import argparse
 import csv
@@ -10,6 +11,7 @@ import logging
 import math
 import re
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
@@ -179,14 +181,88 @@ def grade(rows, last_week):
     return graded, so_far, pending
 
 
+def ripple_lock_status(release_date, scored_songs, today):
+    """(lockable, not_locked_reason). A ripple forecast counts only if locked before the outcome
+    window opens (release + wiki.AFTER_FROM days) and it ranks at least MIN_RIPPLE_SONGS songs."""
+    opens = date.fromisoformat(release_date) + timedelta(days=wiki.AFTER_FROM)
+    if today >= opens:
+        return False, "released before tracking began; its outcome window was already open"
+    if scored_songs < MIN_RIPPLE_SONGS:
+        return False, f"fewer than {MIN_RIPPLE_SONGS} scorable songs"
+    return True, None
+
+
+def ripple_forecasts(item):
+    return [{"kind": "ripple", "title": [item["show"], item["release_date"]], "origin_week": item["release_date"],
+             "target": f"{song['song']} | {song['artist']}", "score": song["score"],
+             "wiki_article": song.get("wiki_article")}
+            for song in item["songs"] if song.get("score") is not None]
+
+
+def fresh_forecasts(to_lock, locked):
+    """Forecasts whose (title, origin_week) is not in the ledger yet; a release is never locked twice."""
+    return [f for f in to_lock if (tuple(f["title"]), f["origin_week"]) not in locked]
+
+
+def ledger_keys():
+    return {(tuple(r["title"]), r["origin_week"]) for r in ledger.read()}
+
+
+def run_ripple_only(args):
+    """Daily job: refresh live placements, score the releases still inside their lock window that are
+    not in the ledger yet, lock the eligible ones. Spillover and Netflix data are not touched."""
+    today = date.today()
+    if not args.no_collect:
+        import collect_live_placements
+        collect_live_placements.run_daily(today)
+    titles = live_placements()
+    locked = ledger_keys()
+    reasons, pending = Counter(), {}
+    for key, entry in titles.items():
+        release = date.fromisoformat(entry["release_date"])
+        if (tuple([entry["show"], entry["release_date"]]), entry["release_date"]) in locked:
+            reasons["already locked"] += 1
+        elif today >= release + timedelta(days=wiki.AFTER_FROM):
+            reasons[ripple_lock_status(entry["release_date"], len(entry["songs"]), today)[1]] += 1
+        elif len(entry["songs"]) < MIN_RIPPLE_SONGS:
+            reasons[ripple_lock_status(entry["release_date"], 0, today)[1]] += 1
+        else:
+            pending[key] = entry
+    client = None if args.no_qloo else Qloo(call_budget=400)
+    watched = ripple_watch(client, pending, today) if client and pending else []
+    scored_ids = {item["id"] for item in watched}
+    reasons["not in Qloo or scoring failed"] += len(pending) - len(scored_ids)
+    to_lock = []
+    for item in watched:
+        scored = [s for s in item["songs"] if s.get("score") is not None]
+        lockable, reason = ripple_lock_status(item["release_date"], len(scored), today)
+        if lockable:
+            to_lock += ripple_forecasts(item)
+        else:
+            reasons[reason] += 1
+    fresh = fresh_forecasts(to_lock, locked)
+    if fresh and not args.no_lock:
+        ledger.append(fresh)
+    releases_locked = len({(tuple(f["title"]), f["origin_week"]) for f in fresh}) if not args.no_lock else 0
+    log.info("ripple-only: %d live releases, %d eligible (scored), locked %d releases (%d forecasts); "
+             "not locked: %s; qloo live calls %s", len(titles), len(watched), releases_locked,
+             len(fresh) if not args.no_lock else 0, dict(reasons), client.live_calls if client else 0)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-refresh", action="store_true")
     parser.add_argument("--no-qloo", action="store_true")
     parser.add_argument("--no-lock", action="store_true")
+    parser.add_argument("--ripple-only", action="store_true",
+                        help="daily mode: collect placements, score and lock RIPPLE only (no Netflix, no spillover)")
+    parser.add_argument("--no-collect", action="store_true", help="with --ripple-only: skip the Tunefind collection")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    if args.ripple_only:
+        run_ripple_only(args)
+        return
 
     if not args.no_refresh:
         try:
@@ -237,18 +313,12 @@ def main():
         scored = [song for song in item["songs"] if song.get("score") is not None]
         # A ripple forecast counts only if locked before the outcome window opens (release + 7 days)
         # and ranks at least MIN_RIPPLE_SONGS songs; anything else is shown as an early read only.
-        opens = date.fromisoformat(item["release_date"]) + timedelta(days=wiki.AFTER_FROM)
-        item["lockable"] = date.today() < opens and len(scored) >= MIN_RIPPLE_SONGS
+        item["lockable"], reason = ripple_lock_status(item["release_date"], len(scored), date.today())
         if not item["lockable"]:
-            item["not_locked_reason"] = ("released before tracking began; its outcome window was already open"
-                                         if date.today() >= opens else f"fewer than {MIN_RIPPLE_SONGS} scorable songs")
+            item["not_locked_reason"] = reason
             continue
-        to_lock += [{"kind": "ripple", "title": [item["show"], item["release_date"]], "origin_week": item["release_date"],
-                     "target": f"{song['song']} | {song['artist']}", "score": song["score"],
-                     "wiki_article": song.get("wiki_article")}
-                    for song in item["songs"] if song.get("score") is not None]
-    already = {(tuple(r["title"]), r["origin_week"]) for r in ledger.read()}
-    fresh = [f for f in to_lock if (tuple(f["title"]), f["origin_week"]) not in already]
+        to_lock += ripple_forecasts(item)
+    fresh = fresh_forecasts(to_lock, ledger_keys())
     if fresh and not args.no_lock:
         written = ledger.append(fresh)
         lock_ids = {(tuple(w["title"]), w["origin_week"]): (w["locked_at"], w["hash"]) for w in written}
