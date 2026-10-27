@@ -123,12 +123,11 @@ export function renderHome(root, isCurrent) {
 
   load(stormBox, "this week's storms", isCurrent, () => stormsP.catch(() => getStorms()), ({ week, storms }) => {
     if (!storms.length) { add(stormBox, h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
-    const grp = (s) => (s.kit_specific ? 0 : s.has_kit ? 1 : 2);
-    const ranked = [...storms].sort((a, b) => grp(a) - grp(b) || (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
+    const ranked = [...storms].sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
     const maxP = Math.max(0.0001, ...ranked.map((s) => s.top_forecast?.probability ?? 0));
     add(stormBox,
       h("p", { class: "muted" }, `Week of ${week}. Titles that entered Netflix's Top 10 in 1 to 3 countries, most likely to spread first.`),
-      h("p", { class: "muted" }, "Qloo kit: what this title's audience loves in each forecast country. Countrywide: Qloo had little title-specific signal, so the kit mostly shows the country's general taste."),
+      h("p", { class: "muted" }, "Tags: \"Qloo kit\" means we have what this title's audience loves in each forecast country. \"Countrywide\" means Qloo had little title-specific signal, so the kit mostly shows the country's general taste."),
       h("ul", { class: "storm-list" }, ranked.map((s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
