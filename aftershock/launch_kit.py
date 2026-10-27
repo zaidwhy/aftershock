@@ -29,6 +29,16 @@ DOMAINS = {
 PER_DOMAIN = 5
 
 
+def repair_name(name):
+    """Some Qloo names arrive as UTF-8 read as Mac Roman ("Dise√±o" for "Diseño"). Reverse that only
+    when the round trip yields valid UTF-8; correct names fail the round trip and come back unchanged."""
+    try:
+        repaired = name.encode("mac_roman").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return name
+    return repaired
+
+
 def domain_picks(client, entity_id, country_name, entity_type):
     """Up to PER_DOMAIN entities of one type the title's audience in a country over-indexes on."""
     body = client.get("/v2/insights", {"filter.type": entity_type, "signal.interests.entities": entity_id,
@@ -37,7 +47,7 @@ def domain_picks(client, entity_id, country_name, entity_type):
     for entity in body.get("results", {}).get("entities", []):
         if not entity.get("name"):
             continue
-        pick = {"name": entity["name"]}
+        pick = {"name": repair_name(entity["name"])}
         if entity.get("entity_id"):
             pick["entity_id"] = entity["entity_id"]
         picks.append(pick)

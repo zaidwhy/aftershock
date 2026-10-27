@@ -16,11 +16,25 @@ Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (
 3. Rotate the Gemini key (it was printed once in an agent's terminal during the LLM test; never written to a file). The code now sends it as a header.
 4. Deploy steps: `.venv/Scripts/python scripts/run_forecasts.py`, then `.venv/Scripts/python scripts/export_static.py` (read-only pages are served as static JSON from public/data/, gitignored), then `vercel deploy --prod`. Git auto-deploy stays disconnected.
 
-## Data licensing (27 Oct)
+## Data licensing (27 Oct, done)
 
-- Tunefind's terms forbid automated collection without written consent and treat publishing scraped data as infringement. 511 of 516 backtest placements and all live placements came from it. Done: ripple-daily workflow disabled on GitHub; Songs to watch removed from the site; /api/ripples serves nothing (data/private/storms.json ripples emptied).
-- In progress: song ground truth rebuilt from MusicBrainz soundtrack releases (CC0; API allows automated use at 1 req/s), every RIPPLE test rerun unchanged; README, Devpost and scorecard numbers follow whatever that shows.
-- Other sources: Netflix Top 10 TSV is offered as a public download on Netflix's Top 10 site; Wikimedia pageviews API (allowed with a contact User-Agent); Nominatim reverse geocoding for Hotspots (1 req/s, cached, credited); Qloo hackathon key; Gemini for the LLM comparison only.
+- Tunefind terms forbid automated collection. Tunefind scraper, collector, daily workflow and all Tunefind-derived CSVs removed from HEAD; songs rebuilt from MusicBrainz (scripts/build_placements_musicbrainz.py, 490 songs, 34 titles, data/placements_sources.csv). Git history still contains the old CSVs (Zaid decision, see Still to do 1).
+- On licensed data the song result did not replicate: Qloo age gap 0.02 (p 0.40) on 24 shows, 0.18 (p 0.22) on 4 shows from 2024; real minus placebo p 0.14. README section 3, Devpost draft, site copy and team brief all say so. Qloo-vs-LLM and the Wednesday example were built on the discarded data and are deleted.
+- Some release dates in data/placements_sources.csv were carried over from the old CSV ("previous placements.csv release_date"); dates are facts, but re-sourcing them from Wikidata would make the provenance clean.
+
+## Judge panel and council (27 Oct evening)
+
+Simulated judges (Qloo CTO, Calacanis, Live Nation + design, Cedric + Seligman) averaged Tech 5.7, Design 6.7, Impact 4.8, Idea 6.5. Verified findings: for thin titles the launch kit collapses to the country's general taste (8 of 62 same-country title pairs overlap >= 60%, mean 0.15); no Qloo-vs-LLM measurement exists; Sync Scout output is near-noise (gaps 0.57-0.63) and slow (12 s); no title disambiguation by year; /api/ripple returns raw fit and age profiles; stale docstrings in aftershock/ripple.py, sync_scout.py and the mcp_server.py sync_scout description still claim significance; Devpost overclaims ("tested every signal against a placebo", "who to partner with"); weekly Action does not export or redeploy.
+
+Council verdict, in order:
+1. Commit a pre-registered experiment spec to the repo BEFORE running it: ~20-30 title-country pairs, three arms (Qloo title+country kit, Qloo country-only kit, Gemini LLM kit with the same country context), objective metrics only (title-specificity = overlap with the country-only kit; grounding = share of LLM picks that resolve in Qloo /search; distinctness across titles in a country), a win rule fixed in advance, publish either way, state low power.
+2. Build the result into the storm page: "title-specific" vs "generic" badge per kit (from the country-only control) and a Qloo-vs-LLM panel.
+3. Hero worked example, kit-rich storms first, one buyer line (local distributors, music publishers, promoters; not streamers).
+4. Honesty fixes (docstrings, /api/ripple raw fields, Devpost overclaims, a short Data and terms note, "not affiliated with Netflix or Qloo") and make forecast.yml run export_static and deploy, or drop the claim.
+5. Small launch-brief export if time. Demote Sync Scout. Skip the Stranger Things retro demo.
+Fallback if Qloo loses every arm: reposition the kit as a country-level taste layer. Freeze for screenshots 30 Oct 14:00 IST.
+
+Done after the council: mojibake repair for Qloo names (launch_kit.repair_name, tested).
 
 ## Team plan (27 Oct)
 

@@ -44,3 +44,10 @@ def test_missing_title_returns_empty_without_calls():
     client = FakeInsights({})
     assert launch_kit(client, None, "Japan") == {}
     assert client.calls == []
+
+
+def test_repair_name_fixes_mac_roman_mojibake_and_leaves_clean_names():
+    from aftershock.launch_kit import repair_name
+    assert repair_name("Chav\u221a\u2265n La Escuela De Dise\u221a\u00b1o") == "Chav\u00f3n La Escuela De Dise\u00f1o"
+    for clean in ("Chav\u00f3n", "S\u01a1n T\u00f9ng M-TP", "GoPro", "\u81fa\u5317\u5e02"):
+        assert repair_name(clean) == clean
