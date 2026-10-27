@@ -16,10 +16,11 @@ Every week the agent reads Netflix's public per-country Top 10, finds titles tha
 - **What this audience loves there (Qloo launch kit):** in each of the top three forecast countries, the artists, shows, films and brands that title's audience over-indexes on, as candidate partners and cross-promotions.
 - **Whether that is really about the title:** each kit is compared with what Qloo returns for the whole country with no title. Names the whole country likes anyway are greyed out, and each kit is labelled "title-specific" or "mostly countrywide taste" (this week 48 of 81 kits are title-specific).
 - **Where in each country (Qloo Hotspots):** the cities where that title's audience concentrates, from Qloo's heatmap, on a small map per country.
+- **This week's map and a lookup for any title:** a world map shaded by how many of this week's breakouts are likely to reach each country, and a search over the 8,721 titles that charted since 2024 (when and where each first charted, and where a title that is still spreading may go next).
 - **Sync Scout:** for a music supervisor. Type a show; Qloo returns artists its audience loves whose own audience sits outside the show's age groups. A shortlist, not a forecast.
 - **A public record:** every country's probability is locked in a hash-chained file in the repo before the outcome exists. A weekly GitHub Action runs the loop (detect breakouts, resolve titles in Qloo, forecast, build kits and hotspots, lock) and commits the ledger; grading starts when the first four-week horizons close on 15 Nov 2026.
 
-Any MCP agent (Claude Desktop, Claude Code) can call it: `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`.
+Any MCP agent (Claude Desktop, Claude Code) can call it: `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history`.
 
 ## How we built it
 
