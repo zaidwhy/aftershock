@@ -122,7 +122,8 @@ def release_year(hit):
 
 def best_title_match(hits, name, chart_year, film):
     """Among search hits whose name equals `name`, the one that fits the Netflix first-chart year.
-    Films: a release within FILM_YEAR_WINDOW years of it, closest first. TV: any season year, so a show
+    Films: a release within FILM_YEAR_WINDOW years of it, closest first; with none in the window, the
+    most popular exact match. TV: any season year, so a show
     first released on or before that year; one released after it cannot be what charted. Higher
     popularity breaks ties. A hit with no release year ranks after every hit that has one."""
     exact = [h for h in hits if norm(h.get("name", ""), keep_subtitle=True) == norm(name, keep_subtitle=True)]
@@ -139,7 +140,9 @@ def best_title_match(hits, name, chart_year, film):
             return (2, 0, popularity, order)
         if film:
             gap = abs(year - chart_year)
-            return (0 if gap <= FILM_YEAR_WINDOW else 1, gap, popularity, order)
+            # Outside the window a near-miss year is no evidence (Housefull: a 2013 entity with popularity 0
+            # beat the 2010 film), so fall back to Qloo's own popularity order.
+            return (0, gap, popularity, order) if gap <= FILM_YEAR_WINDOW else (1, 0, popularity, order)
         return (0 if year <= chart_year else 1, 0 if year <= chart_year else year - chart_year, popularity, order)
     return min(enumerate(exact), key=rank)[1]
 

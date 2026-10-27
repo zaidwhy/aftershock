@@ -32,11 +32,6 @@ def test_film_within_two_years_beats_a_closer_year_less_popular_rule_ties_on_pop
     assert best_title_match(hits, "Heat", 2026, film=True)["entity_id"] == "b"
 
 
-def test_film_with_no_hit_inside_the_window_still_takes_the_closest():
-    hits = [hit("Heat", "a", 1995), hit("Heat", "b", 2015)]
-    assert best_title_match(hits, "Heat", 2026, film=True)["entity_id"] == "b"
-
-
 def test_tv_accepts_any_earlier_season_year_and_rejects_later_ones_then_popularity():
     hits = [hit("Show", "future", 2030, 0.99), hit("Show", "small", 2010, 0.2), hit("Show", "big", 2016, 0.7)]
     assert best_title_match(hits, "Show", 2026, film=False)["entity_id"] == "big"
@@ -63,3 +58,9 @@ def test_resolve_title_uses_the_chart_year_and_asks_for_more_hits():
     event = {"title": ("Relatives", "N/A"), "category": "Films (English)", "origin_week": date(2026, 10, 19)}
     assert run_forecasts.resolve_title(C(), event) == "new"
     assert C.taken > 5
+
+
+def test_film_with_no_hit_in_window_falls_back_to_popularity():
+    hits = [{"name": "Housefull", "entity_id": "OBSCURE", "popularity": 0.0, "properties": {"release_year": 2013}},
+            {"name": "Housefull", "entity_id": "KNOWN", "popularity": 0.9, "properties": {"release_year": 2010}}]
+    assert best_title_match(hits, "Housefull", 2026, film=True)["entity_id"] == "KNOWN"
