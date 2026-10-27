@@ -59,7 +59,7 @@ PLACE_FIELDS = ("city", "town", "municipality", "village", "county", "state_dist
 # Administrative words OpenStreetMap appends to a place name. Matched as whole words at the end or start
 # of the name, so "Mexico City" and "Kingston upon Hull" stay as they are.
 ADMIN_SUFFIX = re.compile(
-    r"(?:\s+|^)(?:Metropolitan\s+Municipality|Municipal\s+Corporation|City\s+Corporation|Municipality|Upazila|District|Ward)$",
+    r"(?:\s+|^)(?:(?:Metropolitan|Local)\s+Municipality|Municipal\s+Corporation|City\s+Corporation|Municipality|Upazila|District|Ward)$",
     re.IGNORECASE)
 ADMIN_PREFIX = re.compile(r"^(?:Municipality|Municipal\s+Corporation)\s+of\s+", re.IGNORECASE)
 

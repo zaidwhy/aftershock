@@ -99,6 +99,7 @@ def test_administrative_suffixes_are_stripped_on_word_boundaries():
     clean = hs.clean_place_name
     assert clean("Pune Municipal Corporation") == "Pune"
     assert clean("Ekurhuleni Metropolitan Municipality") == "Ekurhuleni"
+    assert clean("Saldanha Bay Local Municipality") == "Saldanha Bay"
     assert clean("Savar Upazila") == "Savar"
     assert clean("Kathmandu District") == "Kathmandu"
     assert clean("Chittagong City Corporation") == "Chittagong"
