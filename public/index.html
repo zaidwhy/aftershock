@@ -18,6 +18,22 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- The module graph is three imports deep; preloading it lets the browser fetch every module at once
+     instead of discovering each level after the previous one has parsed (measured on throttled 3G). -->
+<link rel="modulepreload" href="js/views.js">
+<link rel="modulepreload" href="js/dom.js">
+<link rel="modulepreload" href="js/api.js">
+<link rel="modulepreload" href="js/format.js">
+<link rel="modulepreload" href="js/charts.js">
+<link rel="modulepreload" href="js/iso.js">
+<link rel="modulepreload" href="js/netflix.js">
+<link rel="modulepreload" href="js/weekmap.js">
+<link rel="modulepreload" href="js/brief.js">
+<link rel="modulepreload" href="js/ask.js">
+<link rel="modulepreload" href="js/agent.js">
+<link rel="modulepreload" href="js/audience.js">
+<link rel="modulepreload" href="js/crowd.js">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" defer></script>
