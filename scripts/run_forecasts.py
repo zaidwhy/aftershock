@@ -21,7 +21,7 @@ import httpx
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from aftershock import ledger, titles as title_index, wiki  # noqa: E402
+from aftershock import ledger, storm_archive, titles as title_index, wiki  # noqa: E402
 from aftershock.netflix import (  # noqa: E402
     HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
@@ -525,6 +525,7 @@ def main():
             item["locked_at"], item["ledger_id"] = lock_ids[key]
     (PRIVATE / "storms.json").write_text(json.dumps({"week": str(last_week), "storms": storms, "ripples": watched},
                                                     indent=1), encoding="utf-8")
+    storm_archive.write_week(PRIVATE / "storm_archive", last_week, storms)
     (PRIVATE / "scorecard.json").write_text(json.dumps(scorecard, indent=1), encoding="utf-8")
     index = title_index.build_index(rows, model, countries, names, last_week, {e["title"] for e in storms_now}, HORIZON)
     (PRIVATE / "titles.json").write_text(json.dumps(index, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")

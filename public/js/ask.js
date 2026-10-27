@@ -8,12 +8,16 @@ import { songRow, scoutRow, unresolvedShow, failBox } from "./audience.js";
 import { hotspotMap } from "./charts.js";
 import { bandText } from "./crowd.js";
 
-const EXAMPLES = [
-  "Where will Squid Game go next?",
-  "What should Fukrey Returns pair with in Bangladesh?",
-  "Find songs for Stranger Things",
-  "Running Up That Hill by Kate Bush for Stranger Things",
-];
+const FALLBACK_KIT = "What should Fukrey Returns pair with in Bangladesh?";
+/** The example questions. The launch-kit one names this week's hero title and country so it always resolves. */
+export function examples(hero) {
+  return [
+    "Where will Squid Game go next?",
+    hero?.title && hero?.country ? `What should ${hero.title} pair with in ${hero.country}?` : FALLBACK_KIT,
+    "Find songs for Stranger Things",
+    "Running Up That Hill by Kate Bush for Stranger Things",
+  ];
+}
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 const poss = (n) => (/s$/i.test(n) ? `${n}'` : `${n}'s`);
 const list = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
@@ -118,10 +122,14 @@ function stepsList(steps) {
 }
 
 /** The home-page input. `isCurrent` stops the rotating placeholder once the visitor leaves the page. */
-export function askBox(isCurrent) {
+export function askBox(isCurrent, stormsP) {
+  let EXAMPLES = examples(null);
   const out = h("div", { class: "ask-out", "aria-live": "polite" });
   const input = h("input", { id: "ask-q", type: "text", autocomplete: "off", maxlength: "200", placeholder: EXAMPLES[0], required: true });
   const btn = h("button", { type: "submit", class: "btn btn-primary" }, "Ask");
+  const chips = h("div", { class: "examples" }, h("span", { class: "mono eg-label" }, "Try"));
+  const drawChips = () => chips.replaceChildren(h("span", { class: "mono eg-label" }, "Try"),
+    ...EXAMPLES.map((q) => h("button", { type: "button", class: "chip", onclick: () => run(q) }, q)));
   const run = (text) => {
     const q = (text ?? input.value).trim();
     if (!q) { out.replaceChildren(h("p", { class: "status" }, "Type a question, or tap an example.")); input.focus(); return; }
@@ -136,6 +144,13 @@ export function askBox(isCurrent) {
     }).catch((err) => { if (isCurrent()) out.replaceChildren(failBox(err, "the agent")); })
       .finally(() => { btn.disabled = false; });
   };
+  drawChips();
+  if (stormsP) stormsP.then((st) => {
+    if (!isCurrent()) return;
+    EXAMPLES = examples(st?.hero);
+    if (!input.value && document.activeElement !== input) input.placeholder = EXAMPLES[0];
+    drawChips();
+  }).catch(() => {});
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
     let i = 0;
     const timer = setInterval(() => {
@@ -150,7 +165,6 @@ export function askBox(isCurrent) {
     h("p", { class: "muted" }, "Ask in plain words. The agent picks the right tool and shows every step. It follows fixed rules, not a language model, so it only reports what its tools return."),
     h("form", { class: "lookup-form ask-form", novalidate: true, onsubmit: (e) => { e.preventDefault(); run(); } },
       h("label", { for: "ask-q", class: "sr-only" }, "Ask the agent a question"), input, btn),
-    h("div", { class: "examples" }, h("span", { class: "mono eg-label" }, "Try"),
-      EXAMPLES.map((q) => h("button", { type: "button", class: "chip", onclick: () => run(q) }, q))),
+    chips,
     out);
 }

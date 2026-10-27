@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 
 from aftershock import ask as ask_agent
+from aftershock import storm_archive
 from aftershock import titles as title_index
 from aftershock.qloo import CACHE_DIR, Qloo, QlooError
 from aftershock.ripple import MAX_SONGS, score_placements
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PRIVATE = ROOT / "data" / "private"
 PUBLIC_DATA = ROOT / "data" / "public"
 TITLES = PRIVATE / "titles.json"
+ARCHIVE = PRIVATE / "storm_archive"
 RIPPLE_PER_HOUR = 10
 RIPPLE_PER_DAY = 300  # live scorings per server process per day, all visitors
 MAX_FIELD = 120
@@ -119,7 +121,10 @@ def storm(storm_id: str):
     for item in _load(PRIVATE / "storms.json")["storms"]:
         if item["summary"]["id"] == storm_id:
             return item["detail"]
-    raise HTTPException(404, f"no storm with id {storm_id!r}")
+    found = storm_archive.find(ARCHIVE, storm_id)
+    if found:
+        return found[1] | {"archived_week": found[0]}
+    raise HTTPException(404, f"No breakout called {storm_id} in any week we have forecast.")
 
 
 MAX_TITLE_QUERY = 80

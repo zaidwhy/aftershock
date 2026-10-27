@@ -63,3 +63,18 @@ def test_ledger_page_counts_rows_status_and_chain(tmp_path):
         ("Old Show", "France", "hit"), ("Old Show", "Germany", "miss")]
     path.write_text(path.read_text(encoding="utf-8").replace("0.4", "0.9"), encoding="utf-8")
     assert ledger.verify(path) == 0
+
+
+def test_export_includes_archived_storms(tmp_path, monkeypatch):
+    from aftershock import storm_archive
+    current = client.get("/api/storms").json()["storms"][0]["id"]
+    arch = tmp_path / "arch"
+    storm_archive.write_week(arch, "2026-01-04", [
+        {"summary": {"id": "gone-show"}, "detail": {"title": "Gone Show"}},
+        {"summary": {"id": current}, "detail": {"title": "STALE CLASH"}}])
+    monkeypatch.setattr(api, "ARCHIVE", arch)
+    dest = tmp_path / "static"
+    export_static.export(dest)
+    assert _file(dest, "storms/gone-show.json") == {"title": "Gone Show", "archived_week": "2026-01-04"}
+    assert _file(dest, f"storms/{current}.json")["title"] != "STALE CLASH"
+    assert "archived_week" not in _file(dest, f"storms/{current}.json")

@@ -29,7 +29,7 @@ const yearGenres = (year, genres, inline) => {
 };
 
 /** Run a fetch into a container with loading and error states. */
-function load(container, what, isCurrent, fetcher, render) {
+function load(container, what, isCurrent, fetcher, render, notFound) {
   const run = () => {
     container.replaceChildren(loading(what));
     fetcher().then((data) => {
@@ -38,7 +38,7 @@ function load(container, what, isCurrent, fetcher, render) {
       render(data, container);
     }).catch((err) => {
       if (!isCurrent()) return;
-      container.replaceChildren(errorBox(what, err, run));
+      container.replaceChildren(notFound ? notFound(err, container) ?? errorBox(what, err, run) : errorBox(what, err, run));
     });
   };
   run();
@@ -68,7 +68,7 @@ export function renderHome(root, isCurrent) {
         h("div", { class: "hero-side" },
           h("p", { class: "buyer mono" }, "For local distributors, music publishers and promoters: know where a breakout goes next and what to pair it with there, before the competition does."),
           heroBox)),
-      askBox(isCurrent),
+      askBox(isCurrent, stormsP),
       proof,
       agentBox,
       mapBox,
@@ -169,6 +169,7 @@ export function renderStorm(root, id, isCurrent) {
     const mapBox = h("div", { class: "map-box" }, loading("the map"));
     add(root, 
       h("p", { class: "crumb" }, h("a", { href: "#/" }, "All storms")),
+      archivedBanner(st.archived_week),
       h("h1", null, st.title, st.season ? h("span", { class: "h1-sub" }, ` ${st.season}`) : null),
       titleHead(st),
       answerLine(st, fc),
@@ -185,7 +186,20 @@ export function renderStorm(root, id, isCurrent) {
     }).catch((err) => {
       if (isCurrent()) mapBox.replaceChildren(errorBox("the map", err), h("p", { class: "muted" }, "The table below has the same data."));
     });
-  });
+  }, (err) => (err.status === 404 ? h("div", { class: "status status-error", role: "alert" },
+    h("h2", null, "No breakout called that"),
+    h("p", null, /^No breakout called/.test(err.message) ? err.message : `No breakout called ${id} in any week we have forecast.`),
+    h("p", null, h("a", { href: "#/" }, "See this week's breakouts"))) : null));
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** Shown when the API served this storm from an earlier week's archive. */
+export function archivedBanner(week) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(week || "");
+  if (!m) return null;
+  const when = `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
+  return h("p", { class: "status archived-note", role: "note" },
+    `From the week of ${when}. This title has since dropped out of this week's breakouts; its forecast below was locked then and is graded as Netflix publishes.`);
 }
 
 /** Poster (when Qloo has one), year, genres and a one-sentence description, then the origin line. */

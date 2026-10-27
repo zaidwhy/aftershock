@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from datetime import date, timedelta  # noqa: E402
 
-from aftershock import api, ledger  # noqa: E402
+from aftershock import api, ledger, storm_archive  # noqa: E402
 from aftershock.netflix import first_entries, load_rows  # noqa: E402
 
 OUT = ROOT / "public" / "data"
@@ -76,6 +76,11 @@ def export(out=OUT):
     _write(out / "storms.json", listing)
     for s in listing["storms"]:
         _write(out / "storms" / f"{s['id']}.json", api.storm(s["id"]))
+    current = {s["id"] for s in listing["storms"]}
+    for week, sid, detail in storm_archive.all_storms(api.ARCHIVE):
+        if sid not in current:
+            current.add(sid)
+            _write(out / "storms" / f"{sid}.json", detail | {"archived_week": week})
     _write(out / "scorecard.json", api.scorecard())
     _write(out / "replays.json", api.replays())
     _write(out / "ledger.json", _ledger_body(listing))

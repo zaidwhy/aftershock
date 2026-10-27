@@ -329,3 +329,30 @@ def test_live_lookup_failures_say_what_happened(monkeypatch, status, code, says)
     monkeypatch.setattr(api, "score_placements", refuse)
     resp = client.get("/api/ripple", params={"show": "X", "songs": "A|B"})
     assert resp.status_code == code and says in resp.json()["detail"]
+
+
+def _archive_with(tmp_path, monkeypatch, sid="gone-show", week="2026-01-04"):
+    from aftershock import storm_archive
+    detail = {"title": "Gone Show", "origin_week": week}
+    storm_archive.write_week(tmp_path, week, [{"summary": {"id": sid}, "detail": detail}])
+    monkeypatch.setattr(api, "ARCHIVE", tmp_path)
+
+
+def test_storm_falls_back_to_archive(tmp_path, monkeypatch):
+    _archive_with(tmp_path, monkeypatch)
+    body = client.get("/api/storms/gone-show").json()
+    assert body["title"] == "Gone Show" and body["archived_week"] == "2026-01-04"
+
+
+def test_storm_archive_prefers_most_recent_week(tmp_path, monkeypatch):
+    from aftershock import storm_archive
+    _archive_with(tmp_path, monkeypatch)
+    storm_archive.write_week(tmp_path, "2026-02-01", [{"summary": {"id": "gone-show"}, "detail": {"title": "Newer"}}])
+    assert client.get("/api/storms/gone-show").json()["archived_week"] == "2026-02-01"
+
+
+def test_unknown_storm_404_sentence(tmp_path, monkeypatch):
+    _archive_with(tmp_path, monkeypatch)
+    resp = client.get("/api/storms/not-real")
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "No breakout called not-real in any week we have forecast."
