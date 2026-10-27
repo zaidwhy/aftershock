@@ -2,6 +2,27 @@
 
 Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (Discord says keys live to 16 Nov); top 3 present on air 5 Nov.
 
+## Start here (written 28 Oct, 02:25 IST)
+
+State: live at https://aftershock-qloo.vercel.app, repo github.com/zaidwhy/aftershock in sync, 133 tests passing locally and in CI (tests.yml, green badge), weekly Action verified under the current code (run 40581939996, 8.5 min).
+
+Runs on its own, no action needed:
+1. Netflix week of 25 Oct: `projects/aftershock-team/netflix_watch.sh` (log `netflix_watch.log`) acts from 22:30 UTC 27 Oct: pulls what the 22:00 UTC Action locked, runs the forecast job, verifies the ledger, exports, pushes the ledger if it changed, deploys. Storm links from 18 Oct keep working through the archive.
+2. Qloo vs LLM experiment: `experiment_watch.sh` (log `experiment.log`) runs at 07:15 UTC 28 Oct (12:45 IST), commits `data/results/kit_experiment.json`, redeploys; the Scorecard slot fills itself.
+
+Check when you wake up: the two logs end with "pipeline done" and "experiment done"; the Agent page shows the 25 Oct run; the Scorecard shows the early top-pick read and the experiment verdict. Then put the verdict into README section 3, the bracketed placeholder in docs/DEVPOST.md and the LinkedIn draft placeholder, and re-record the video if you want it to show them.
+
+Needs you (nothing below is done for you):
+1. Submit on Devpost yourself before 31 Oct 09:15 IST; all four teammates on the team; paste docs/DEVPOST.md.
+2. Gallery: `projects/aftershock-team/gallery/` (7 images, in order). Video: `projects/aftershock-team/video/AFTERSHOCK-walkthrough.mp4` as an unlisted YouTube link.
+3. Rotate the Gemini key (printed once in an agent's terminal, never written to a file).
+4. Git history still has the Tunefind CSVs from before 27 Oct (removed from the tree, disclosed in README): leave it, or rewrite history / start a fresh repo (irreversible, resets ledger timestamps).
+5. GitHub profile: the FLAKE LAUNDERING section another session added links to a private repo (404).
+6. LinkedIn drafts: `projects/career/linkedin-refresh-2026-10-28.md` (nothing posted).
+7. Team brief to share: https://claude.ai/artifact/TZpZyUGS1K1qrSEAHoYaLX (PDF in Downloads).
+
+Everything below is the record of how it got here, newest decisions first within each section.
+
 ## Live (27 Oct)
 
 - Repo: https://github.com/zaidwhy/aftershock (public, MIT), `main` pushed; Actions secret `QLOO_API_KEY` set.
