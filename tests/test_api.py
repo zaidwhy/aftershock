@@ -79,3 +79,34 @@ def test_ripple_rejects_as_of_before_pageview_history():
     resp = client.get("/api/ripple", params={"show": "X", "songs": "A|B", "as_of": "2010-01-01"})
     assert resp.status_code == 422
     assert "as_of" in resp.json()["detail"]
+
+
+def test_song_by_artist_splits_on_last_by():
+    assert api._parse_songs("Stand by Me by Ben E. King") == [("Stand by Me", "Ben E. King")]
+    assert api._parse_songs("Space Song BY Beach House") == [("Space Song", "Beach House")]
+
+
+def test_pipe_format_still_works_and_wins_over_by():
+    assert api._parse_songs("X | Y") == [("X", "Y")]
+    assert api._parse_songs("Stand by Me | Ben E. King; Song by Artist") == [("Stand by Me", "Ben E. King"), ("Song", "Artist")]
+
+
+def test_song_chunk_with_neither_format_names_both():
+    resp = client.get("/api/ripple", params={"show": "Wednesday", "songs": "Just a title"})
+    assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    assert "song|artist" in detail and "song by artist" in detail
+
+
+def test_scout_validates_show():
+    assert client.get("/api/scout").status_code == 422
+    assert client.get("/api/scout", params={"show": "x" * 121}).status_code == 422
+    assert client.get("/api/scout", params={"show": "   "}).status_code == 422
+
+
+def test_scout_shares_the_ripple_limiter(monkeypatch):
+    _stub_scoring(monkeypatch)
+    monkeypatch.setattr(api, "scout", lambda *a, **k: {"resolved": True, "artists": []})
+    codes = [client.get("/api/scout", params={"show": "X"}).status_code for _ in range(api.RIPPLE_PER_HOUR + 1)]
+    assert codes[:-1] == [200] * api.RIPPLE_PER_HOUR and codes[-1] == 429
+    assert client.get("/api/ripple", params={"show": "X", "songs": "A|B"}).status_code == 429

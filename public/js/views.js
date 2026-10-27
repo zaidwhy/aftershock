@@ -1,6 +1,6 @@
 import { h } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
-import { getStorms, getStorm, getScorecard, getReplays, getRipples, getRipple, scoreSongs, isMock } from "./api.js";
+import { getStorms, getStorm, getScorecard, getReplays, getRipples, getRipple, scoreSongs, scoutShow, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
 import { seismograph, ripplePanel, generationGap, forecastMap } from "./charts.js";
 import { ISO } from "./iso.js";
@@ -12,6 +12,14 @@ const countryName = (code) => ISO[code]?.[1] ?? code;
 
 const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - forecast where a breakout show spreads"; };
 const mockNote = () => (isMock() ? h("p", { class: "mock-flag" }, "Mock data (?mock=1). Numbers are placeholders, except the replay pageviews.") : null);
+/** "song | artist" (first "|"), else "song by artist" split on the last " by ". Mirrors the API. */
+function parseSongLine(line) {
+  const pipeAt = line.indexOf("|");
+  if (pipeAt >= 0) return { song: line.slice(0, pipeAt).trim(), artist: line.slice(pipeAt + 1).trim() };
+  const byAt = line.toLowerCase().lastIndexOf(" by ");
+  if (byAt < 0) return { song: line.trim(), artist: "" };
+  return { song: line.slice(0, byAt).trim(), artist: line.slice(byAt + 4).trim() };
+}
 const origins = (list) => list.map((c) => c.name).join(", ");
 
 /** Run a fetch into a container with loading and error states. */
@@ -194,7 +202,7 @@ export function renderTry(root, isCurrent) {
   setTitle("Try it");
   const out = h("div", { class: "try-out", "aria-live": "polite" });
   const show = h("input", { id: "show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Stranger Things", maxlength: "120" });
-  const songs = h("textarea", { id: "songs", name: "songs", rows: "6", required: true, "aria-describedby": "songs-help", placeholder: "Running Up That Hill | Kate Bush\nMaster of Puppets | Metallica" });
+  const songs = h("textarea", { id: "songs", name: "songs", rows: "6", required: true, "aria-describedby": "songs-help", placeholder: "Running Up That Hill by Kate Bush\nMaster of Puppets by Metallica" });
   const asOf = h("input", { id: "asof", name: "asof", type: "date", min: "2015-08-01", "aria-describedby": "asof-help" });
   const btn = h("button", { type: "submit", class: "btn btn-primary" }, "Score these songs");
   const form = h("form", { class: "try-form", novalidate: true,
@@ -202,12 +210,12 @@ export function renderTry(root, isCurrent) {
       e.preventDefault();
       const showName = show.value.trim();
       const lines = songs.value.split("\n").map((l) => l.trim()).filter(Boolean);
-      const parsed = lines.map((l) => { const [song, ...rest] = l.split("|"); return { song: song.trim(), artist: rest.join("|").trim() }; });
+      const parsed = lines.map(parseSongLine);
       const bad = parsed.findIndex((p) => !p.song || !p.artist);
       if (!showName) { out.replaceChildren(errorBox("your input", new Error("Enter a show name."))); show.focus(); return; }
-      if (!parsed.length) { out.replaceChildren(errorBox("your input", new Error("Enter at least one line as: song | artist."))); songs.focus(); return; }
+      if (!parsed.length) { out.replaceChildren(errorBox("your input", new Error("Enter at least one line as: song by artist."))); songs.focus(); return; }
       if (parsed.length > 8) { out.replaceChildren(errorBox("your input", new Error(`Up to 8 songs are allowed, you entered ${parsed.length}.`))); songs.focus(); return; }
-      if (bad >= 0) { out.replaceChildren(errorBox("your input", new Error(`Line ${bad + 1} needs both a song and an artist, written "song | artist".`))); songs.focus(); return; }
+      if (bad >= 0) { out.replaceChildren(errorBox("your input", new Error(`Line ${bad + 1} needs both a song and an artist, written "song by artist" or "song | artist".`))); songs.focus(); return; }
       btn.disabled = true;
       out.replaceChildren(loading("scores from Qloo"));
       scoreSongs(showName, parsed, asOf.value || null).then((r) => {
@@ -220,12 +228,52 @@ export function renderTry(root, isCurrent) {
     } },
     h("div", { class: "field" }, h("label", { for: "show" }, "Show or film"), show),
     h("div", { class: "field" }, h("label", { for: "songs" }, "Songs, one per line"), songs,
-      h("p", { id: "songs-help", class: "help" }, "Format: song | artist. Up to 8 lines. Limited to 10 live scorings per hour per visitor.")),
+      h("p", { id: "songs-help", class: "help" }, "Format: \"song by artist\" or \"song | artist\". Up to 8 lines. Limited to 10 live scorings per hour per visitor.")),
     h("div", { class: "field" }, h("label", { for: "asof" }, "Score as of (optional)"), asOf,
-      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show. It changes only the Wikipedia context (prior views are read before this date); the Qloo audiences, and so the score, are today's, so a past replay carries Qloo's later knowledge. Try Wednesday as of 2022-11-23 with Space Song | Beach House, Physical | Dua Lipa, Dream Weaver | Gary Wright, Dancing In the Dark | Bruce Springsteen.")),
+      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show. It changes only the Wikipedia context (prior views are read before this date); the Qloo audiences, and so the score, are today's, so a past replay carries Qloo's later knowledge. Try Wednesday as of 2022-11-23 with Space Song by Beach House, Physical by Dua Lipa, Dream Weaver by Gary Wright, Dancing In the Dark by Bruce Springsteen.")),
     btn);
   add(root, h("h1", null, "Try it on any show"),
     h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each artist in Qloo and scores it by the age gap: how far the artist's audience sits from the show's, from 0 to 1. Prior Wikipedia views and Qloo taste fit are shown as context and are not scored."),
+    mockNote(), form, out);
+}
+
+/* ------------------------------------------------------------ sync scout */
+export function renderScout(root, isCurrent) {
+  setTitle("Sync Scout");
+  const out = h("div", { class: "try-out", "aria-live": "polite" });
+  const show = h("input", { id: "scout-show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Wednesday", maxlength: "120" });
+  const btn = h("button", { type: "submit", class: "btn btn-primary" }, "Scout artists");
+  const form = h("form", { class: "try-form", novalidate: true,
+    onsubmit: (e) => {
+      e.preventDefault();
+      const name = show.value.trim();
+      if (!name) { out.replaceChildren(errorBox("your input", new Error("Enter a show or film name."))); show.focus(); return; }
+      btn.disabled = true;
+      out.replaceChildren(loading("candidates from Qloo (about 15 seconds the first time, faster when cached)"));
+      scoutShow(name).then((r) => {
+        if (!isCurrent()) return;
+        out.replaceChildren();
+        if (r.resolved === false) {
+          add(out, h("div", { class: "status status-error", role: "alert" }, h("p", null, `Could not scout "${name}": ${r.reason || "Qloo has no data for it."}`)));
+          return;
+        }
+        if (!r.artists?.length) { add(out, h("p", { class: "status" }, `Qloo returned no artists with an audience profile for ${r.show}.`)); return; }
+        add(out, h("h2", null, `Artists for ${r.show}`),
+          h("p", { class: "muted" }, `Top ${r.artists.length} of ${r.profiled} profiled artists from ${r.candidates} candidates, ranked by age gap.${r.truncated ? " The Qloo call budget ran out, so the list is partial." : ""}`),
+          h("ol", { class: "songs scout-list" }, r.artists.map((a) => h("li", { class: "song" },
+            h("div", { class: "song-head" }, h("strong", null, a.name), h("span", { class: "muted mono" }, `taste rank ${a.taste_rank}`)),
+            h("div", { class: "score-row" }, h("span", { class: "score-num mono" }, a.gap.toFixed(2)),
+              h("div", { class: "bar", role: "img", "aria-label": `Age gap ${a.gap.toFixed(2)} of 1` }, h("span", { style: `width:${Math.round(a.gap * 100)}%` }))),
+            h("p", { class: "song-math" }, a.why)))));
+      }).catch((err) => { if (isCurrent()) out.replaceChildren(errorBox("the scout", err)); })
+        .finally(() => { btn.disabled = false; });
+    } },
+    h("div", { class: "field" }, h("label", { for: "scout-show" }, "Show or film"), show,
+      h("p", { class: "help" }, "Uses up to 60 live Qloo calls and takes about 15 seconds when not cached. Shares the limit of 10 live requests per hour per visitor with Try it.")),
+    btn);
+  add(root, h("h1", null, "Sync Scout"),
+    h("p", { class: "pitch" }, "For a music supervisor: which artists does this show's taste neighbourhood like, whose audience sits outside the show's own generation? Candidates come from Qloo; the ranking is the age gap, from 0 to 1."),
+    h("p", { class: "caveat-line" }, "Ranks artists, not scenes. The age gap tracked real song spikes but not a placebo in our backtest (README section 3); it is modest, in-sample evidence, not a hit predictor."),
     mockNote(), form, out);
 }
 

@@ -1,6 +1,6 @@
 """HTTP API for AFTERSHOCK. Serves precomputed storms, the scorecard, replays and live RIPPLE scoring.
 
-Live Qloo calls happen only in /api/ripple, capped per visitor; everything else is read from files
+Live Qloo calls happen only in /api/ripple and /api/scout, capped per visitor; everything else is read from files
 the forecast job writes. The Qloo key stays in the server environment.
 """
 import json
@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from aftershock.qloo import CACHE_DIR, Qloo, QlooError
 from aftershock.ripple import MAX_SONGS, score_placements
+from aftershock.sync_scout import MAX_QLOO_CALLS, scout
 
 log = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parent.parent
@@ -94,12 +95,20 @@ def _visitor(request):
     return request.client.host if request.client else "unknown"
 
 
+def _split_song(chunk):
+    """"song | artist" (first "|"), else "song by artist" split on the LAST " by "."""
+    if "|" in chunk:
+        return tuple(part.strip() for part in chunk.split("|", 1))
+    cut = chunk.lower().rfind(" by ")
+    if cut < 0:
+        raise HTTPException(422, f"each song must be 'song|artist' or 'song by artist'; got {chunk[:MAX_FIELD]!r}")
+    return chunk[:cut].strip(), chunk[cut + 4:].strip()
+
+
 def _parse_songs(songs):
     placements = []
     for chunk in filter(None, (c.strip() for c in songs.split(";"))):
-        if "|" not in chunk:
-            raise HTTPException(422, f"each song must be 'song|artist'; got {chunk[:MAX_FIELD]!r}")
-        song, artist = (part.strip() for part in chunk.split("|", 1))
+        song, artist = _split_song(chunk)
         if not song or not artist or len(song) > MAX_FIELD or len(artist) > MAX_FIELD:
             raise HTTPException(422, f"song and artist must each be 1 to {MAX_FIELD} characters")
         placements.append((song, artist))
@@ -108,15 +117,9 @@ def _parse_songs(songs):
     return placements
 
 
-@app.get("/api/ripple")
-def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX_FIELD),
-           songs: str = Query(..., min_length=3, max_length=MAX_SONGS * (2 * MAX_FIELD + 2)),
-           as_of: date | None = None):
-    placements = _parse_songs(songs)
-    if as_of and not (WIKI_FIRST_DAY <= as_of <= date.today()):
-        raise HTTPException(422, f"as_of must be between {WIKI_FIRST_DAY} and today; got {as_of}")
-    visitor = _visitor(request)
-    hits = _ripple_hits[visitor]
+def _take_live_slot(request):
+    """Shared per-visitor hourly and per-process daily limit for every endpoint that calls Qloo live."""
+    hits = _ripple_hits[_visitor(request)]
     now = time.time()
     while hits and now - hits[0] > 3600:
         hits.popleft()
@@ -129,10 +132,34 @@ def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX
         raise HTTPException(429, f"daily limit of {RIPPLE_PER_DAY} live scorings across all visitors is used up; try again tomorrow")
     hits.append(now)
     _daily["count"] += 1
+
+
+@app.get("/api/ripple")
+def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX_FIELD),
+           songs: str = Query(..., min_length=3, max_length=MAX_SONGS * (2 * MAX_FIELD + 2)),
+           as_of: date | None = None):
+    placements = _parse_songs(songs)
+    if as_of and not (WIKI_FIRST_DAY <= as_of <= date.today()):
+        raise HTTPException(422, f"as_of must be between {WIKI_FIRST_DAY} and today; got {as_of}")
+    _take_live_slot(request)
     try:
         return score_placements(Qloo(call_budget=40), show, placements, as_of=as_of)
     except QlooError as err:
         log.warning("ripple scoring failed: %s", err)
+        raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err
+
+
+@app.get("/api/scout")
+def sync_scout(request: Request, show: str = Query(..., min_length=1, max_length=MAX_FIELD)):
+    """Qloo-sourced candidate artists for a show, ranked by age gap. Same limiter as /api/ripple."""
+    name = show.strip()
+    if not name:
+        raise HTTPException(422, "show must not be blank")
+    _take_live_slot(request)
+    try:
+        return scout(Qloo(call_budget=MAX_QLOO_CALLS), name)
+    except QlooError as err:
+        log.warning("sync scout failed: %s", err)
         raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err
 
 

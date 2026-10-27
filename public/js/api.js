@@ -22,6 +22,11 @@ export const getRipples = () => getJson(cfg.mock ? `${cfg.mockBase}/ripples.json
 export const getRipple = (id) => getJson(cfg.mock ? `${cfg.mockBase}/ripple-${encodeURIComponent(id)}.json` : `${cfg.apiBase}/ripples/${encodeURIComponent(id)}`);
 export const getReplays = () => getJson(cfg.mock ? `${cfg.mockBase}/replays.json` : `${cfg.apiBase}/replays`);
 
+export async function scoutShow(show) {
+  if (cfg.mock) throw new Error("Sync Scout needs the live API; mock mode has no scout data.");
+  return getJson(`${cfg.apiBase}/scout?show=${encodeURIComponent(show)}`);
+}
+
 export async function scoreSongs(show, songs, asOf) {
   if (cfg.mock) {
     const r = await getJson(`${cfg.mockBase}/ripple.json`);

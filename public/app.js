@@ -7,7 +7,7 @@ export const CONFIG = {
 };
 
 import { setConfig } from "./js/api.js";
-import { renderHome, renderStorm, renderRipple, renderTry, renderScorecard, renderMethod, renderNotFound } from "./js/views.js";
+import { renderHome, renderStorm, renderRipple, renderTry, renderScout, renderScorecard, renderMethod, renderNotFound } from "./js/views.js";
 
 setConfig(CONFIG);
 
@@ -19,6 +19,7 @@ const routes = [
   [/^#\/storm\/([^/]+)$/, (m) => (el, t) => renderStorm(el, decodeURIComponent(m[1]), t)],
   [/^#\/ripple\/([^/]+)$/, (m) => (el, t) => renderRipple(el, decodeURIComponent(m[1]), t)],
   [/^#\/try$/, () => renderTry],
+  [/^#\/scout$/, () => renderScout],
   [/^#\/scorecard$/, () => renderScorecard],
   [/^#\/method$/, () => renderMethod],
 ];

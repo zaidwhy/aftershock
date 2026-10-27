@@ -42,8 +42,8 @@ SPILLOVER forecast for one breakout. Probabilities come from Netflix history onl
 
 `launch_kit` covers the same top three forecast countries. Per country, `kit` maps a domain (`artist`, `tv_show`, `movie`, `brand`) to up to five entities the title's audience there over-indexes on, in Qloo's order; a domain that returned nothing is omitted, and a country with no results is omitted. No affinity values are exposed. The MCP tool `launch_kit(storm_id, country)` returns one country's kit from the same data.
 
-## GET /api/ripple?show=Example%20Show&songs=Song%20One|Artist%20One;Song%20Two|Artist%20Two
-Live scoring for any show and up to 8 songs, with an optional `as_of=YYYY-MM-DD` (between 2015-08-01 and today). `as_of` changes only the Wikipedia context window; Qloo audiences are today's. Limits: 10 scorings per hour per visitor (first address in `X-Forwarded-For`, else the socket peer) and 300 per day per server process; either returns HTTP 429 with the limit named.
+## GET /api/ripple?show=Example%20Show&songs=Song%20One%20by%20Artist%20One;Song%20Two|Artist%20Two
+Live scoring for any show and up to 8 songs, separated by `;`. Each song is `song|artist` (split on the first `|`) or `song by artist` (split on the last ` by `, case-insensitive, so `Stand by Me by Example Singer` is song `Stand by Me`, artist `Example Singer`); anything else is a 422 naming both formats. Optional an optional `as_of=YYYY-MM-DD` (between 2015-08-01 and today). `as_of` changes only the Wikipedia context window; Qloo audiences are today's. Limits: 10 scorings per hour per visitor (first address in `X-Forwarded-For`, else the socket peer) and 300 per day per server process; either returns HTTP 429 with the limit named.
 ```json
 {"resolved": true, "show": "Example Show", "as_of": "2026-10-27",
  "show_age": {"24_and_younger": 0.5, "25_to_29": 0.3, "30_to_34": 0.1, "35_to_44": -0.4, "45_to_54": -0.3, "55_and_older": -0.4},
@@ -98,3 +98,12 @@ New releases with known song placements. A release's songs are locked in the led
             "early_status": "pending", "early_ratio": 1.8, "early_after_mean": 120.4}]}
 ```
 `score` is the Qloo age gap. `early_ratio` is the mean daily Wikipedia views on days +7 to +35 after release over days -60 to -8, still accumulating while `early_status` is `pending`. Many new 2026 titles have no Qloo audience profile yet, so some releases have few or no scorable songs.
+
+## GET /api/scout?show=Example%20Show
+Sync Scout: artists from Qloo's taste neighbourhood for a show or film, ranked by the Qloo age gap (how far the artist's audience sits from the show's by age band, 0 to 1). It ranks artists, not scenes; the gap tracked real song spikes but not a placebo in the backtest, so it is modest, in-sample evidence and not a hit predictor. One scout makes at most 60 Qloo calls and takes about 15 seconds uncached. It shares the per-visitor and daily limit of `/api/ripple`. `show` is 1 to 120 characters. Raw affinity and demographic values are never returned.
+```json
+{"resolved": true, "show": "Example Show", "show_entity": "uuid", "candidates": 50, "profiled": 44, "truncated": false,
+ "artists": [{"name": "Example Artist", "entity_id": "uuid", "gap": 0.71, "taste_rank": 9,
+              "why": "Audience over-indexes on ages 45 to 54; the show's on ages 24 and younger."}]}
+```
+`artists` holds up to 12 rows sorted by `gap` descending; `taste_rank` is the artist's position (1 to 50) in Qloo's taste order for the show. Artists with no Qloo audience profile are dropped, and `truncated` is true if the Qloo call budget ran out partway. An unknown show or one without an audience profile returns `{"resolved": false, "show": "...", "reason": "...", "artists": []}`. The MCP tool `sync_scout(show)` returns the same shape, limited to 6 calls per hour per server process.

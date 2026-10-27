@@ -13,10 +13,13 @@ from mcp.server.mcpserver import MCPServer
 
 from aftershock.qloo import Qloo
 from aftershock.ripple import MAX_SONGS, score_placements
+from aftershock.sync_scout import MAX_QLOO_CALLS, TOP_N, scout
 
 WIKI_FIRST_DAY = date(2015, 8, 1)  # Wikimedia per-article pageviews start in July 2015
 RIPPLE_PER_HOUR = 20
+SCOUT_PER_HOUR = 6
 _ripple_calls: list[float] = []
+_scout_calls: list[float] = []
 
 ROOT = Path(__file__).resolve().parent.parent
 STORMS = ROOT / "data" / "private" / "storms.json"
@@ -92,6 +95,24 @@ def ripple_score(show: str, songs: list[list[str]], as_of: str | None = None) ->
     _ripple_calls.append(now)
     placements = [(pair[0], pair[1]) for pair in songs if len(pair) == 2][:MAX_SONGS]
     return score_placements(Qloo(call_budget=40), show, placements, as_of=when)
+
+
+@server.tool(description=f"Sync Scout: for a show or film, up to {TOP_N} artists from Qloo's taste neighbourhood for that "
+                         "title, ranked by the Qloo age gap (how far the artist's audience sits from the show's by age "
+                         "band, 0 to 1). It ranks artists, not scenes or songs. The gap tracked real song spikes but not "
+                         "a placebo in our backtest; the evidence is modest and in-sample, not a hit predictor. Each row "
+                         "has name, entity_id, gap, taste_rank (Qloo's taste order) and a why line. Takes about 15 "
+                         f"seconds uncached and uses up to {MAX_QLOO_CALLS} Qloo calls. Limited to {SCOUT_PER_HOUR} calls per hour.")
+def sync_scout(show: str) -> dict:
+    name = show.strip()
+    if not name or len(name) > 120:
+        return {"error": "show must be 1 to 120 characters"}
+    now = time.time()
+    _scout_calls[:] = [t for t in _scout_calls if now - t < 3600]
+    if len(_scout_calls) >= SCOUT_PER_HOUR:
+        return {"error": f"sync_scout is limited to {SCOUT_PER_HOUR} calls per hour per server process; try again later"}
+    _scout_calls.append(now)
+    return scout(Qloo(call_budget=MAX_QLOO_CALLS), name)
 
 
 if __name__ == "__main__":
