@@ -53,11 +53,11 @@ export function renderHome(root, isCurrent) {
         h("div", { class: "hero-copy" },
           h("p", { class: "eyebrow" }, "A Qloo taste agent for breakout shows"),
           h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next, and what travels with it?")),
-          h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to do there: the artists, shows, films and brands that title's audience over-indexes on in each country, and which songs could carry it to a new generation. Every forecast is locked in a public ledger before the outcome exists."),
+          h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to do there: the artists, shows, films and brands that title's audience over-indexes on in each country, and the cities where that audience lives. Every forecast is locked in a public ledger before the outcome exists."),
           h("ul", { class: "hero-links" },
             h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's storms")),
-            h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find songs from outside a show's generation")),
-            h("li", null, h("a", { href: "#/try" }, "Try it - score songs placed in any show")))),
+            h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find artists from outside a show's generation")),
+            h("li", null, h("a", { href: "#/try" }, "Try it - explore songs placed in any show")))),
         proof),
       chartBox),
     mockNote(),
@@ -67,13 +67,13 @@ export function renderHome(root, isCurrent) {
 
   Promise.all([getScorecard(), stormsP]).then(([sc, st]) => {
     if (!isCurrent()) return;
-    const bt = sc.backtest || {}, rb = bt.ripple || {}, ll = rb.llm_baseline || {};
-    const q = ll.qloo?.["2024_plus"], m = ll.llm?.["2024_plus"];
+    const bt = sc.backtest || {};
+    const kits = st.storms.filter((x) => x.has_kit).length;
     const locked = (sc.spillover?.locked ?? 0) + (sc.ripple?.locked ?? 0);
     const items = [
       ["Forecasts locked", whole(locked), "in a public, hash-chained ledger"],
       bt.spillover?.history_auc != null ? ["Backtest AUC", plain2(bt.spillover.history_auc), `on ${whole(bt.spillover.test_breakouts)} breakouts`] : null,
-      q && m ? ["Qloo vs LLM, 2024+ song spikes", `${plain2(q.real_spearman)} vs ${plain2(m.real_spearman)}`, `age-gap Spearman, ${q.n_shows} shows, in-sample`] : null,
+      ["Storms with a Qloo kit", String(kits), `of ${st.storms.length} this week`],
       ["Breakouts this week", String(st.storms.length), `week of ${st.week}`],
     ].filter(Boolean);
     proof.append(...items.map(([k, v, note]) => h("div", { class: "proof-item" },
@@ -247,7 +247,7 @@ export function renderTry(root, isCurrent) {
   setTitle("Try it");
   const out = h("div", { class: "try-out", "aria-live": "polite" });
   const show = h("input", { id: "show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Stranger Things", maxlength: "120" });
-  const songs = h("textarea", { id: "songs", name: "songs", rows: "6", required: true, "aria-describedby": "songs-help", placeholder: "Running Up That Hill by Kate Bush\nMaster of Puppets by Metallica" });
+  const songs = h("textarea", { id: "songs", name: "songs", rows: "6", required: true, "aria-describedby": "songs-help", placeholder: "Running Up That Hill by Kate Bush\nMaster of Puppets by Metallica\nPsycho Killer by Talking Heads" });
   const asOf = h("input", { id: "asof", name: "asof", type: "date", min: "2015-08-01", "aria-describedby": "asof-help" });
   const btn = h("button", { type: "submit", class: "btn btn-primary" }, "Score these songs");
   const form = h("form", { class: "try-form", novalidate: true,
@@ -275,10 +275,10 @@ export function renderTry(root, isCurrent) {
     h("div", { class: "field" }, h("label", { for: "songs" }, "Songs, one per line"), songs,
       h("p", { id: "songs-help", class: "help" }, "Format: \"song by artist\" or \"song | artist\". Up to 8 lines. Limited to 10 live scorings per hour per visitor.")),
     h("div", { class: "field" }, h("label", { for: "asof" }, "Score as of (optional)"), asOf,
-      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show. It changes only the Wikipedia context (prior views are read before this date); the Qloo audiences, and so the score, are today's, so a past replay carries Qloo's later knowledge. Try Wednesday as of 2022-11-23 with Space Song by Beach House, Physical by Dua Lipa, Dream Weaver by Gary Wright, Dancing In the Dark by Bruce Springsteen.")),
+      h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show. It changes only the Wikipedia context (prior views are read before this date); the Qloo audiences, and so the score, are today's, so a past replay carries Qloo's later knowledge. Try Stranger Things as of 2022-05-27 with Running Up That Hill by Kate Bush, Master of Puppets by Metallica, Psycho Killer by Talking Heads.")),
     btn);
   add(root, h("h1", null, "Try it on any show"),
-    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each artist in Qloo and scores it by the age gap: how far the artist's audience sits from the show's, from 0 to 1. Prior Wikipedia views and Qloo taste fit are shown as context and are not scored."),
+    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each artist in Qloo and scores it as the Qloo age gap between each artist's audience and the show's: how far outside the show's generation a song reaches, from 0 to 1. It is an explorer, not a hit predictor. Prior Wikipedia views and Qloo taste fit are shown as context and are not scored."),
     mockNote(), form, out);
 }
 
@@ -318,7 +318,7 @@ export function renderScout(root, isCurrent) {
     btn);
   add(root, h("h1", null, "Sync Scout"),
     h("p", { class: "pitch" }, "For a music supervisor: which artists does this show's taste neighbourhood like, whose audience sits outside the show's own generation? Candidates come from Qloo; the ranking is the age gap, from 0 to 1."),
-    h("p", { class: "caveat-line" }, "Ranks artists, not scenes. The age gap tracked real song spikes but not a placebo in our backtest (README section 3); it is modest, in-sample evidence, not a hit predictor."),
+    h("p", { class: "caveat-line" }, "Ranks artists, not scenes. A discovery tool: these are on-taste artists whose own audience sits outside the show's age groups. In our test, the age gap did not predict which soundtrack songs spike (see Scorecard), so treat this as a shortlist, not a forecast."),
     mockNote(), form, out);
 }
 
@@ -330,25 +330,22 @@ export function renderScorecard(root, isCurrent) {
   load(box, "the scorecard", isCurrent, getScorecard, (sc) => {
     const sp = sc.spillover || {}, rp = sc.ripple || {}, bt = sc.backtest || {};
     const bs = bt.spillover || {}, br = bt.ripple || {};
-    const pl = br.placebo || {}, ll = br.llm_baseline || {};
+    const pl = br.placebo || {};
     const row = (label, value) => h("tr", null, h("th", { scope: "row" }, label), h("td", { class: "mono" }, value));
     const gapCell = br.gap_2024_plus == null ? "n/a" : `${plain2(br.gap_2024_plus)}${br.gap_2024_plus_p == null ? "" : ` (permutation p = ${br.gap_2024_plus_p.toFixed(2)})`}`;
-    const llm = ll.llm?.["2024_plus"], llmAll = ll.llm?.all;
-    const llmCell = llm?.real_spearman == null ? "n/a" : `${plain2(llm.real_spearman)}${llm.p_real_minus_placebo == null ? "" : ` (real minus placebo p = ${plain2(llm.p_real_minus_placebo)})`}`;
     const placeboRow = (label, a, b) => h("tr", null, h("th", { scope: "row" }, label),
       [pl["2024_plus"]?.[a], pl["2024_plus"]?.[b], pl.all?.[a], pl.all?.[b]].map((v) => h("td", { class: "num mono" }, plain2(v))));
     const recent = pl["2024_plus"] || {};
     const rows = [
       ["Qloo age gap", recent["real: gap"], recent["placebo: gap"]],
-      ll.llm ? ["LLM-guessed age gap", llm?.real_spearman, llm?.placebo_spearman] : null,
       ["Obscurity", recent["real: obscurity"], recent["placebo: obscurity (its own pre-window)"]],
     ].filter((r) => r && r[1] != null && r[2] != null).map(([label, real, placebo]) => ({ label, real, placebo }));
     const evidence = rows.length ? h("section", { "aria-labelledby": "why-h" },
-      h("h2", { id: "why-h" }, "Why Qloo, measured"),
+      h("h2", { id: "why-h" }, "What we tested"),
       h("div", { class: "db-box" },
         h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Real spike", h("span", { class: "dot dot-placebo" }), "Placebo spike, measured before release"),
         dumbbell(rows, `Within-show Spearman with the artist's Wikipedia spike on 2024+ releases, real spike versus placebo spike. ${rows.map((r) => `${r.label}: real ${plain2(r.real)}, placebo ${plain2(r.placebo)}`).join("; ")}.`)),
-      h("p", { class: "muted" }, `Mean within-show Spearman with the artist's Wikipedia spike, ${recent.n_shows ?? "n/a"} shows released 2024 or later; in-sample.${ll.model_name ? ` The LLM guess is ${ll.model_name}.` : ""} A signal that follows the real spike but not the placebo is picking up the show, not regression to the mean.`)) : null;
+      h("p", { class: "muted" }, "Mean within-show Spearman with the artist's Wikipedia spike, real versus a placebo measured before release, on licensed MusicBrainz soundtrack data. No Qloo signal is significant here; see the README for the full test and why an earlier result was discarded.")) : null;
     const so = sp.so_far;
     const closes = (() => {
       if (!sp.earliest_origin_week) return null;
@@ -376,9 +373,7 @@ export function renderScorecard(root, isCurrent) {
         h("thead", null, h("tr", null, ["Score", `Real, 2024+ (${pl["2024_plus"]?.n_shows ?? "n/a"} shows)`, "Placebo, 2024+", `Real, all (${pl.all?.n_shows ?? "n/a"} shows)`, "Placebo, all"].map((t, i) => h("th", { scope: "col", class: i ? "num" : null }, t)))),
         h("tbody", null,
           placeboRow("Obscurity", "real: obscurity", "placebo: obscurity (its own pre-window)"),
-          placeboRow("Qloo age gap", "real: gap", "placebo: gap"),
-          ll.llm ? h("tr", null, h("th", { scope: "row" }, "LLM-guessed age gap"),
-            [llm?.real_spearman, llm?.placebo_spearman, llmAll?.real_spearman, llmAll?.placebo_spearman].map((v) => h("td", { class: "num mono" }, plain2(v)))) : null))),
+          placeboRow("Qloo age gap", "real: gap", "placebo: gap")))),
       h("p", { class: "muted" }, `Real minus placebo for the Qloo age gap: permutation p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])} on 2024+ releases, ${plain2(pl.all?.["p: gap real minus gap placebo"])} on all.`),
       h("h2", null, "Backtests on past events"),
       h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Backtest results, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Backtest results"),
@@ -388,9 +383,8 @@ export function renderScorecard(root, isCurrent) {
           row(`Spillover: same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
           row(`Spillover: same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc)),
           row("Ripple: Qloo age gap, 2024+ releases (Spearman)", gapCell),
-          ll.llm ? row("Ripple: LLM-guessed age gap, 2024+ (Spearman)", llmCell) : null,
           row("Ripple: Qloo taste fit, 2024+", plain2(br.fit_2024_plus)),
-          row("Ripple: obscurity, 2024+ (mostly regression to the mean, see placebo)", plain2(br.obscurity_2024_plus))))),
+          row("Ripple: obscurity, 2024+ (see placebo)", plain2(br.obscurity_2024_plus))))),
       h("p", { class: "muted" }, `Ripple backtest: ${br.n_artists ?? "n/a"} artists placed in ${br.n_shows ?? "n/a"} shows (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
       h("h2", null, "Live ledger"),
       h("div", { class: "grid2" }, spillSection, rippleSection),
@@ -399,7 +393,7 @@ export function renderScorecard(root, isCurrent) {
         sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
-        h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The ripple backtest is 9 shows from 2024 on and 195 artists, with an outcome (Wikipedia page spike) that is a proxy for attention, and Qloo audiences are today's, which postdate those releases. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+        h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test covers 229 artists in 24 shows (4 released 2024 or later), where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
   });
 }
 
@@ -413,17 +407,20 @@ export function renderMethod(root) {
       h("p", null, "Start with a title that entered Netflix's Top 10 in 1 to 3 countries. The probability that each other country charts it within 4 weeks comes from Netflix history only: how often that country followed past breakouts from the same origin countries, smoothed toward the same-category rate for that country, which is smoothed toward the country's base rate."),
       h("p", null, "Backtest: ROC AUC 0.817 on 829 test breakouts (Mar-Oct 2026). We also tested Qloo as an extra feature on a 200-breakout subset: AUC 0.8188 with history only against 0.8182 with Qloo, so no lift. Qloo had an in-country value for only 1.8% of title-country pairs. So Qloo's role in SPILLOVER is the partners list: artists the title's audience over-indexes on in each forecast country."),
       h("p", null, "Every candidate country's probability is locked in the ledger, not just the top rows, so AUC and calibration can be graded. Grading happens once a title's 4-week horizon has passed in Netflix's weekly data.")),
-    h("section", null, h("h2", null, "RIPPLE: which songs"),
-      h("p", null, "The score is the Qloo age gap, from 0 to 1: how far the artist's audience sits from the show's audience by age band, using Qloo demographics for both (the artist's over-index weighted by the age bands the show over-indexes on)."),
-      h("p", null, "Evidence: 195 artists placed in 24 shows, with the outcome being the artist's Wikipedia page spike (days +7 to +35 over days -60 to -8). On releases from 2024 on (9 shows) the age gap's mean within-show Spearman is 0.28 (permutation p 0.02). It does not predict a placebo spike measured entirely before release (-0.11), and real minus placebo is significant (p 0.03; 0.04 on all 24 shows)."),
-      h("p", null, "Qloo taste fit predicted nothing (about 0.00) and is shown as context only. Obscurity (low Wikipedia views before release) correlates with the spike (0.29) but predicts the placebo spike almost as well (0.28): it is mostly regression to the mean, so it is shown as context with that warning, not scored."),
-      h("p", null, "Live: a release's songs are locked only if the lock happens before its outcome window opens (release + 7 days) and at least 4 songs are scorable. Older releases are shown as an early read only, with a reason. Many new 2026 titles have no Qloo audience profile yet, which is a coverage limit."),
-      h("p", null, "Known miss: the model would not have picked Kate Bush's Running Up That Hill for Stranger Things 4. The show's audience skews young and her Qloo audience does not, yet taste fit was very high, and her page views rose from about 10k a month to 909k in June 2022 because of how the scene used the song, which neither Qloo nor Wikipedia sees.")),
+    h("section", null, h("h2", null, "Launch kit and hotspots: what to do there"),
+      h("p", null, "For each storm's top three forecast countries, Qloo is asked which shows, films, brands and artists the title's audience over-indexes on there, and where in the country that audience lives (a heatmap, reduced to its three strongest places and named with OpenStreetMap). Neither changes the probabilities, and neither has been validated against outcomes."),
+      h("p", null, "Sync Scout is a discovery tool: it ranks the artists a show's audience likes by the age gap between the artist's audience and the show's. It ranks artists, not scenes.")),
+    h("section", null, h("h2", null, "RIPPLE: the song score, tested"),
+      h("p", null, "The score is the Qloo age gap, from 0 to 1: how far outside the show's generation an artist's audience sits. We tested whether it, Qloo taste fit or obscurity predicts which soundtrack songs spike on Wikipedia, using 490 songs from the official soundtracks of 34 titles in MusicBrainz (CC0)."),
+      h("p", null, "Result: no Qloo signal predicts the spike. Within-show Spearman for the age gap is 0.02 (p 0.40) on 24 shows and 0.18 (p 0.22) on the 4 released from 2024 on; real minus placebo p is 0.14, and taste fit is 0.04. Obscurity is 0.22 against 0.11 on a placebo spike measured before release."),
+      h("p", null, "An earlier version used placement lists from Tunefind and showed a significant effect. Tunefind's terms do not permit automated collection, so that data and everything computed from it was discarded, and the effect did not replicate on MusicBrainz. The song score is an explorer, not a predictor."),
+      h("p", null, "Known miss: the score would not have picked Kate Bush's Running Up That Hill for Stranger Things 4. Her page views rose from about 10k a month to 909k in June 2022 because of how the scene used the song, which neither Qloo nor Wikipedia sees.")),
     h("section", null, h("h2", null, "Data sources"),
       h("ul", { class: "plain-list" },
         h("li", null, h("strong", null, "Netflix Top 10"), ": the public weekly TSV, by country. Defines storms, supplies the SPILLOVER history and grades it."),
-        h("li", null, h("strong", null, "Wikimedia pageviews API"), ": daily views per article. The RIPPLE outcome and its prior-views context."),
-        h("li", null, h("strong", null, "Qloo Insights"), ": entity search and demographics (age bands) for the RIPPLE age gap, and the partners list of artists a title's audience over-indexes on in each country."))),
+        h("li", null, h("strong", null, "Wikimedia pageviews API"), ": daily views per article. The song test outcome and its prior-views context."),
+        h("li", null, h("strong", null, "MusicBrainz"), ": official soundtrack track lists (CC0), the song test's ground truth."),
+        h("li", null, h("strong", null, "Qloo Insights"), ": entity search and demographics (age bands) for the age gap, the partners list, launch kit and heatmaps for each title's audience in each country."))),
     h("p", null, "The Qloo key stays on the server; this page only talks to AFTERSHOCK's own API."));
 }
 
