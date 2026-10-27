@@ -53,6 +53,10 @@ Tested with a local server given an invalid key: read-only pages (storms, map, k
 
 Before this, every storm link (Devpost instructions, gallery, video, bookmarks such as #/storm/fukrey-returns) would have 404'd as soon as a new Netflix week replaced the storms. Now run_forecasts.py archives each week to data/private/storm_archive/<week>.json (seeded with 18 Oct); /api/storms/{id} and the static export fall back to the most recent archived week, tagged `archived_week`, and the storm page shows a "From the week of ..." banner; an unknown id gets "No breakout called that" with a way back. The Ask launch-kit example is built from this week's hero. Simulated a rollover against a temp copy of the data: an archived id returns 200 with archived_week 2026-10-18, an unknown id 404 with the sentence. Devpost instructions no longer name this week's title.
 
+## Weekly Action verified under the new code (27 Oct, 20:52 UTC)
+
+Manual run 40581939996 on GitHub: success in 8.5 minutes (limit now 50), 608 live Qloo calls, 35 storms written, 0 new forecasts locked (same Netflix week, as expected); heatmap 400s are titles Qloo has no heatmap for and are handled. The scheduled 22:00 UTC run uses the same code.
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.
