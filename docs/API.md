@@ -108,6 +108,66 @@ Sync Scout: artists from Qloo's taste neighbourhood for a show or film, ranked b
 ```json
 {"resolved": true, "show": "Example Show", "show_entity": "uuid", "candidates": 50, "profiled": 44, "truncated": false,
  "artists": [{"name": "Example Artist", "entity_id": "uuid", "gap": 0.71, "taste_rank": 9,
-              "why": "Audience over-indexes on ages 45 to 54; the show's on ages 24 and younger."}]}
+              "why": "...", "leans": ["45_to_54", "55_and_older"]}],
+ "show_leans": ["24_and_younger", "25_to_29"]}
 ```
 `artists` holds up to 12 rows sorted by `gap` descending; `taste_rank` is the artist's position (1 to 50) in Qloo's taste order for the show. Artists with no Qloo audience profile are dropped, and `truncated` is true if the Qloo call budget ran out partway. An unknown show or one without an audience profile returns `{"resolved": false, "show": "...", "reason": "...", "artists": []}`. The MCP tool `sync_scout(show)` returns the same shape, limited to 6 calls per hour per server process.
+
+When the show is not found, the response also carries `suggestion`: the nearest name Qloo's search returns (for example `"Stranger Things"` for `"Stranger Thingz"`). It is only a suggestion; nothing is scored against it.
+
+## GET /api/title?name=Example%20Show
+
+Netflix Top 10 history for any title that charted since 2024 (no Qloo calls, no rate limit). Matching ignores case, accents and "Season N"; a name must match closely (ratio 0.85 or a whole-word match) or the response is 404 `{"detail": "No close match in Netflix's Top 10 since 2024"}`. `name` is 1 to 80 characters.
+
+```json
+{"title": "Example Show: Season 2", "show": "Example Show", "season": "Season 2", "kind": "tv",
+ "first_week": "2026-09-06", "countries": [["XA", "2026-09-06"], ["XB", "2026-09-13"]],
+ "still_spreading": true, "storm_id": "example-show-season-2",
+ "forecast": {"origin": ["XA"], "horizon_weeks": 4,
+              "next": [{"code": "XC", "name": "Country C", "probability": 0.21, "why": "Country C joined 12 of 57 past breakouts that started in Country A"}]},
+ "others": [{"title": "Example Show: Season 1", "kind": "tv", "first_week": "2025-03-02"}]}
+```
+`forecast` is present only for titles that first charted within the last four weeks in one to three countries; a title still spreading from more countries than that carries `forecast_note` ("already charting widely") instead. `storm_id` is present only when the title is one of this week's breakouts.
+
+## GET /api/ask?q=What%20is%20heading%20to%20Country%20C
+
+The plain-question router behind "Ask the agent" and the MCP tool `ask`. Fixed rules, no language model: it picks one intent and calls the site's own tools. `q` is 1 to 200 characters.
+
+| intent | example question | tool used |
+|---|---|---|
+| `song_check` | "Song One by Artist One for Example Show" | the ripple scoring (live, counts against the limit below) |
+| `artists_for_show` | "Find songs for Example Show" | Sync Scout (live) |
+| `launch_kit` | "What should Example Show pair with in Country C?" | this week's storm, its kit and hotspots |
+| `forecast` | "Where will Example Show go next?" | title lookup plus the storm forecast |
+| `country` | "What is heading to Country C?" | this week's map entry |
+| `none` | anything else | a list of what it can answer |
+
+```json
+{"intent": "country",
+ "steps": [{"n": 1, "tool": "understand", "input": null, "ok": true, "note": "What is heading to Country C this week."},
+           {"n": 2, "tool": "week_map", "input": "XC", "ok": true, "note": "Read this week's map."}],
+ "answer": {"kind": "country", "name": "Country C", "code": "XC", "week": "2026-10-18", "chance": 0.2,
+            "top": [{"title": "Example Show", "probability": 0.07, "id": "example-show"}]},
+ "links": [{"label": "Full forecast for Example Show", "href": "#/storm/example-show"}]}
+```
+`steps` is what the agent did, in order; a failed step has `ok: false` and says why (an unknown country, a title that is not a breakout this week, a non-Latin title).
+
+## Static files the site reads
+
+Read-only pages load these files instead of the API, so they never wait for a cold start. They are written by `scripts/export_static.py` from the weekly run and match the API bodies exactly (`tests/test_export_static.py`).
+
+| file | same as | notes |
+|---|---|---|
+| `/data/storms.json` | `GET /api/storms` | includes `map` (per country: chance at least one breakout arrives, top titles) and `hero` (the worked example) |
+| `/data/storms/<id>.json` | `GET /api/storms/{id}` | |
+| `/data/scorecard.json` | `GET /api/scorecard` | includes `kit_check`, `top_pick` and the experiment result once it exists |
+| `/data/replays.json` | `GET /api/replays` | |
+| `/data/agent_run.json` | (static only) | the last weekly run: `started`, `finished`, `netflix_week`, `dry_run`, `summary`, `steps[{key, count, text, detail}]` |
+| `/data/ledger.json` | (static only) | `total`, `titles`, `first_locked`, `last_locked`, `intact` (hash chain verified), `raw_url`, 50 most recent `rows` |
+
+## Limits and errors
+
+- Live endpoints (`/api/ripple`, `/api/scout`, and `/api/ask` when it routes to them) share one limit: 10 per hour per visitor (first `X-Forwarded-For` address) and 300 per day per server process across all visitors; over the limit is 429 with a plain message.
+- Text fields are length-limited (show and artist 120 characters, title lookup 80, questions 200); a missing or too-long field is 422 naming the field.
+- An unknown storm or title is 404 with a sentence in `detail`.
+- Qloo failing is 502 "Qloo did not answer this request; try again in a minute".

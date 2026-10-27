@@ -33,6 +33,10 @@ After both watchers finish: put the experiment verdict into README section 3, do
 
 Fixed: a glossary before first use of storm/SPILLOVER/launch kit/Hotspots/Song check/Spearman/Jaccard; "Run it" rewritten for a fresh clone (Python 3.12, key source, cross-platform paths, run order, time and call cost, MCP config snippet); mean kit specificity 0.61 not 0.62; "every number comes from data/results" narrowed to backtests and tests; "registered" defined as a public commit, not an external registry; the age gap's partial correlation on the 4 recent shows (0.42, p 0.07) now stated. The Qloo in-country coverage was quoted as 1.8% but never saved; `scripts/test_spillover_qloo.py` now saves it and a cached rerun gives 2.8% (975 of 35,344 title-country pairs), with identical AUCs, so README, site and handoff now say 2.8%.
 
+## API docs (28 Oct)
+
+docs/API.md now covers every served endpoint: /api/title and /api/ask were missing, as were the static /data files the site reads, the shared live-call limits, field length limits and error codes; the Sync Scout example gained `leans`, `show_leans` and `suggestion`. Every documented static file and status code was checked against the live site (10 of 10).
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.
