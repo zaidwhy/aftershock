@@ -9,6 +9,7 @@ import hashlib
 import json
 import logging
 import math
+import re
 import time
 from pathlib import Path
 
@@ -54,6 +55,33 @@ def top_cells(body, limit=MAX_CELLS):
     return [[round(lat, 4), round(lon, 4), round(1 - i / n, 3)] for i, (lat, lon, _, _) in enumerate(cells)]
 
 
+PLACE_FIELDS = ("city", "town", "municipality", "village", "county", "state_district", "state")
+# Administrative words OpenStreetMap appends to a place name. Matched as whole words at the end or start
+# of the name, so "Mexico City" and "Kingston upon Hull" stay as they are.
+ADMIN_SUFFIX = re.compile(
+    r"(?:\s+|^)(?:Metropolitan\s+Municipality|Municipal\s+Corporation|City\s+Corporation|Municipality|Upazila|District|Ward)$",
+    re.IGNORECASE)
+ADMIN_PREFIX = re.compile(r"^(?:Municipality|Municipal\s+Corporation)\s+of\s+", re.IGNORECASE)
+
+
+def clean_place_name(name):
+    """The place name without administrative wording; the original when stripping would empty it."""
+    out = name.strip()
+    for _ in range(2):
+        out = ADMIN_SUFFIX.sub("", out).strip(" ,-")
+    out = ADMIN_PREFIX.sub("", out).strip(" ,-")
+    return out or name.strip()
+
+
+def place_from_address(address):
+    """The most local named place in a Nominatim address: city, town, municipality, village, and only then
+    county, state_district or state; administrative suffixes removed. None when there is none."""
+    for field in PLACE_FIELDS:
+        if address.get(field):
+            return clean_place_name(address[field])
+    return None
+
+
 def nominatim_name(lat, lon, cache_dir=None):
     """City, town or county name for a point, or None. Cached on disk; 1 live request per second."""
     cache_dir = Path(cache_dir) if cache_dir else CACHE_DIR
@@ -72,11 +100,7 @@ def nominatim_name(lat, lon, cache_dir=None):
         body = resp.json()
         cache_dir.mkdir(parents=True, exist_ok=True)
         cached.write_text(json.dumps(body), encoding="utf-8")
-    address = body.get("address") or {}
-    for field in ("city", "town", "municipality", "village", "county", "state_district", "state"):
-        if address.get(field):
-            return address[field]
-    return None
+    return place_from_address(body.get("address") or {})
 
 
 def name_places(cells, geocode=nominatim_name, count=MAX_PLACES):

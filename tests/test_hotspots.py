@@ -82,3 +82,38 @@ def test_qloo_failure_and_missing_entity_return_empty():
     empty = {"cells": [], "places": []}
     assert hs.hotspots(FakeClient(error=QlooError("budget")), "id1", "T", geocode=lambda a, b: "x") == empty
     assert hs.hotspots(FakeClient(), None, "T") == empty
+
+
+def test_place_prefers_city_town_municipality_village_before_county_and_state():
+    assert hs.place_from_address({"state": "S", "county": "C", "village": "V", "city": "Pune"}) == "Pune"
+    assert hs.place_from_address({"county": "C", "village": "V", "town": "T"}) == "T"
+    assert hs.place_from_address({"county": "C", "village": "V", "municipality": "M", "town": "T"}) == "T"
+    assert hs.place_from_address({"county": "C", "village": "V", "municipality": "M"}) == "M"
+    assert hs.place_from_address({"state_district": "SD", "county": "C", "village": "V"}) == "V"
+    assert hs.place_from_address({"state_district": "SD", "county": "C"}) == "C"
+    assert hs.place_from_address({"state": "S"}) == "S"
+    assert hs.place_from_address({"country": "X"}) is None
+
+
+def test_administrative_suffixes_are_stripped_on_word_boundaries():
+    clean = hs.clean_place_name
+    assert clean("Pune Municipal Corporation") == "Pune"
+    assert clean("Ekurhuleni Metropolitan Municipality") == "Ekurhuleni"
+    assert clean("Savar Upazila") == "Savar"
+    assert clean("Kathmandu District") == "Kathmandu"
+    assert clean("Chittagong City Corporation") == "Chittagong"
+    assert clean("Dhaka ward") == "Dhaka"
+    assert clean("Municipality of Gdynia") == "Gdynia"
+    assert clean("Mexico City") == "Mexico City"
+    assert clean("Kingston upon Hull") == "Kingston upon Hull"
+    assert clean("Edwardsville") == "Edwardsville"
+    assert clean("Ward") == "Ward"
+
+
+def test_nominatim_name_applies_new_parsing_to_a_cached_response(tmp_path):
+    import hashlib
+    import json
+    key = hashlib.sha256("18.520,73.856,en".encode()).hexdigest()[:24]
+    (tmp_path / f"{key}.json").write_text(json.dumps(
+        {"address": {"county": "Pune District", "city": "Pune Municipal Corporation"}}), encoding="utf-8")
+    assert hs.nominatim_name(18.52, 73.856, cache_dir=tmp_path) == "Pune"
