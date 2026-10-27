@@ -1,5 +1,7 @@
 # AFTERSHOCK
 
+[![tests](https://github.com/zaidwhy/aftershock/actions/workflows/tests.yml/badge.svg)](https://github.com/zaidwhy/aftershock/actions/workflows/tests.yml) [live site](https://aftershock-qloo.vercel.app) · [public ledger](https://aftershock-qloo.vercel.app/#/ledger) · [pre-registered experiments](docs/EXPERIMENT_KITS.md)
+
 **A Qloo taste agent for breakout shows: where a show lands next, and what travels with it.**
 
 Every week AFTERSHOCK reads Netflix's public per-country Top 10 and finds titles that just broke out in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to do there: in each forecast country, the artists, shows, films and brands that title's audience over-indexes on (the launch kit) and the cities where that audience concentrates (Hotspots). Sync Scout uses Qloo to find on-taste artists whose audience sits outside a show's own age groups, for a music supervisor. Every forecast goes into a hash-chained ledger graded against later public data: Netflix's weekly charts and Wikipedia's daily pageviews.
