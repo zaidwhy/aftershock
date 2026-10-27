@@ -14,6 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 
+from aftershock import ask as ask_agent
 from aftershock import titles as title_index
 from aftershock.qloo import CACHE_DIR, Qloo, QlooError
 from aftershock.ripple import MAX_SONGS, score_placements
@@ -256,6 +257,47 @@ def sync_scout(request: Request, show: str = Query(..., min_length=1, max_length
     except QlooError as err:
         log.warning("sync scout failed: %s", err)
         raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err
+
+
+class _Live:
+    """Live Qloo tools for the ask router: the shared limiter and the same calls as /api/ripple and /api/scout."""
+
+    def __init__(self, request):
+        self.request = request
+
+    def take(self):
+        try:
+            _take_live_slot(self.request)
+        except HTTPException as err:
+            raise ask_agent.LiveError(err.detail) from err
+
+    def ripple(self, show, songs):
+        try:
+            return public_ripple(score_placements(Qloo(call_budget=40), show, songs))
+        except QlooError as err:
+            log.warning("ask: ripple scoring failed: %s", err)
+            raise ask_agent.LiveError("Qloo did not answer this request; try again in a minute") from err
+
+    def scout(self, show):
+        try:
+            return scout(Qloo(call_budget=MAX_QLOO_CALLS), show)
+        except QlooError as err:
+            log.warning("ask: sync scout failed: %s", err)
+            raise ask_agent.LiveError("Qloo did not answer this request; try again in a minute") from err
+
+
+def ask_context(live=None):
+    path = PRIVATE / "storms.json"
+    data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"week": None, "storms": []}
+    return {"storms": data["storms"], "week": data["week"], "titles": title_index.load(TITLES), "live": live,
+            "week_map": lambda: _week_map(data["storms"])}
+
+
+@app.get("/api/ask")
+def ask(request: Request, q: str = Query(..., min_length=1, max_length=ask_agent.MAX_QUESTION)):
+    """A plain question routed to AFTERSHOCK's tools by fixed rules (no language model). Only the song and artist
+    routes call Qloo live, and they use the same per-visitor limit as /api/ripple."""
+    return ask_agent.answer(q, ask_context(_Live(request)))
 
 
 # Local runs serve the frontend too; on Vercel, public/ is served by the platform.

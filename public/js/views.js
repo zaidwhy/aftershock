@@ -7,6 +7,7 @@ import { ISO } from "./iso.js";
 import { lookupBox } from "./netflix.js";
 import { weekMapSection } from "./weekmap.js";
 import { launchBrief } from "./brief.js";
+import { askBox } from "./ask.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -65,6 +66,7 @@ export function renderHome(root, isCurrent) {
         h("div", { class: "hero-side" },
           h("p", { class: "buyer mono" }, "For local distributors, music publishers and promoters: know where a breakout goes next and what to pair it with there, before the competition does."),
           heroBox)),
+      askBox(isCurrent),
       proof,
       mapBox,
       lookupBox(isCurrent)),

@@ -28,6 +28,12 @@ export const getScorecard = () => stat("scorecard");
 export const getReplays = () => stat("replays");
 export const getLedger = () => stat("ledger");
 
+/** A plain question for the keyword agent (aftershock/ask.py). Song and artist questions use a live Qloo slot. */
+export async function askAgent(question) {
+  if (cfg.mock) throw new Error("Ask the agent needs the live API; mock mode has no agent.");
+  return getJson(`${cfg.apiBase}/ask?q=${encodeURIComponent(question.slice(0, 200))}`);
+}
+
 export async function scoutShow(show) {
   if (cfg.mock) throw new Error("Sync Scout needs the live API; mock mode has no scout data.");
   return getJson(`${cfg.apiBase}/scout?show=${encodeURIComponent(show)}`);

@@ -392,3 +392,22 @@ dd { margin: 0; font-size: 1.1rem; }
 .storm-facts { flex-basis: 100%; color: var(--ink); }
 .ledger-stats > div { display: block; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
 .ledger-stats dt, .ledger-stats dd { display: block; text-align: left; }
+
+/* Ask the agent */
+.ask { margin-top: 28px; padding-top: 14px; border-top: 2px solid var(--ink); }
+.ask h2 { margin-top: 0; }
+.ask-form { max-width: 720px; }
+.ask .examples { margin: 0 0 6px; }
+.ask-out { margin-top: 14px; }
+.ask-card { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; max-width: 760px; }
+.ask-card h3 { font: 400 1.35rem/1.25 var(--serif); margin: 4px 0 8px; overflow-wrap: anywhere; }
+.ask-card .on-netflix { margin-top: 8px; }
+.ask-why { font-size: 0.85rem; color: var(--ink-soft); margin: 2px 0 8px; max-width: 68ch; }
+.ask-next { columns: 1; max-width: 460px; }
+.ask-steps { margin-top: 18px; max-width: 760px; }
+.ask-steps h3 { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
+.ask-steps .steps { margin-bottom: 0; font-size: 0.92rem; }
+.ask-tool { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.step-no .step-n { color: var(--ink-soft); }
+.ask-links { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 12px 0 0; }
+.ask-out .song-head { flex-wrap: wrap; }

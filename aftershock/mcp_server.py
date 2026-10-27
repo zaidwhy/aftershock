@@ -11,6 +11,7 @@ from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
+from aftershock import ask as ask_agent
 from aftershock import titles as title_index
 from aftershock.qloo import Qloo
 from aftershock.ripple import MAX_SONGS, score_placements
@@ -135,6 +136,39 @@ def sync_scout(show: str) -> dict:
         return {"error": f"sync_scout is limited to {SCOUT_PER_HOUR} calls per hour per server process; try again later"}
     _scout_calls.append(now)
     return scout(Qloo(call_budget=MAX_QLOO_CALLS), name)
+
+
+class _McpLive:
+    """Live tools for ask(): the same per-process limits as ripple_score and sync_scout."""
+
+    def take(self):
+        pass
+
+    def ripple(self, show, songs):
+        out = ripple_score(show, [list(p) for p in songs])
+        if "error" in out:
+            raise ask_agent.LiveError(out["error"])
+        return out
+
+    def scout(self, show):
+        out = sync_scout(show)
+        if "error" in out:
+            raise ask_agent.LiveError(out["error"])
+        return out
+
+
+@server.tool(description="Ask a plain-language question and let AFTERSHOCK pick the tool, by fixed rules (no language "
+                         "model). Handles: where a title goes next; a launch kit for a title in a country (\"What should "
+                         "Fukrey Returns pair with in Bangladesh?\"); artists for a show; \"song by artist for show\"; what "
+                         "is heading to a country. Returns {intent, steps (which tools it used and what each found), "
+                         "answer, links}. Song and artist questions call Qloo live and share those tools' limits.")
+def ask(question: str) -> dict:
+    loaded = title_index.load(TITLES)
+    storms = _storms()
+    from aftershock import api  # local: the week map helper lives with the API
+    week = json.loads(STORMS.read_text(encoding="utf-8"))["week"] if STORMS.exists() else None
+    return ask_agent.answer(question[:ask_agent.MAX_QUESTION], {
+        "storms": storms, "week": week, "titles": loaded, "live": _McpLive(), "week_map": lambda: api._week_map(storms)})
 
 
 if __name__ == "__main__":

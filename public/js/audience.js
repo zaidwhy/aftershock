@@ -49,7 +49,7 @@ const REACH = {
 
 const suggestBtn = (name, onclick) => h("button", { type: "button", class: "btn btn-small", onclick }, `Use ${name} and try again`);
 
-function songRow(x, showName, showLeans, fix) {
+export function songRow(x, showName, showLeans, fix) {
   if (x.resolved === false) {
     return h("li", { class: "song song-bad" },
       h("div", { class: "song-head" }, h("div", null, h("strong", null, x.song), ` by ${x.artist}`)),
@@ -76,7 +76,7 @@ function songRow(x, showName, showLeans, fix) {
         : "No Wikipedia page was found for this song or artist, so there is no prior-views figure."));
 }
 
-function failBox(err, what) {
+export function failBox(err, what) {
   if (err.status !== 429) return errorBox(what, err);
   const msg = /daily/i.test(err.detail || "")
     ? "The shared daily limit for live lookups has been used up. Try again tomorrow or use an example below."
@@ -85,7 +85,7 @@ function failBox(err, what) {
 }
 
 /** Show did not resolve: a suggestion button when Qloo has a near name, a profile notice otherwise. */
-function unresolvedShow(r, typed, retryWith) {
+export function unresolvedShow(r, typed, retryWith) {
   if (r.no_profile) return `Qloo knows ${r.show} but has no audience data for it yet, so we can't compare. Try another show.`;
   return [`We couldn't find "${typed}" in Qloo. `,
     r.suggestion ? [`Did you mean ${r.suggestion}? `, suggestBtn(r.suggestion, () => retryWith(r.suggestion))] : "Check the spelling or try another show."];
@@ -160,7 +160,7 @@ export function renderTry(root, isCurrent) {
 /* ----------------------------------------------------------- sync scout */
 const SCOUT_EXAMPLES = ["Stranger Things", "Wednesday", "Squid Game"];
 
-function scoutRow(a, showLeans, of, showName) {
+export function scoutRow(a, showLeans, of, showName) {
   return h("li", { class: "song" },
     h("div", { class: "song-head" }, h("strong", null, a.name), chip(showLeans, a.leans)),
     h("p", { class: "plain" }, `Listeners lean ${bandText(a.leans)}. `, gapNote(a.name, showLeans, a.leans)),
