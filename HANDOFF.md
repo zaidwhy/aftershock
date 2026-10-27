@@ -11,8 +11,23 @@ Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (
 
 ## Still to do (Zaid)
 
-4. Before judging (after Netflix's 3 Nov update), refresh the live site's data: `.venv/Scripts/python scripts/run_forecasts.py` then `vercel deploy --prod`. The site reads `data/private/storms.json`, which is generated locally and bundled into the deployment, never committed.
-5. Review the Devpost draft in `docs/DEVPOST.md` and submit it yourself. Also record the demo video (the kit and Devpost expect one): landing seismograph, a storm page, a Songs to watch page, Try it with Stranger Things + Running Up That Hill | Kate Bush, the scorecard.
+1. Decide on git history: commits before 27 Oct afternoon contain Tunefind-derived CSVs (data/placements*.csv). They are being removed from HEAD; erasing history needs a force-push (forbidden by our rules) or deleting and recreating the repo (resets the ledger's public timestamps). Recommendation: remove going forward and say so in the README.
+2. Submit on Devpost yourself (deadline 31 Oct 09:15 IST). Teammate 2 prepares the draft from `docs/DEVPOST.md`. All four must be on the Devpost team. A demo video is NOT required by the rules ("Demo videos are not required"); the live demo is what judges use.
+3. Rotate the Gemini key (it was printed once in an agent's terminal during the LLM test; never written to a file). The code now sends it as a header.
+4. Deploy steps: `.venv/Scripts/python scripts/run_forecasts.py`, then `.venv/Scripts/python scripts/export_static.py` (read-only pages are served as static JSON from public/data/, gitignored), then `vercel deploy --prod`. Git auto-deploy stays disconnected.
+
+## Data licensing (27 Oct)
+
+- Tunefind's terms forbid automated collection without written consent and treat publishing scraped data as infringement. 511 of 516 backtest placements and all live placements came from it. Done: ripple-daily workflow disabled on GitHub; Songs to watch removed from the site; /api/ripples serves nothing (data/private/storms.json ripples emptied).
+- In progress: song ground truth rebuilt from MusicBrainz soundtrack releases (CC0; API allows automated use at 1 req/s), every RIPPLE test rerun unchanged; README, Devpost and scorecard numbers follow whatever that shows.
+- Other sources: Netflix Top 10 TSV is offered as a public download on Netflix's Top 10 site; Wikimedia pageviews API (allowed with a contact User-Agent); Nominatim reverse geocoding for Hotspots (1 req/s, cached, credited); Qloo hackathon key; Gemini for the LLM comparison only.
+
+## Team plan (27 Oct)
+
+- Teammate 1: Claude Desktop MCP demo with their own Qloo key; second tester. Optional short video for the Devpost gallery.
+- Teammate 2: Devpost draft, team membership, gallery screenshots, Discord questions.
+- Teammate 3 (first hackathon): phone test, friend test, number check against README, cover image.
+- Site frozen for screenshots by 30 Oct 14:00 IST.
 
 ## State (overnight, 27 Oct)
 
