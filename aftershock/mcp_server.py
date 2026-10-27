@@ -11,6 +11,7 @@ from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
+from aftershock import titles as title_index
 from aftershock.qloo import Qloo
 from aftershock.ripple import MAX_SONGS, score_placements
 from aftershock.sync_scout import MAX_QLOO_CALLS, TOP_N, public_ripple, scout
@@ -23,6 +24,7 @@ _scout_calls: list[float] = []
 
 ROOT = Path(__file__).resolve().parent.parent
 STORMS = ROOT / "data" / "private" / "storms.json"
+TITLES = ROOT / "data" / "private" / "titles.json"
 
 server = MCPServer(
     name="aftershock",
@@ -45,6 +47,22 @@ def _storms():
 @server.tool(description="List this week's breakouts: titles that entered the Netflix Top 10 in 1 to 3 countries.")
 def list_storms() -> list[dict]:
     return [s["summary"] for s in _storms()]
+
+
+@server.tool(description="Netflix history of any title that charted in a Top 10 since 2024: the week it first entered a "
+                         "Top 10 and where, every country it has since charted in (with the week), whether it is still "
+                         "spreading, and for a recent title not among this week's breakouts the countries it is likely to "
+                         "chart in next (history only). Matches ignore case, accents and 'Season N'. storm_id is set when "
+                         "it is one of this week's breakouts (use spillover_forecast). No Qloo call.")
+def netflix_history(title: str) -> dict:
+    name = title.strip()
+    if not name or len(name) > 80:
+        return {"error": "title must be 1 to 80 characters"}
+    loaded = title_index.load(TITLES)
+    if loaded is None:
+        return {"error": "titles.json has not been generated yet; run scripts/run_forecasts.py"}
+    found = title_index.history(loaded, name, _storms())
+    return found or {"error": f"Not in Netflix's Top 10 since {loaded[0]['since'][:4]} in any country"}
 
 
 @server.tool(description="SPILLOVER forecast for one breakout, by storm id from list_storms: a probability for each "

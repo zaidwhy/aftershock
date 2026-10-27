@@ -4,6 +4,8 @@ import { getStorms, getStorm, getScorecard, getReplays, isMock } from "./api.js"
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
 import { seismograph, ageLean, forecastMap, dumbbell, hotspotMap } from "./charts.js";
 import { ISO } from "./iso.js";
+import { lookupBox } from "./netflix.js";
+import { weekMapSection } from "./weekmap.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -39,6 +41,7 @@ export function renderHome(root, isCurrent) {
   const stormBox = h("div", null);
   const heroBox = h("div", null);
   const proof = h("aside", { class: "proof", "aria-label": "Evidence at a glance" });
+  const mapBox = h("div", null);
   const stormsP = getStorms();
   add(root,
     h("section", { class: "hero" },
@@ -55,6 +58,8 @@ export function renderHome(root, isCurrent) {
           h("p", { class: "buyer mono" }, "For local distributors, music publishers and promoters: know where a breakout goes next and what to pair it with there, before the competition does."),
           heroBox)),
       proof,
+      mapBox,
+      lookupBox(isCurrent),
       chartBox),
     mockNote(),
     h("section", { "aria-labelledby": "live-h" },
@@ -76,6 +81,10 @@ export function renderHome(root, isCurrent) {
     proof.append(...items.map(([k, v, note]) => h("div", { class: "proof-item" },
       h("p", { class: "proof-k" }, k), h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, note))));
   }).catch(() => { proof.hidden = true; });
+
+  stormsP.then((st) => {
+    if (isCurrent() && st.map?.countries?.length) mapBox.append(weekMapSection(st.map, st.week, isCurrent));
+  }).catch(() => {});
 
   stormsP.then((st) => {
     const x = st.hero;

@@ -48,3 +48,14 @@ export async function scoreSongs(show, songs, asOf) {
   const when = asOf ? `&as_of=${encodeURIComponent(asOf)}` : "";
   return getJson(`${cfg.apiBase}/ripple?show=${encodeURIComponent(show)}&songs=${encodeURIComponent(q)}${when}`);
 }
+
+/** Netflix history for a typed title: the record, or null when Netflix's Top 10 never listed it (404). */
+export async function lookupTitle(name) {
+  if (cfg.mock) return null;
+  let res;
+  try { res = await fetch(`${cfg.apiBase}/title?name=${encodeURIComponent(name.slice(0, 80))}`, { headers: { Accept: "application/json" } }); }
+  catch { throw new Error("Could not reach the title lookup. Check your connection and try again."); }
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`The title lookup returned HTTP ${res.status}.`);
+  return res.json();
+}

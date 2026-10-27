@@ -1,11 +1,15 @@
+import json
 import sys
+from collections import defaultdict
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from aftershock import api  # noqa: E402
+from aftershock import api, titles  # noqa: E402
 
 client = TestClient(api.app)
 
@@ -218,3 +222,88 @@ def test_scout_unresolved_show_carries_suggestion():
 
     out = scout(Near(), "Strangr Things")
     assert out["resolved"] is False and out["suggestion"] == "Stranger Things"
+
+
+# ---- /api/title and the map on /api/storms -------------------------------------------------------------
+class _StubModel:
+    _pair_trials = defaultdict(int, {("BR", "US"): 10})  # the real model's counters are defaultdicts
+    _pair_joins = defaultdict(int, {("BR", "US"): 4})
+
+    def predict(self, event, candidates):
+        return {c: 0.5 / (1 + i) for i, c in enumerate(sorted(candidates))}
+
+
+def _row(country, week, show, season="N/A", category="TV (Non-English)"):
+    return {"country_iso2": country, "week": week, "show_title": show, "season_title": season, "category": category}
+
+
+@pytest.fixture
+def title_files(tmp_path, monkeypatch):
+    rows = [_row("US", "2024-03-03", "Squid Game", "Squid Game: Season 1"), _row("GB", "2024-03-10", "Squid Game", "Squid Game: Season 1"),
+            _row("US", "2025-06-01", "Squid Game", "Squid Game: Season 3"),
+            _row("US", "2023-01-01", "Old Hit"),  # charted only before the cutoff: not indexed
+            _row("BR", "2026-10-11", "Café Nocturne"), _row("BR", "2026-10-18", "Café Nocturne"),
+            _row("FR", "2026-10-18", "Fukrey Returns", category="Films (Non-English)"),
+            _row("US", "2026-10-18", "Fukrey Returns", category="Films (Non-English)")]
+    index = titles.build_index(rows, _StubModel(), ["BR", "FR", "GB", "US"], {"BR": "Brazil", "FR": "France", "GB": "United Kingdom", "US": "United States"},
+                               date(2026, 10, 18), {("Fukrey Returns", "N/A")}, 4)
+    (tmp_path / "titles.json").write_text(json.dumps(index), encoding="utf-8")
+    storms = {"week": "2026-10-18", "ripples": [], "storms": [{"netflix_title": ["Fukrey Returns", "N/A"], "summary": {"id": "fukrey-returns"}}]}
+    (tmp_path / "storms.json").write_text(json.dumps(storms), encoding="utf-8")
+    monkeypatch.setattr(api, "TITLES", tmp_path / "titles.json")
+    monkeypatch.setattr(api, "PRIVATE", tmp_path)
+    return index
+
+
+def test_title_lookup_ignores_case_accents_and_season(title_files):
+    found = client.get("/api/title", params={"name": "  squid GAME season 1 "}).json()
+    assert found["title"] == "Squid Game: Season 1" and found["season"] == "Season 1"
+    assert found["first_week"] == "2024-03-03" and found["countries"] == [["US", "2024-03-03"], ["GB", "2024-03-10"]]
+    assert found["still_spreading"] is False and found["storm_id"] is None
+    assert [o["title"] for o in found["others"]] == ["Squid Game: Season 3"]
+    assert client.get("/api/title", params={"name": "cafe nocturne"}).json()["title"] == "Café Nocturne"
+
+
+def test_title_lookup_prefers_newest_season_and_tolerates_typos(title_files):
+    assert client.get("/api/title", params={"name": "Squid Game"}).json()["season"] == "Season 3"
+    assert client.get("/api/title", params={"name": "Squid Gam"}).json()["show"] == "Squid Game"
+
+
+def test_title_lookup_storm_and_forecast(title_files):
+    storm = client.get("/api/title", params={"name": "Fukrey Returns"}).json()
+    assert storm["storm_id"] == "fukrey-returns" and storm["still_spreading"] is True and "forecast" not in storm
+    spreading = client.get("/api/title", params={"name": "Cafe Nocturne"}).json()
+    assert spreading["still_spreading"] is True and spreading["storm_id"] is None
+    assert spreading["forecast"]["origin"] == ["BR"] and spreading["forecast"]["horizon_weeks"] == 4
+    assert [f["code"] for f in spreading["forecast"]["next"]] == ["FR", "GB", "US"]
+    assert spreading["forecast"]["next"][2]["why"] == "United States joined 4 of 10 past breakouts that started in Brazil"
+
+
+def test_title_lookup_not_found_and_limits(title_files):
+    missing = client.get("/api/title", params={"name": "Zzzz Nothing"})
+    assert missing.status_code == 404 and "Not in Netflix's Top 10 since 2024" in missing.json()["detail"]
+    assert client.get("/api/title", params={"name": "Old Hit"}).status_code == 404
+    assert client.get("/api/title", params={"name": "x" * 81}).status_code == 422
+    assert client.get("/api/title", params={"name": ""}).status_code == 422
+
+
+def test_title_lookup_uses_no_live_slot(title_files):
+    api._ripple_hits.clear()
+    client.get("/api/title", params={"name": "Squid Game"})
+    assert not any(api._ripple_hits.values())
+
+
+def test_week_map_sums_forecasts_and_lists_top_titles(tmp_path, monkeypatch):
+    def storm(sid, title, origin, fcs):
+        return {"netflix_title": [title, "N/A"], "summary": {"id": sid, "title": title, "origin_countries": [{"code": origin, "name": origin}],
+                                                              "top_forecast": None},
+                "detail": {"spillover": {"forecasts": [{"code": c, "name": c.title(), "probability": p} for c, p in fcs]}}}
+    data = {"week": "2026-10-18", "ripples": [], "storms": [storm("a", "A", "KR", [("bd", 0.4), ("fr", 0.1)]),
+                                                            storm("b", "B", "JP", [("bd", 0.3)])]}
+    (tmp_path / "storms.json").write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(api, "PRIVATE", tmp_path)
+    body = api.storms()
+    assert body["map"]["origins"] == ["JP", "KR"]
+    first = body["map"]["countries"][0]
+    assert first["code"] == "bd" and first["expected"] == 0.7
+    assert [t["id"] for t in first["top"]] == ["a", "b"] and first["top"][0]["p"] == 0.4

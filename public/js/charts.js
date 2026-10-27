@@ -166,6 +166,55 @@ export async function forecastMap(forecasts, origins) {
   return svg.node();
 }
 
+/** This week's map: each country shaded by the expected number of this week's breakouts to reach it.
+ *  `pick(code)` is called on hover and tap; the returned `select(code)` marks the chosen country. */
+export async function weekMap(map, pick) {
+  if (!window.d3 || !window.topojson) throw new Error("d3 or topojson-client did not load from cdn.jsdelivr.net.");
+  const res = await fetch(WORLD_URL);
+  if (!res.ok) throw new Error(`world-atlas returned HTTP ${res.status} from cdn.jsdelivr.net.`);
+  const world = await res.json();
+  const { d3, topojson } = window;
+  const feats = topojson.feature(world, world.objects.countries).features;
+  const W = 960, H = 500;
+  const proj = d3.geoNaturalEarth1().fitExtent([[6, 6], [W - 6, H - 6]], { type: "Sphere" });
+  const path = d3.geoPath(proj);
+  const byCode = new Map(map.countries.map((c) => [c.code, c]));
+  const originSet = new Set(map.origins);
+  const max = Math.max(0.01, ...map.countries.map((c) => c.expected));
+  const shade = (c) => `fill:color-mix(in srgb, var(--accent) ${Math.round(12 + (c.expected / max) * 88)}%, var(--map-base))`;
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("class", "world").attr("role", "img")
+    .attr("aria-label", `World map shaded by how many of this week's breakouts are likely to reach each country. Darkest: ${map.countries.slice(0, 3).map((c) => c.name).join(", ")}. A list of the top countries follows.`);
+  svg.append("path").attr("d", path({ type: "Sphere" })).attr("class", "map-sphere");
+  const listen = (sel, codeOf) => sel.on("mouseenter", (e, d) => pick(codeOf(d))).on("click", (e, d) => pick(codeOf(d)));
+  listen(svg.append("g").selectAll("path").data(feats).join("path").attr("d", path)
+    .attr("data-code", (d) => NUMERIC_TO_CODE[+d.id] ?? null)
+    .attr("class", (d) => {
+      const code = NUMERIC_TO_CODE[+d.id];
+      return "country" + (originSet.has(code) ? " is-origin" : "") + (byCode.has(code) ? " has-fc" : "");
+    }).attr("style", (d) => { const c = byCode.get(NUMERIC_TO_CODE[+d.id]); return c ? shade(c) : null; }),
+  (d) => NUMERIC_TO_CODE[+d.id]);
+  // Outlines that project to a few pixels (or have no 110m outline at all) get a dot at their centroid.
+  const SMALL_AREA = 150;
+  const dots = [];
+  const seen = new Set();
+  feats.forEach((d) => {
+    const code = NUMERIC_TO_CODE[+d.id];
+    if (!byCode.has(code) || originSet.has(code) || path.area(d) >= SMALL_AREA) return;
+    seen.add(code);
+    dots.push([code, proj(d3.geoCentroid(d))]);
+  });
+  map.countries.forEach((c) => {
+    if (!seen.has(c.code) && MICRO_LONLAT[c.code] && !originSet.has(c.code)) dots.push([c.code, proj(MICRO_LONLAT[c.code])]);
+  });
+  listen(svg.append("g").attr("class", "fc-dots").selectAll("circle").data(dots.filter(([, xy]) => xy)).join("circle")
+    .attr("cx", ([, xy]) => xy[0]).attr("cy", ([, xy]) => xy[1])
+    .attr("r", ([c]) => 3.5 + (byCode.get(c).expected / max) * 4.5).attr("data-code", ([c]) => c)
+    .attr("class", "fc-dot").attr("style", ([c]) => shade(byCode.get(c))), ([c]) => c);
+  const node = svg.node();
+  const select = (code) => node.querySelectorAll("[data-code]").forEach((el) => el.classList.toggle("is-selected", el.dataset.code === code));
+  return { node, select };
+}
+
 /** Dumbbell chart: per row, a real-spike marker and a placebo-spike marker on one shared axis with a zero line.
  *  Drawn at the container's pixel width (viewBox equals the width), so text keeps its CSS size; redrawn on resize. */
 export function dumbbell(rows, label) {

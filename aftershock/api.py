@@ -14,6 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 
+from aftershock import titles as title_index
 from aftershock.qloo import CACHE_DIR, Qloo, QlooError
 from aftershock.ripple import MAX_SONGS, score_placements
 from aftershock.sync_scout import MAX_QLOO_CALLS, public_ripple, scout
@@ -22,6 +23,7 @@ log = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parent.parent
 PRIVATE = ROOT / "data" / "private"
 PUBLIC_DATA = ROOT / "data" / "public"
+TITLES = PRIVATE / "titles.json"
 RIPPLE_PER_HOUR = 10
 RIPPLE_PER_DAY = 300  # live scorings per server process per day, all visitors
 MAX_FIELD = 120
@@ -74,13 +76,34 @@ def _hero(items):
             "specificity": row.get("specificity")}
 
 
+MAP_TOP_TITLES = 3
+
+
+def _week_map(items):
+    """Per country, the expected number of this week's breakouts to arrive (sum of the forecast probabilities over
+    storms) and the 3 likeliest. Only each storm's published forecast rows count, so it is a floor."""
+    expected, top, origins = defaultdict(float), defaultdict(list), set()
+    for item in items:
+        summ = item["summary"]
+        origins.update(o["code"] for o in summ["origin_countries"])
+        for fc in item["detail"].get("spillover", {}).get("forecasts", []):
+            expected[fc["code"]] += fc["probability"]
+            top[fc["code"]].append((fc["probability"], summ["id"], summ["title"], fc["name"]))
+    countries = []
+    for code in sorted(expected, key=lambda c: -expected[c]):
+        best = sorted(top[code], key=lambda t: -t[0])[:MAP_TOP_TITLES]
+        countries.append({"code": code, "name": best[0][3], "expected": round(expected[code], 2),
+                          "top": [{"id": i, "title": t, "p": p} for p, i, t, _ in best]})
+    return {"origins": sorted(origins), "countries": countries}
+
+
 @app.get("/api/storms")
 def storms():
     data = _load(PRIVATE / "storms.json")
     def kit_rows(s):
         return [r for r in s["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())]
 
-    return {"week": data["week"], "hero": _hero(data["storms"]), "storms": [
+    return {"week": data["week"], "hero": _hero(data["storms"]), "map": _week_map(data["storms"]), "storms": [
         s["summary"] | {"has_kit": bool(kit_rows(s)), "kit_specific": any(not r.get("generic") for r in kit_rows(s))}
         for s in data["storms"]]}
 
@@ -91,6 +114,27 @@ def storm(storm_id: str):
         if item["summary"]["id"] == storm_id:
             return item["detail"]
     raise HTTPException(404, f"no storm with id {storm_id!r}")
+
+
+MAX_TITLE_QUERY = 80
+
+
+@app.get("/api/title")
+def netflix_title(name: str = Query(..., min_length=1, max_length=MAX_TITLE_QUERY)):
+    """When and where a title charted in Netflix's Top 10 (since 2024), and where it may chart next.
+    Reads files only: no Qloo call, so no live-lookup slot is used."""
+    return title_history(name)
+
+
+def title_history(name):
+    loaded = title_index.load(TITLES)
+    if loaded is None:
+        raise HTTPException(503, f"{TITLES.name} has not been generated yet")
+    storms = _load(PRIVATE / "storms.json")["storms"] if (PRIVATE / "storms.json").exists() else []
+    found = title_index.history(loaded, name, storms)
+    if found is None:
+        raise HTTPException(404, f"Not in Netflix's Top 10 since {loaded[0]['since'][:4]} in any country")
+    return found
 
 
 @app.get("/api/ripples")

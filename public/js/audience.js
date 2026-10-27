@@ -2,6 +2,7 @@
 import { h, loading, errorBox, add } from "./dom.js";
 import { scoreSongs, scoutShow, isMock } from "./api.js";
 import { BANDS } from "./format.js";
+import { attachTitlePanel } from "./netflix.js";
 
 /** Age-gap cut points for the verdict chip. The gap is 0 (same age groups) to 1 (opposite); these are
  *  presentation words only. The gap did not predict which songs spike (README section 3). */
@@ -113,6 +114,7 @@ const TRY_EXAMPLES = [
 export function renderTry(root, isCurrent) {
   setTitle("Try it");
   const out = h("div", { class: "try-out", "aria-live": "polite" });
+  const netflix = h("div", { class: "try-out", "aria-live": "polite" });
   const show = h("input", { id: "show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Stranger Things", maxlength: "120" });
   const songs = h("textarea", { id: "songs", name: "songs", rows: "5", required: true, "aria-describedby": "songs-help", placeholder: "Running Up That Hill by Kate Bush\nMaster of Puppets by Metallica" });
   const asOf = h("input", { id: "asof", name: "asof", type: "date", min: "2015-08-01", "aria-describedby": "asof-help" });
@@ -128,6 +130,7 @@ export function renderTry(root, isCurrent) {
     if (parsed.length > 8) { fail(`Up to 8 songs are allowed, you entered ${parsed.length}.`); songs.focus(); return; }
     if (bad >= 0) { fail(`Line ${bad + 1} needs both a song and an artist, written "Song by Artist".`); songs.focus(); return; }
     btn.disabled = true;
+    attachTitlePanel(netflix, showName, isCurrent);
     out.replaceChildren(loading(`Asking Qloo about ${showName} and each artist... this can take 10 to 20 seconds the first time.`, true));
     scoreSongs(showName, parsed, asOf.value || null).then((r) => {
       if (!isCurrent()) return;
@@ -163,7 +166,7 @@ export function renderTry(root, isCurrent) {
     steps(["You type a show and some songs (songs already in it, or ones you are thinking of placing).",
       "We look up who watches the show and who listens to each artist, using Qloo's audience data.",
       "You see whether each song's listeners are the same crowd as the show's, or a different age group the show could reach."]),
-    mockNote(), examples(TRY_EXAMPLES.map((e) => [e[0], fill(e)])), form, out);
+    mockNote(), examples(TRY_EXAMPLES.map((e) => [e[0], fill(e)])), form, netflix, out);
 }
 
 /* ----------------------------------------------------------- sync scout */
@@ -182,12 +185,14 @@ function scoutRow(a, showName, showLeans, of) {
 export function renderScout(root, isCurrent) {
   setTitle("Sync Scout");
   const out = h("div", { class: "try-out", "aria-live": "polite" });
+  const netflix = h("div", { class: "try-out", "aria-live": "polite" });
   const show = h("input", { id: "scout-show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Wednesday", maxlength: "120" });
   const btn = h("button", { type: "submit", class: "btn btn-primary" }, "Find artists");
   const submit = () => {
     const name = show.value.trim();
     if (!name) { out.replaceChildren(h("div", { class: "status status-error", role: "alert" }, h("p", null, "Enter a show or film name."))); show.focus(); return; }
     btn.disabled = true;
+    attachTitlePanel(netflix, name, isCurrent);
     out.replaceChildren(loading(`Asking Qloo about ${name}... this takes about 15 seconds the first time.`, true));
     scoutShow(name).then((r) => {
       if (!isCurrent()) return;
@@ -211,5 +216,5 @@ export function renderScout(root, isCurrent) {
   add(root, h("h1", null, "Find artists who could bring a show a new audience"),
     steps(["You type a show.", "Qloo lists the artists that show's fans love.",
       "We sort them so artists whose own fans are a different age group come first: candidates that could bring the show new listeners."]),
-    mockNote(), examples(SCOUT_EXAMPLES.map((n) => [n, () => { show.value = n; submit(); }])), form, out);
+    mockNote(), examples(SCOUT_EXAMPLES.map((n) => [n, () => { show.value = n; submit(); }])), form, netflix, out);
 }

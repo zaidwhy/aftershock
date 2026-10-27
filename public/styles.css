@@ -324,3 +324,26 @@ dd { margin: 0; font-size: 1.1rem; }
 .songs { max-width: 760px; }
 .bs-head { white-space: nowrap; }
 @media (max-width: 480px) { .band-strip { grid-template-columns: 5rem repeat(6, minmax(0, 1fr)); } .bs-head { font-size: 0.56rem; letter-spacing: -0.03em; } }
+
+/* This week's map and the Netflix lookup */
+.week-map, .lookup { margin-top: 28px; }
+.country.is-selected { stroke: var(--accent-ink); stroke-width: 2; }
+.fc-dot.is-selected { stroke: var(--accent-ink); stroke-width: 2; }
+.country.has-fc, .fc-dot { cursor: pointer; }
+.wm-grid { display: grid; gap: 16px 32px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 800px) { .wm-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+.wm-panel { align-self: start; border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; min-height: 3.2em; }
+.wm-panel .plain { margin: 0; }
+.wm-h3 { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
+.wm-top { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.wm-top li { border-bottom: 1px solid var(--rule); }
+.wm-row { width: 100%; display: flex; justify-content: space-between; gap: 12px; align-items: center; font: 400 0.95rem var(--sans); color: var(--ink); background: transparent; border: 0; padding: 10px 4px; min-height: 44px; cursor: pointer; text-align: left; }
+.wm-row:hover, .wm-row[aria-pressed="true"] { background: var(--paper-2); }
+.lookup-form { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; max-width: 560px; }
+.lookup-form input { flex: 1 1 220px; width: auto; min-width: 0; }
+.on-netflix { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); background: var(--paper-2); padding: 14px 16px; margin-top: 16px; max-width: 68ch; }
+.on-netflix h3 { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; display: flex; align-items: center; gap: 10px; }
+.on-netflix .plain { margin: 6px 0; }
+.timeline { list-style: none; margin: 4px 0 8px; padding: 0; columns: 2 220px; column-gap: 28px; }
+.timeline li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--rule); break-inside: avoid; font-size: 0.92rem; }
+.on-netflix .btn-small { margin: 4px 8px 0 0; }
