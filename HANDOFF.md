@@ -29,6 +29,10 @@ Decisions taken (change them if you disagree):
 
 After both watchers finish: put the experiment verdict into README section 3, docs/DEVPOST.md (replace the bracketed placeholder) and the LinkedIn draft placeholder; re-record the video if the scorecard caption should mention it.
 
+## README audit (28 Oct, by a fresh reader)
+
+Fixed: a glossary before first use of storm/SPILLOVER/launch kit/Hotspots/Song check/Spearman/Jaccard; "Run it" rewritten for a fresh clone (Python 3.12, key source, cross-platform paths, run order, time and call cost, MCP config snippet); mean kit specificity 0.61 not 0.62; "every number comes from data/results" narrowed to backtests and tests; "registered" defined as a public commit, not an external registry; the age gap's partial correlation on the 4 recent shows (0.42, p 0.07) now stated. The Qloo in-country coverage was quoted as 1.8% but never saved; `scripts/test_spillover_qloo.py` now saves it and a cached rerun gives 2.8% (975 of 35,344 title-country pairs), with identical AUCs, so README, site and handoff now say 2.8%.
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.
@@ -76,7 +80,7 @@ See the end of this file for the latest results; everything below is committed l
 
 ## Decisions taken overnight (and why)
 
-- SPILLOVER: Qloo in-country affinity added no AUC (0.8188 history vs 0.8182 with Qloo on 200 breakouts; Qloo had a value for 1.8% of pairs). The country forecast is history-only; Qloo supplies the partners list.
+- SPILLOVER: Qloo in-country affinity added no AUC (0.8188 history vs 0.8182 with Qloo on 200 breakouts; Qloo had a value for 2.8% of pairs, 975 of 35,344). The country forecast is history-only; Qloo supplies the partners list.
 - RIPPLE went through three models, each tested before shipping:
   1. taste fit x age gap: did not beat a no-Qloo baseline;
   2. obscurity + age gap: looked best, until an independent review pointed out that obscurity is the spike's own denominator;

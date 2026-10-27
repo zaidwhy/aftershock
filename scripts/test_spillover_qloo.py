@@ -114,8 +114,14 @@ def main():
         print(f"{row['model']:36s} {row['auc']:7.4f} {row['brier']:8.4f} {row['top5_precision']:7.4f}")
     print(f"blend weights: {blended.blend}")
     print(f"live calls {client.live_calls}, month remaining {client.month_remaining}")
+    # How often Qloo returned an in-country value at all: the reason the blend cannot add much.
+    pairs = len(resolved) * len(countries)
+    present = sum(1 for c in countries for e in resolved if affinity[c].get(e) is not None)
     OUT.write_text(json.dumps({"metrics": table + table_resolved, "test_events": len(test),
-                               "resolved_test": len(resolved_test), "live_calls": client.live_calls}, indent=2))
+                               "resolved_test": len(resolved_test), "live_calls": client.live_calls,
+                               "qloo_value_coverage": {"title_country_pairs": pairs, "with_value": present,
+                                                       "share": round(present / pairs, 4) if pairs else None}},
+                              indent=2))
 
 
 if __name__ == "__main__":

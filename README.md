@@ -8,7 +8,9 @@ Every week AFTERSHOCK reads Netflix's public per-country Top 10 and finds titles
 
 The inspiration: in 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a new, younger audience, and its English Wikipedia page went from about 10,000 views a month to 909,926 in June 2022 (`data/public/replays.json`). We wanted to know whether that kind of jump can be seen coming, and we report what we found, including where it cannot.
 
-Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/), October 2026. MIT licensed.
+Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/), October 2026. MIT licensed. The live site is refreshed after each weekly run; its Agent page shows when the last run happened.
+
+**Words used below.** A *breakout* (the site calls it a *storm*) is a title that has just entered Netflix's Top 10 in one to three countries. *SPILLOVER* is the forecast of which other countries chart it within four weeks. A *launch kit* is what that title's audience over-indexes on in one forecast country, from Qloo; *Hotspots* are the cities where that audience concentrates. *Song check* (code name RIPPLE) compares a show's audience with each artist's by age; *Sync Scout* runs the same comparison over artists Qloo says the show's fans like. *Over-index* is Qloo's term for "likes this more than the average person". *Spearman* is a rank correlation from -1 to 1; *Jaccard overlap* is the share of names two lists have in common.
 
 ## 1. The problem
 
@@ -20,7 +22,7 @@ Distributors, dubbing studios, music publishers and catalog owners react to brea
 
 **Launch kit (what to do there).** For each storm's top three forecast countries, the same call is repeated for `urn:entity:tv_show`, `urn:entity:movie` and `urn:entity:brand` (four calls per country, about 330 added calls per weekly run), giving up to five names per domain in Qloo's order (`aftershock/launch_kit.py`). We probed seven domains and kept the four that were title-specific and local; podcasts (identical across titles), books and places (from other countries) were dropped, see `data/results/launch_kit_probe.json`. Like partners, the kit does not change the probabilities.
 
-**Is the kit about the title? (country-only control).** For each kit country the same four calls are made once more without the title signal, giving what the whole country over-indexes on. A kit's specificity is the mean over domains of 1 minus the Jaccard overlap with that control; at 0.4 or below (overlap 0.6 or more, the threshold registered in `docs/EXPERIMENT_KITS.md`) the kit is labelled "mostly countrywide taste", otherwise "title-specific", and names that are also in the control are greyed out on the page. In the week of 18 Oct, 48 of 81 kits were title-specific (mean specificity 0.62); thin titles such as stand-up specials fall back to the country's general taste.
+**Is the kit about the title? (country-only control).** For each kit country the same four calls are made once more without the title signal, giving what the whole country over-indexes on. A kit's specificity is the mean over domains of 1 minus the Jaccard overlap with that control; at 0.4 or below (overlap 0.6 or more, the threshold registered in `docs/EXPERIMENT_KITS.md`) the kit is labelled "mostly countrywide taste", otherwise "title-specific", and names that are also in the control are greyed out on the page. In the week of 18 Oct, 48 of 81 kits were title-specific (mean specificity 0.61); thin titles such as stand-up specials fall back to the country's general taste.
 
 **Hotspots (which cities).** For the same three countries, one `GET /v2/insights?filter.type=urn:heatmap&signal.interests.entities=<title>&filter.location.query=<country>` call returns about 1,800 geohash cells with an affinity rank; the top 120 are kept as `[lat, lon, weight]`. The three strongest cells that are at least 60 km apart are named by reverse geocoding with OpenStreetMap Nominatim (one request per second, cached under `.cache/nominatim/`, at most eight tries per country), so a promo or touring team sees where in the country to start (`aftershock/hotspots.py`). If either call fails the storm keeps whatever was gathered. Place names are © OpenStreetMap contributors.
 
@@ -41,7 +43,7 @@ Wikipedia supplies context and the outcome: mean daily views of the song's artic
 
 ## 3. What we measured, including what did not work
 
-Every number here comes from a script in this repo and a file in `data/results/`.
+Every backtest and test number here comes from a script in this repo and a file in `data/results/`. Counts that describe the current week (kits, titles indexed) come from the weekly run's output, which holds Qloo-derived data and is not committed; the site and its Agent page show them.
 
 **SPILLOVER** (`scripts/backtest_spillover.py` -> `spillover_backtest.json`; 8,696 training and 829 test breakouts, March to October 2026, 4-week horizon):
 
@@ -51,7 +53,7 @@ Every number here comes from a script in this repo and a file in `data/results/`
 | Each country's general rate | 0.558 | 0.015 |
 | Uniform | 0.500 | 0.012 |
 
-Does Qloo help? `scripts/test_spillover_qloo.py` added each title's location-conditioned Qloo affinity as features on a 200-breakout subset (1,432 Qloo calls): AUC 0.8188 history-only vs 0.8182 with Qloo, so no lift. Qloo returned an in-country value for only about 1.8% of title-country pairs. The country forecast is therefore history-only.
+Does Qloo help? `scripts/test_spillover_qloo.py` added each title's location-conditioned Qloo affinity as features on a 200-breakout subset (1,432 Qloo calls): AUC 0.8188 history-only vs 0.8182 with Qloo, so no lift. Qloo returned an in-country value for only 2.8% of title-country pairs (975 of 35,344, `qloo_value_coverage` in the same file); top-5 precision was identical (0.052) with and without Qloo, and 147 of the 200 test breakouts resolved in Qloo. The country forecast is therefore history-only.
 
 **RIPPLE.** Ground truth: 490 songs from the official song soundtracks of 34 titles in MusicBrainz (`scripts/build_placements_musicbrainz.py` -> `data/placements.csv`; release and source per title in `data/placements_sources.csv`), with Wikipedia spikes in `data/ripple_truth.csv`. A placement here means "on the title's official song soundtrack", which is broader than "used in a scene". Main test (`scripts/test_ripple.py --outcome artist` -> `ripple_test_artist.json`): one row per artist per show, artists without a Qloo audience profile excluded, 229 artists in 24 shows with at least 4 scored artists. Mean within-show Spearman with the log spike, one-sided permutation p-value:
 
@@ -68,7 +70,7 @@ Placebo control (`scripts/test_ripple_controls.py` -> `ripple_controls.json`): t
 | obscurity | 0.22 / 0.48 | 0.11 / 0.01 |
 | Qloo age gap | 0.02 / 0.18 | -0.13 / -0.20 |
 
-What this says: no Qloo signal predicts which soundtrack songs spike on this data. The age gap points the right way (real above placebo) but is not significant (real minus placebo p 0.14 on all shows, 0.15 on the 4 recent ones), and taste fit predicts nothing. Obscurity does beat its placebo here, so part of its effect may be real attention from the show, not only regression to the mean.
+What this says: no Qloo signal predicts which soundtrack songs spike on this data. The age gap points the right way (real above placebo) but is not significant (real minus placebo p 0.14 on all shows, 0.15 on the 4 recent ones), and taste fit predicts nothing. Holding obscurity fixed, the age gap's partial correlation on the 4 recent shows is 0.42 (permutation p 0.07): suggestive, from 4 shows, not significant. Obscurity sits further above its placebo here than in the earlier data (0.22 against 0.11 on all shows), so part of its effect may be real attention from the show; we did not test that difference for significance.
 
 How we got here, for the record: an earlier version of this test used placement lists collected from Tunefind and showed a significant age-gap effect on releases from 2024 on. We then found that Tunefind's terms do not permit automated collection, discarded that data and everything computed from it, and rebuilt the ground truth from MusicBrainz (CC0). The effect did not replicate. The song score is therefore shown as an explorer, not a predictor, and nothing in the product claims otherwise.
 
@@ -76,24 +78,34 @@ How we got here, for the record: an earlier version of this test used placement 
 
 `ledger/forecasts.jsonl` holds one line per forecast, each chained to the previous line's hash (`aftershock.ledger.verify()` checks the chain). For each breakout, every candidate country's probability is locked, not only the top rows, so AUC and calibration can be graded once its 4-week horizon passes. A RIPPLE forecast is locked only before the release's outcome window opens (release + 7 days) and only if at least 4 songs are scorable; releases found later are shown as an early read with the reason they were not locked. The chain proves the file was not edited line by line; the public timestamp comes from the git history on GitHub. Before its first push the ledger was rebuilt twice, after a scoring bug fix and after the locking rules above were tightened.
 
-**Early read, defined before the data.** Each week, for every locked breakout, its single top forecast country is checked against Netflix's newest data: how many have already charted, against the number calibrated forecasts would expect and against a naive "busiest country" baseline (`docs/EARLY_GRADE.md`, committed and pushed before the week of 25 Oct was published). The full four-week grade lands on 15 Nov 2026.
+**Early read, defined before the data.** Each week, for every locked breakout, its single top forecast country is checked against Netflix's newest data: how many have already charted, against the number calibrated forecasts would expect and against a naive "busiest country" baseline (`docs/EARLY_GRADE.md`, committed and pushed to this public repo before the week of 25 Oct was published; "registered" here means that public commit, not an external registry). The full four-week grade lands on 15 Nov 2026.
 
 ## 5. Run it
 
+You need Python 3.12 and, for anything that calls Qloo, a Qloo API key (hackathon keys come from Qloo's form linked on the hackathon page). Nothing Qloo-derived is committed, so a fresh clone has no forecasts or site data until the weekly job has run once.
+
 ```bash
 python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements-dev.txt      # macOS/Linux: .venv/bin/python
-cp .env.example .env    # then put your Qloo hackathon key after QLOO_API_KEY=
-.venv/Scripts/python scripts/probe.py                 # 25 calls: checks the API returns what the models need
-.venv/Scripts/python scripts/backtest_spillover.py    # no key needed
-.venv/Scripts/python scripts/run_forecasts.py         # refresh Netflix data, forecast, lock, grade
-.venv/Scripts/python -m uvicorn aftershock.api:app --port 8000   # site and API on http://127.0.0.1:8000
-.venv/Scripts/python -m pytest -q
+# Windows: .venv\Scripts\python   macOS/Linux: .venv/bin/python   (written as "python" below)
+python -m pip install -r requirements-dev.txt
+python -m pytest -q                        # no key, no network: fixtures and fakes; tests needing local data skip
+cp .env.example .env                       # Windows PowerShell: Copy-Item .env.example .env; then set QLOO_API_KEY
+python scripts/run_forecasts.py            # downloads Netflix's TSV, forecasts, locks new forecasts, builds kits, hotspots and the title index
+python scripts/export_static.py            # writes the read-only site data to public/data/
+python -m uvicorn aftershock.api:app --port 8000   # site and API on http://127.0.0.1:8000
 ```
 
-From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with seven tools, `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history` and `ask` (the same plain-question router as the site). Add it to Claude Desktop or Claude Code with the command `.venv/Scripts/python -m aftershock.mcp_server`, run from the repo folder. The Qloo key stays in that process's environment.
+A first `run_forecasts.py` takes 15 to 30 minutes: about 700 Qloo calls (paced at 4 per second) and up to about 150 OpenStreetMap lookups (1 per second); later runs reuse the disk cache in `.cache/`. `scripts/backtest_spillover.py` needs no key but reads the Netflix file that `run_forecasts.py` downloads to `data/raw/`. The research scripts (`test_ripple*.py`, `test_spillover_qloo.py`, `experiment_kits.py`) also need the key, and `experiment_kits.py` a `GEMINI_API_KEY`.
 
-Automation: `.github/workflows/forecast.yml` runs the forecast job every Tuesday after Netflix publishes and commits the ledger (it needs the `QLOO_API_KEY` repo secret). Read-only pages are served as static JSON: run `scripts/export_static.py` before `vercel deploy --prod`.
+From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with seven tools, `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history` and `ask` (the same plain-question router as the site). It reads the weekly run's output, so run `run_forecasts.py` first. In Claude Desktop's config:
+
+```json
+{ "mcpServers": { "aftershock": { "command": "<repo>/.venv/bin/python", "args": ["-m", "aftershock.mcp_server"], "cwd": "<repo>" } } }
+```
+
+The Qloo key stays in that process's environment. `tests/test_mcp_stdio.py` checks the server with a real MCP client.
+
+Automation: `.github/workflows/tests.yml` runs the tests on every push; `.github/workflows/forecast.yml` runs the forecast job every Tuesday and commits the ledger (it needs the `QLOO_API_KEY` repo secret). The site is a static front end plus one Python function on Vercel: run `scripts/export_static.py`, then `vercel deploy --prod` from a linked project.
 
 API contract: `docs/API.md`.
 

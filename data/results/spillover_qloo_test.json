@@ -27,5 +27,10 @@
   ],
   "test_events": 200,
   "resolved_test": 147,
-  "live_calls": 1432
+  "live_calls": 0,
+  "qloo_value_coverage": {
+    "title_country_pairs": 35344,
+    "with_value": 975,
+    "share": 0.0276
+  }
 }
