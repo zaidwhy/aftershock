@@ -180,15 +180,17 @@ export function dumbbell(rows, label) {
   for (let v = lo; v <= hi + 1e-9; v += 0.1) ticks.push(Math.round(v * 10) / 10);
   const draw = (W) => {
     const wide = W >= 560;
-    const labelW = wide ? 200 : 0, valsW = wide ? 190 : 0, pad = 10;
+    const labelW = wide ? 200 : 0, valsW = wide ? 190 : 0, pad = 18;
     const x0 = labelW + pad, x1 = W - valsW - pad;
     const x = (v) => x0 + ((v - lo) / (hi - lo)) * (x1 - x0);
     const rowH = wide ? 46 : 74, top = 6, axisH = 26;
     const H = top + rows.length * rowH + axisH;
     const g = [];
+    // Wide: grid lines run the full height. Narrow: labels sit above each plot, so lines only span each plot band.
+    const bands = wide ? [[top, H - axisH]] : rows.map((_, i) => [top + i * rowH + 44, top + i * rowH + 68]);
     ticks.forEach((v) => {
-      g.push(s("line", { x1: x(v), x2: x(v), y1: top, y2: H - axisH, class: v === 0 ? "db-zero" : "db-grid" }),
-        s("text", { x: x(v), y: H - 8, class: "ax-label db-tick", "text-anchor": "middle" }, f2(v)));
+      bands.forEach(([y1, y2]) => g.push(s("line", { x1: x(v), x2: x(v), y1, y2, class: v === 0 ? "db-zero" : "db-grid" })));
+      g.push(s("text", { x: x(v), y: H - 8, class: "ax-label db-tick", "text-anchor": "middle" }, f2(v)));
     });
     rows.forEach((r, i) => {
       const t = top + i * rowH;
@@ -251,6 +253,9 @@ export async function hotspotMap(code, cells) {
     proj.fitExtent([[pad + 10, pad + 10], [W - pad - 10, H - pad - 10]], points);
     svg.append("rect").attr("x", 0.5).attr("y", 0.5).attr("width", W - 1).attr("height", H - 1).attr("class", "hs-frame");
   }
+  // A single cell (or cells at one point) has no extent to fit: centre on it at a fixed zoom.
+  const first = proj([cells[0][1], cells[0][0]]);
+  if (!first || !first.every(Number.isFinite)) proj.center([cells[0][1], cells[0][0]]).scale(3000).translate([W / 2, H / 2]);
   svg.append("g").selectAll("circle").data(cells.filter((c) => proj([c[1], c[0]]))).join("circle")
     .attr("cx", (c) => proj([c[1], c[0]])[0]).attr("cy", (c) => proj([c[1], c[0]])[1])
     .attr("r", 2.6).attr("class", "hs-dot").attr("fill-opacity", (c) => (0.15 + 0.8 * c[2]).toFixed(2));

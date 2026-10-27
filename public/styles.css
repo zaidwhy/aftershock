@@ -239,7 +239,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .kit-cap { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 4px 0 0; }
 
 /* ---- scorecard */
-.db-box { width: 100%; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); background: var(--paper-2); padding: 10px 12px 8px; }
+.db-box { width: 100%; min-width: 0; box-sizing: border-box; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); background: var(--paper-2); padding: 10px 12px 8px; }
 .db-box .legend { margin: 0 0 8px; }
 .dumbbell { display: block; width: 100%; height: auto; overflow: visible; }
 .db-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
@@ -258,7 +258,8 @@ dd { margin: 0; font-size: 1.1rem; }
 .ledger-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 24px 0 0; }
 .ledger-row .muted { font-size: 0.9rem; }
 .early-note { font: 400 0.72rem var(--mono); color: var(--ink-soft); }
-.db-wrap { position: relative; overflow: hidden; }
+.db-wrap { position: relative; overflow: hidden; min-width: 0; }
+.db-svg { width: 100%; min-width: 0; overflow: hidden; }
 
 /* ---- hotspot maps */
 .hs-map { display: block; width: 100%; max-width: 260px; height: auto; margin: 14px 0 4px; }
