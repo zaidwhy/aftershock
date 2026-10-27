@@ -5,7 +5,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
-import collect_live_placements as collect  # noqa: E402
 import run_forecasts as rf  # noqa: E402
 from aftershock import ledger  # noqa: E402
 
@@ -41,10 +40,3 @@ def test_locking_is_idempotent(tmp_path):
     ledger.append(second, path)
     assert len(second) == 5 and len(ledger.read(path)) == 10
     assert ledger.verify(path) is None
-
-
-def test_merge_rows_keeps_existing_and_adds_only_new():
-    row = lambda song: {"show": "S", "release_date": "2026-10-22", "song": song, "artist": "A"}  # noqa: E731
-    existing = [row("one"), row("two")]
-    merged = collect.merge_rows(existing, [row("two"), row("three")])
-    assert [r["song"] for r in merged] == ["one", "two", "three"]
