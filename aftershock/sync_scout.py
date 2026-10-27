@@ -6,6 +6,7 @@ did not predict which songs spiked (README section 3). Taste only supplies the c
 order is reported as context. Output carries derived gaps and age-band names only.
 """
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from aftershock.qloo import QlooError, suggest
 from aftershock.ripple import AGE_BANDS, age_gap, age_profile, resolve_show
@@ -15,6 +16,14 @@ log = logging.getLogger(__name__)
 CANDIDATES = 50
 TOP_N = 12
 MAX_QLOO_CALLS = 60
+WORKERS = 4  # the Qloo client paces and locks its requests; threads only overlap the network waits
+# Quality floors, read off the insights response (Qloo's own obscurity tag and popularity score).
+# Obscurity runs 1 (household name) to 7 (barely known). Ashley O, the fictional pop star from Black Mirror,
+# is tagged 7, as are artists with a few thousand listeners; real mid-size artists (Chappell Roan 4, CYN 4,
+# VAST 5, Suki Waterhouse 4) sit at 5 or below. Popularity is 0 to 1; the real least-popular names seen
+# in the pool (Ashton Irwin 0.82) clear 0.80 while one-off uploads sit far below.
+MAX_OBSCURITY = 5
+MIN_POPULARITY = 0.80
 SHOW_TYPES = ("urn:entity:tv_show", "urn:entity:movie")
 BAND_LABELS = {"24_and_younger": "24 and younger", "25_to_29": "25 to 29", "30_to_34": "30 to 34",
                "35_to_44": "35 to 44", "45_to_54": "45 to 54", "55_and_older": "55 and older"}
@@ -53,10 +62,38 @@ def why(show_age, artist_age):
     return text + f" Overlap only at {band_list(shared)}."
 
 
+def obscurity(entity):
+    """Qloo's obscurity tag (1 to 7) when the entity carries one, else None."""
+    levels = [int(t["name"]) for t in entity.get("tags") or []
+              if t.get("type") == "urn:tag:obscurity:qloo" and str(t.get("name", "")).isdigit()]
+    return max(levels) if levels else None
+
+
+def too_obscure_or_fictional(entity):
+    """True for entries the shortlist should not offer: a fictional act, or one almost nobody knows.
+    Missing fields never drop an entity; only evidence does."""
+    types = {item.get("artist_type") for item in (entity.get("external") or {}).get("musicbrainz") or []}
+    if types == {"Character"}:
+        return True
+    level = obscurity(entity)
+    if level is not None and level > MAX_OBSCURITY:
+        return True
+    popularity = entity.get("popularity")
+    return popularity is not None and popularity < MIN_POPULARITY
+
+
 def candidates(client, show_id):
     body = client.insights(filter__type="urn:entity:artist", signal__interests__entities=show_id, take=CANDIDATES)
     rows = body.get("results", {}).get("entities", [])
-    return [(e["entity_id"], e.get("name", "")) for e in rows if e.get("entity_id")]
+    return [(e["entity_id"], e.get("name", "")) for e in rows
+            if e.get("entity_id") and not too_obscure_or_fictional(e)]
+
+
+def _profile(client, entity_id):
+    try:
+        return age_profile(client, entity_id), None
+    except QlooError as err:
+        return None, err
 
 
 def scout(client, show_name):
@@ -80,13 +117,13 @@ def scout(client, show_name):
                 "no_profile": True, "artists": []}
     pool = candidates(client, show["entity_id"])
     rows, truncated = [], False
-    for rank, (entity_id, name) in enumerate(pool, start=1):
-        try:
-            artist_age = age_profile(client, entity_id)
-        except QlooError as err:
-            log.warning("scout stopped at candidate %d: %s", rank, err)
+    with ThreadPoolExecutor(max_workers=WORKERS) as workers:
+        profiles = list(workers.map(lambda item: _profile(client, item[0]), pool))
+    for rank, ((entity_id, name), (artist_age, err)) in enumerate(zip(pool, profiles), start=1):
+        if err is not None:
+            log.warning("scout could not profile candidate %d: %s", rank, err)
             truncated = True
-            break
+            continue
         if artist_age is None:
             continue
         rows.append({"name": name, "entity_id": entity_id, "gap": round(age_gap(show_age, artist_age), 3),

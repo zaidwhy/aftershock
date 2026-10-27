@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from aftershock.ripple import AGE_BANDS  # noqa: E402
-from aftershock.sync_scout import why, TOP_N, scout  # noqa: E402
+from aftershock.sync_scout import why, TOP_N, scout, candidates, too_obscure_or_fictional  # noqa: E402
 
 
 def demographics(values):
@@ -91,3 +91,47 @@ def test_why_names_every_band_a_two_sided_audience_leans_on():
 def test_returns_at_most_top_n():
     out = scout(FakeClient(extra=30), "Show")
     assert len(out["artists"]) == TOP_N
+
+
+def entity(name, obscurity=None, popularity=None, mb=None):
+    out = {"entity_id": name, "name": name}
+    if obscurity is not None:
+        out["tags"] = [{"type": "urn:tag:obscurity:qloo", "name": str(obscurity)}, {"type": "urn:tag:genre", "name": "Pop"}]
+    if popularity is not None:
+        out["popularity"] = popularity
+    if mb:
+        out["external"] = {"musicbrainz": [{"artist_type": t} for t in mb]}
+    return out
+
+
+def test_floors_drop_fictional_and_obscure_but_keep_mid_size_artists():
+    assert too_obscure_or_fictional(entity("Ashley O", obscurity=7, popularity=0.962, mb=["Character", "Person"]))
+    assert too_obscure_or_fictional(entity("Some Character", mb=["Character"]))
+    assert too_obscure_or_fictional(entity("One Upload", obscurity=3, popularity=0.02))
+    assert not too_obscure_or_fictional(entity("VAST", obscurity=5, popularity=0.99))
+    assert not too_obscure_or_fictional(entity("Chappell Roan", obscurity=4, popularity=0.995))
+    assert not too_obscure_or_fictional(entity("Ashton Irwin", obscurity=3, popularity=0.82))
+    assert not too_obscure_or_fictional(entity("Marina", obscurity=3, popularity=0.99, mb=["Character", "Group", "Person"]))
+    assert not too_obscure_or_fictional(entity("No Fields"))
+
+
+def test_candidates_filters_the_pool():
+    class C:
+        def insights(self, **params):
+            return {"results": {"entities": [entity("Ashley O", obscurity=7, popularity=0.96), entity("Real", obscurity=3, popularity=0.99)]}}
+    assert candidates(C(), "S") == [("Real", "Real")]
+
+
+def test_parallel_profiling_keeps_taste_rank_order_and_counts_failures():
+    from aftershock.qloo import QlooError
+
+    class Flaky(FakeClient):
+        def insights(self, **params):
+            if params.get("signal__interests__entities") == "x3":
+                raise QlooError("boom")
+            return super().insights(**params)
+    out = scout(Flaky(extra=6), "Show")
+    assert out["truncated"] is True and out["profiled"] == 8
+    assert "x3" not in {a["entity_id"] for a in out["artists"]}
+    ranks = [a["taste_rank"] for a in out["artists"]]
+    assert len(set(ranks)) == len(ranks)
