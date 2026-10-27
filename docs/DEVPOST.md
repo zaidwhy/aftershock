@@ -12,7 +12,7 @@ In 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front o
 
 Every week the agent reads Netflix's public per-country Top 10, finds titles that just broke out in one to three countries (35 in the week of 18 Oct 2026), and for each one:
 
-- **Where next:** the probability that each other country charts it within four weeks, with the evidence ("Bangladesh joined 19 of 47 past breakouts that started in Pakistan", so Fukrey Returns gets 38% there).
+- **Where next:** the probability that each other country charts it within four weeks, with the evidence ("Bangladesh joined 19 of 47 past breakouts that started in Pakistan", so Fukrey Returns got 38% there in the week of 18 Oct 2026).
 - **What this audience loves there (Qloo launch kit):** in each of the top three forecast countries, the artists, shows, films and brands that title's audience over-indexes on, as candidate partners and cross-promotions.
 - **Whether that is really about the title:** each kit is compared with what Qloo returns for the whole country with no title. Names the whole country likes anyway are greyed out, and each kit is labelled "title-specific" or "mostly countrywide taste" (this week 48 of 81 kits are title-specific).
 - **Where in each country (Qloo Hotspots):** the cities where that title's audience concentrates, from Qloo's heatmap, on a small map per country.
@@ -67,7 +67,7 @@ AFTERSHOCK is not affiliated with Netflix or Qloo.
 No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app:
 
 1. **Home:** the worked example on the right shows this week's clearest case: where a title broke out, where it is likely to chart next and why, what its audience there loves (Qloo), and which cities to start in.
-2. **Ask the agent:** click "What should Fukrey Returns pair with in Bangladesh?" or type your own question. The agent picks its tools and lists every step it took ("How the agent answered").
+2. **Ask the agent:** click the example "What should ... pair with in ...?" (it uses this week's clearest breakout) or type your own question. The agent picks its tools and lists every step it took ("How the agent answered").
 3. **The map:** hover a country under "Where this week's breakouts are heading", or use "Look up any title" for any show or film.
 4. **Song check:** click "Stranger Things + 3 songs" to see which songs reach a new crowd (a first run takes about 10 seconds).
 5. **Agent, Scorecard and Ledger:** what the agent did on its weekly run; what we measured, including what did not work and the pre-registered tests; and every locked forecast.

@@ -49,6 +49,10 @@ Measured cold (no cache) at phone width on a throttled 1.6 Mbps / 150 ms connect
 
 Tested with a local server given an invalid key: read-only pages (storms, map, kits, scorecard, ledger) need no live call and keep working; live lookups failed with "try again in a minute", which is wrong for a refused key. Now `QlooError` carries Qloo's status and `api.qloo_failure` maps 401/403 to 503 "Live Qloo lookups are switched off right now (Qloo refused the API key). The weekly forecasts, launch kits, hotspots and map on this site still work.", 429 to a rate-limit message, anything else to the old one; the page shows the server's sentence without the URL and status code. Tests for all four cases. If the hackathon key expires during judging, this is what judges see.
 
+## Links survive the weekly rollover (28 Oct)
+
+Before this, every storm link (Devpost instructions, gallery, video, bookmarks such as #/storm/fukrey-returns) would have 404'd as soon as a new Netflix week replaced the storms. Now run_forecasts.py archives each week to data/private/storm_archive/<week>.json (seeded with 18 Oct); /api/storms/{id} and the static export fall back to the most recent archived week, tagged `archived_week`, and the storm page shows a "From the week of ..." banner; an unknown id gets "No breakout called that" with a way back. The Ask launch-kit example is built from this week's hero. Simulated a rollover against a temp copy of the data: an archived id returns 200 with archived_week 2026-10-18, an unknown id 404 with the sentence. Devpost instructions no longer name this week's title.
+
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.
