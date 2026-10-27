@@ -102,13 +102,13 @@ nav a[aria-current="page"] { border-bottom-color: var(--accent); }
 
 .storm-list { list-style: none; margin: 16px 0 0; padding: 0; border-top: 2px solid var(--ink); }
 .storm-list li { border-bottom: 1px solid var(--rule); }
-.storm-link { display: grid; grid-template-columns: 1fr; gap: 2px 24px; padding: 14px 4px; color: var(--ink); text-decoration: none; }
+.storm-link { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 24px; padding: 14px 4px; color: var(--ink); text-decoration: none; }
 .storm-link:hover { background: var(--paper-2); }
 .storm-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.1; }
 .storm-meta, .storm-next { font-size: 0.92rem; color: var(--ink-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .storm-next strong { color: var(--ink); }
 .storm-next { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 4px 14px; align-items: center; }
-@media (max-width: 480px) { .storm-next { grid-template-columns: minmax(0, 1fr) 72px; } .pbar { width: 72px; } }
+@media (max-width: 480px) { .storm-next { grid-template-columns: minmax(0, 1fr) 72px; } .storm-next .pbar { width: 72px; } }
 @media (min-width: 720px) {
   .storm-link { grid-template-columns: 1.4fr 1fr 1fr; align-items: baseline; }
 }
@@ -216,7 +216,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .hero-top { display: grid; gap: 8px 48px; }
 @media (min-width: 900px) { .hero-top { grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); align-items: start; } }
 .proof { border-top: 2px solid var(--ink); margin-top: 28px; }
-@media (min-width: 900px) { .proof { margin-top: 56px; } }
+
 .proof-item { padding: 12px 0 10px; border-bottom: 1px solid var(--rule); }
 .proof-item p { margin: 0; }
 .proof-k { font: 500 0.72rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
@@ -284,8 +284,15 @@ dd { margin: 0; font-size: 1.1rem; }
 .ex-step .ex-k { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
 .ex-step .ex-why { font-size: 0.8rem; color: var(--ink-soft); }
 .ex-link { margin: 8px 0 0; }
+/* The worked example sits in the hero's right column so it is in the first screen; the evidence
+   numbers run as one row underneath. */
 @media (min-width: 900px) {
-  .ex-grid { grid-template-columns: repeat(4, 1fr); gap: 0 20px; }
-  .ex-step { border-top: 0; border-left: 1px solid var(--rule); padding: 4px 0 4px 14px; }
-  .ex-step:first-child { border-left: 0; padding-left: 0; }
+  .hero-side { margin-top: 40px; }
+  .hero-side .buyer { margin-top: 0; }
+  .proof { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 24px; margin-top: 28px; }
+  .proof-item { border-bottom: 0; }
+  .proof-v { font-size: clamp(1.8rem, 3vw, 2.4rem); }
+}
+@media (max-width: 899px) {
+  .proof { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 }
