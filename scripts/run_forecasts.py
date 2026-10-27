@@ -28,7 +28,7 @@ from aftershock.netflix import (  # noqa: E402
 from aftershock.hotspots import hotspots  # noqa: E402
 from aftershock.launch_kit import (  # noqa: E402
     DOMAINS, GENERIC_AT_OR_BELOW, country_picks, launch_kit, specificity)
-from aftershock.qloo import Qloo, QlooError, norm  # noqa: E402
+from aftershock.qloo import Qloo, QlooError, best_title_match  # noqa: E402
 from aftershock.ripple import score_placements  # noqa: E402
 
 RAW = ROOT / "data" / "raw" / "all-weeks-countries.tsv"
@@ -41,6 +41,7 @@ SHOW_TOP = 15
 MIN_RIPPLE_SONGS = 4
 MAX_STORMS = 40
 MAX_RIPPLE_SONGS = 25
+SEARCH_TAKE = 10
 log = logging.getLogger("run_forecasts")
 
 
@@ -75,12 +76,14 @@ def why_text(model, event, target, names):
     return "; ".join(parts) or f"no past breakouts from these origins; uses {names[target]}'s general rate"
 
 
-def resolve_title(client, event):
-    entity_type = "urn:entity:movie" if event["category"].startswith("Films") else "urn:entity:tv_show"
-    for hit in client.search(event["title"][0], types=entity_type):
-        if norm(hit.get("name", "")) == norm(event["title"][0]):
-            return hit["entity_id"]
-    return None
+def resolve_title(client, event, take=SEARCH_TAKE):
+    """The Qloo entity for a Netflix title. Several titles can share a name (a 2026 film and an older one
+    called "Relatives"), so the hit is chosen by release year against the year it first charted."""
+    film = event["category"].startswith("Films")
+    entity_type = "urn:entity:movie" if film else "urn:entity:tv_show"
+    hit = best_title_match(client.search(event["title"][0], types=entity_type, take=take), event["title"][0],
+                           event["origin_week"].year, film)
+    return hit["entity_id"] if hit else None
 
 
 def live_placements():

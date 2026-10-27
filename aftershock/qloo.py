@@ -108,6 +108,42 @@ def resolve(client, name, types):
     return None
 
 
+FILM_YEAR_WINDOW = 2
+
+
+def release_year(hit):
+    props = hit.get("properties") or {}
+    year = props.get("release_year")
+    if isinstance(year, (int, float)):
+        return int(year)
+    match = re.match(r"(\d{4})", str(props.get("release_date") or ""))
+    return int(match.group(1)) if match else None
+
+
+def best_title_match(hits, name, chart_year, film):
+    """Among search hits whose name equals `name`, the one that fits the Netflix first-chart year.
+    Films: a release within FILM_YEAR_WINDOW years of it, closest first. TV: any season year, so a show
+    first released on or before that year; one released after it cannot be what charted. Higher
+    popularity breaks ties. A hit with no release year ranks after every hit that has one."""
+    exact = [h for h in hits if norm(h.get("name", ""), keep_subtitle=True) == norm(name, keep_subtitle=True)]
+    if not exact:  # Netflix adds or drops ": subtitle" more often than Qloo does
+        exact = [h for h in hits if norm(h.get("name", "")) == norm(name)]
+    if not exact:
+        return None
+
+    def rank(item):
+        order, hit = item
+        year = release_year(hit)
+        popularity = -(hit.get("popularity") or 0.0)
+        if year is None:
+            return (2, 0, popularity, order)
+        if film:
+            gap = abs(year - chart_year)
+            return (0 if gap <= FILM_YEAR_WINDOW else 1, gap, popularity, order)
+        return (0 if year <= chart_year else 1, 0 if year <= chart_year else year - chart_year, popularity, order)
+    return min(enumerate(exact), key=rank)[1]
+
+
 SUGGEST_MIN_SIMILARITY = 0.78
 SUGGEST_MAX_QUERIES = 7
 
