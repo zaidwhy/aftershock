@@ -7,7 +7,7 @@ order is reported as context. Output carries derived gaps and age-band names onl
 """
 import logging
 
-from aftershock.qloo import QlooError
+from aftershock.qloo import QlooError, suggest
 from aftershock.ripple import AGE_BANDS, age_gap, age_profile, resolve_show
 
 log = logging.getLogger(__name__)
@@ -67,12 +67,17 @@ def scout(client, show_name):
         if show:
             break
     if not show:
+        try:
+            hint = suggest(client, show_name, ",".join(SHOW_TYPES))
+        except QlooError as err:
+            log.warning("suggestion lookup failed for %r: %s", show_name, err)
+            hint = None
         return {"resolved": False, "show": show_name, "reason": "Qloo does not know a show or film by this name",
-                "artists": []}
+                "suggestion": hint, "artists": []}
     show_age = age_profile(client, show["entity_id"])
     if show_age is None:
         return {"resolved": False, "show": show["name"], "reason": "Qloo has no audience profile for this title",
-                "artists": []}
+                "no_profile": True, "artists": []}
     pool = candidates(client, show["entity_id"])
     rows, truncated = [], False
     for rank, (entity_id, name) in enumerate(pool, start=1):
@@ -85,7 +90,7 @@ def scout(client, show_name):
         if artist_age is None:
             continue
         rows.append({"name": name, "entity_id": entity_id, "gap": round(age_gap(show_age, artist_age), 3),
-                     "taste_rank": rank, "why": why(show_age, artist_age)})
+                     "taste_rank": rank, "leans": leaning_bands(artist_age), "why": why(show_age, artist_age)})
     rows.sort(key=lambda r: (-r["gap"], r["taste_rank"]))
-    return {"resolved": True, "show": show["name"], "show_entity": show["entity_id"], "candidates": len(pool),
+    return {"resolved": True, "show": show["name"], "show_entity": show["entity_id"], "show_leans": leaning_bands(show_age), "candidates": len(pool),
             "profiled": len(rows), "truncated": truncated, "artists": rows[:TOP_N]}

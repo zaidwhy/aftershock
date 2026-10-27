@@ -16,7 +16,7 @@ export function s(tag, attrs, ...kids) {
   for (const k of kids.flat()) if (k != null) el.append(k.nodeType ? k : document.createTextNode(String(k)));
   return el;
 }
-export const loading = (what) => h("p", { class: "status", role: "status" }, h("span", { class: "pulse", "aria-hidden": "true" }), `Loading ${what}...`);
+export const loading = (what, verbatim) => h("p", { class: "status", role: "status" }, h("span", { class: "pulse", "aria-hidden": "true" }), verbatim ? what : `Loading ${what}...`);
 export function errorBox(what, err, retry) {
   return h("div", { class: "status status-error", role: "alert" },
     h("p", null, h("strong", null, `Could not load ${what}. `), err.message || String(err)),

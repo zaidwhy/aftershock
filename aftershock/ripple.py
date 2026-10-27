@@ -18,12 +18,13 @@ import re
 from datetime import date, timedelta
 
 from aftershock import wiki
-from aftershock.qloo import QlooError, resolve
+from aftershock.qloo import QlooError, resolve, suggest
 
 log = logging.getLogger(__name__)
 
 AGE_BANDS = ["24_and_younger", "25_to_29", "30_to_34", "35_to_44", "45_to_54", "55_and_older"]
 MAX_SONGS = 8
+SHOW_TYPES = "urn:entity:tv_show,urn:entity:movie"
 BASELINE_DAYS = (60, 8)  # same window as the backtest: days -60..-8 before the reference date
 
 
@@ -45,6 +46,14 @@ def resolve_artist(client, artist):
         return hit
     first = re.split(r",| feat\.? | featuring | & | x ", artist, maxsplit=1)[0].strip()
     return resolve(client, first, "urn:entity:artist") if first != artist else None
+
+
+def _safe_suggest(client, name, types):
+    try:
+        return suggest(client, re.sub(r"\s*\(.*?\)", "", name).strip() or name, types)
+    except QlooError as err:
+        log.warning("suggestion lookup failed for %r: %s", name, err)
+        return None
 
 
 def age_gap(show_age, artist_age):
@@ -97,27 +106,32 @@ def score_placements(client, show_name, placements, show_type=None, as_of=None, 
     if len(placements) > max_songs:
         raise ValueError(f"at most {max_songs} songs per request, got {len(placements)}")
     as_of = as_of or date.today()
-    show = resolve_show(client, show_name, show_type or "urn:entity:tv_show,urn:entity:movie")
+    show = resolve_show(client, show_name, show_type or SHOW_TYPES)
     if not show:
-        return {"resolved": False, "show": show_name, "songs": []}
+        return {"resolved": False, "show": show_name, "songs": [], "suggestion": _safe_suggest(client, show_name, show_type or SHOW_TYPES)}
     show_age = age_profile(client, show["entity_id"])
     if show_age is None:
-        return {"resolved": False, "show": show["name"], "reason": "Qloo has no audience profile for this title", "songs": []}
-    artists = {}
+        return {"resolved": False, "show": show["name"], "reason": "Qloo has no audience profile for this title", "no_profile": True, "songs": []}
+    artists, suggestions = {}, {}
     for _, artist in placements:
         if artist not in artists:
             hit = resolve_artist(client, artist)
-            artists[artist] = hit["entity_id"] if hit else None
-    known = sorted({a for a in artists.values() if a})
+            artists[artist] = hit
+            if not hit:
+                suggestions[artist] = _safe_suggest(client, artist, "urn:entity:artist")
+    known = sorted({a["entity_id"] for a in artists.values() if a})
     fit = taste_fit(client, show["entity_id"], known) if known else {}
     songs = []
     for song, artist in placements:
         row = {"song": song, "artist": artist, "resolved": False}
-        artist_id = artists.get(artist)
+        hit = artists.get(artist)
+        artist_id = hit["entity_id"] if hit else None
+        if not hit and suggestions.get(artist):
+            row["suggestion"] = suggestions[artist]
         if artist_id:
             try:
                 artist_age = age_profile(client, artist_id)
-                row.update(resolved=True, fit=fit.get(artist_id))
+                row.update(resolved=True, fit=fit.get(artist_id), matched_artist=hit.get("name") or artist)
                 if artist_age is not None:
                     row.update(artist_age=artist_age, age_gap=round(age_gap(show_age, artist_age), 3))
             except QlooError as err:

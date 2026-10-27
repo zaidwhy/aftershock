@@ -72,7 +72,7 @@ def test_show_without_profile_returns_reason():
 def test_output_has_no_raw_affinity_or_demographics():
     out = scout(FakeClient(), "Show")
     row = out["artists"][0]
-    assert set(row) == {"name", "entity_id", "gap", "taste_rank", "why"}
+    assert set(row) == {"name", "entity_id", "gap", "taste_rank", "leans", "why"}
     text = str(out)
     assert "0.987" not in text and "affinity" not in text and "age_profile" not in text
     assert row["why"].startswith("Audience leans 55 and older") and "24 and younger" in row["why"]

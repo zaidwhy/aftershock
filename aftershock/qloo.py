@@ -3,6 +3,7 @@
 The key comes from QLOO_API_KEY (loaded from .env). Responses are cached under .cache/qloo/,
 which is gitignored: Qloo's terms forbid publishing their data in a public repo.
 """
+import difflib
 import hashlib
 import json
 import logging
@@ -105,3 +106,38 @@ def resolve(client, name, types):
             if norm(hit.get("name", "")) == norm(name):
                 return hit
     return None
+
+
+SUGGEST_MIN_SIMILARITY = 0.78
+SUGGEST_MAX_QUERIES = 7
+
+
+def _suggest_queries(name):
+    """The name itself, then respellings Qloo's search can match: a misspelled one-word name often returns
+    nothing ("edshreen"), but a word break ("ed shreen") or a shorter prefix does."""
+    name = " ".join(name.split())
+    queries = [name]
+    if " " not in name:
+        queries += [f"{name[:i]} {name[i:]}" for i in range(2, len(name) - 2)]
+    queries += [name[:-k] for k in (1, 2, 3) if len(name) - k >= 3]
+    return list(dict.fromkeys(queries))[:SUGGEST_MAX_QUERIES]
+
+
+def suggest(client, name, types):
+    """Nearest Qloo search hit's name for a name that did not resolve, or None. Only ever shown to the
+    visitor as "did you mean"; never used to score anything. The most similar hit across the respelled queries wins, and it must look
+    enough like what was typed (similarity of the names without spaces or case)."""
+    squash = lambda s: re.sub(r"[^a-z0-9]", "", norm(s, keep_subtitle=True))
+    typed = squash(name)
+    best, best_ratio = None, 0.0
+    for query in _suggest_queries(name):
+        for hit in client.search(query, types=types):
+            found = hit.get("name", "").strip()
+            if not found or squash(found) == typed:
+                continue
+            ratio = difflib.SequenceMatcher(None, typed, squash(found)).ratio()
+            if ratio > best_ratio:
+                best, best_ratio = found, ratio
+        if best_ratio >= 0.9:
+            break
+    return best if best_ratio >= SUGGEST_MIN_SIMILARITY else None

@@ -296,3 +296,31 @@ dd { margin: 0; font-size: 1.1rem; }
 @media (max-width: 899px) {
   .proof { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 }
+
+/* Try it and Sync Scout: plain-language results */
+.steps { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 0; max-width: 68ch; border-top: 1px solid var(--rule); }
+.steps li { display: grid; grid-template-columns: 2rem 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.step-n { color: var(--accent-ink); font-weight: 500; }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0; }
+.eg-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.btn-small { min-height: 40px; padding: 6px 14px; font-size: 0.9rem; }
+.advanced summary, .row-details summary { cursor: pointer; font: 500 0.8rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); padding: 6px 0; }
+.advanced[open] summary { margin-bottom: 8px; }
+.row-details p { font-size: 0.85rem; color: var(--ink-soft); margin: 2px 0 6px; max-width: 68ch; }
+.verdict { font: 500 0.75rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 10px; border: 1px solid var(--ink-soft); color: var(--ink-soft); white-space: nowrap; }
+.v-part { border-color: var(--accent-ink); color: var(--accent-ink); }
+.v-new { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--on-accent); }
+.matched { font-size: 0.78rem; color: var(--ink-soft); }
+.plain { margin: 0; max-width: 68ch; }
+.rank { margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
+.honest { margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--ink-soft); max-width: 68ch; }
+.not-found .btn-small { margin-top: 6px; }
+.band-strip { display: grid; grid-template-columns: minmax(5.5rem, 8.5rem) repeat(6, minmax(0, 1fr)); gap: 3px; max-width: 460px; align-items: center; }
+.bs-head { font-size: 0.65rem; color: var(--ink-soft); text-align: center; }
+.bs-label { font-size: 0.75rem; color: var(--ink); line-height: 1.2; overflow-wrap: anywhere; }
+.bs-cell { height: 14px; background: var(--paper-2); border: 1px solid var(--rule); }
+.bs-cell.on-show { background: var(--accent); border-color: var(--accent); }
+.bs-cell.on-artist { background: var(--ink); border-color: var(--ink); }
+.songs { max-width: 760px; }
+.bs-head { white-space: nowrap; }
+@media (max-width: 480px) { .band-strip { grid-template-columns: 5rem repeat(6, minmax(0, 1fr)); } .bs-head { font-size: 0.56rem; letter-spacing: -0.03em; } }

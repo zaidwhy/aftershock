@@ -148,3 +148,73 @@ def test_hero_picks_highest_qualifying_storm():
 def test_hero_none_when_nothing_qualifies():
     assert api._hero([_item("g", 0.9, generic=True), _item("p", 0.5, places=())]) is None
     assert api._hero([]) is None
+
+
+class _FakeQloo:
+    """Search-only stand-in: the show and Ed Sheeran exist; "edshreen" is not a name but is nearest to him."""
+    def search(self, query, types=None, take=5):
+        if "tv_show" in (types or ""):
+            return [{"name": "Stranger Things", "entity_id": "show"}]
+        if "artist" in (types or ""):
+            return [{"name": "Ed Sheeran", "entity_id": "ed"}] if "sheeran" not in query.lower() else \
+                [{"name": "Ed Sheeran", "entity_id": "ed"}]
+        return []
+
+    def insights(self, **params):
+        age = {"24_and_younger": 0.4, "25_to_29": 0.2, "30_to_34": 0.0, "35_to_44": -0.2, "45_to_54": -0.2, "55_and_older": -0.2}
+        if params.get("filter__type") == "urn:demographics":
+            return {"results": {"demographics": [{"query": {"age": age}}]}}
+        return {"results": {"entities": []}}
+
+
+def test_unresolved_artist_row_carries_a_suggestion(monkeypatch):
+    from aftershock import ripple
+    monkeypatch.setattr(ripple, "prior_attention", lambda *a, **k: (None, None))
+    out = ripple.score_placements(_FakeQloo(), "Stranger Things", [("Shape of You", "edshreen"), ("Perfect", "Ed Sheeran")])
+    by_artist = {s["artist"]: s for s in out["songs"]}
+    assert by_artist["edshreen"]["resolved"] is False
+    assert by_artist["edshreen"]["suggestion"] == "Ed Sheeran"
+    assert by_artist["Ed Sheeran"]["resolved"] is True and by_artist["Ed Sheeran"]["matched_artist"] == "Ed Sheeran"
+    assert "suggestion" not in by_artist["Ed Sheeran"]
+
+
+def test_unresolved_show_carries_a_suggestion(monkeypatch):
+    from aftershock import ripple
+    class Near(_FakeQloo):
+        def search(self, query, types=None, take=5):
+            return [{"name": "Stranger Things", "entity_id": "show"}]
+    out = ripple.score_placements(Near(), "Stranger Thingz", [("A", "B")])
+    assert out["resolved"] is False and out["suggestion"] == "Stranger Things"
+
+
+def test_api_passes_suggestion_through(monkeypatch):
+    raw = {"resolved": True, "show": "X", "songs": [{"song": "S", "artist": "edshreen", "resolved": False, "suggestion": "Ed Sheeran"}]}
+    monkeypatch.setattr(api, "score_placements", lambda *a, **k: raw)
+    monkeypatch.setattr(api, "Qloo", lambda **k: None)
+    api._ripple_hits.clear()
+    api._daily.update(day=None, count=0)
+    body = client.get("/api/ripple", params={"show": "X", "songs": "S|edshreen"}).json()
+    assert body["songs"][0]["suggestion"] == "Ed Sheeran"
+
+
+def test_suggest_respells_a_name_qloo_search_cannot_match():
+    from aftershock.qloo import suggest
+
+    class Picky:
+        def search(self, query, types=None, take=5):
+            return [{"name": "Ed Sheeran"}, {"name": "Ed Harcourt"}] if query == "ed shreen" else []
+
+    assert suggest(Picky(), "edshreen", "urn:entity:artist") == "Ed Sheeran"
+    assert suggest(Picky(), "zzzzqqq", "urn:entity:artist") is None
+
+
+def test_scout_unresolved_show_carries_suggestion():
+    from aftershock.sync_scout import scout
+
+    class Near:
+        def search(self, query, types=None, take=5):
+            return [{"name": "Wednesday", "entity_id": "w"}] if query == "Wednsday" and False else \
+                [{"name": "Stranger Things", "entity_id": "s"}] if query.startswith("Strangr") else []
+
+    out = scout(Near(), "Strangr Things")
+    assert out["resolved"] is False and out["suggestion"] == "Stranger Things"

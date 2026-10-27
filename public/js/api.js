@@ -6,7 +6,11 @@ async function getJson(url) {
   let res;
   try { res = await fetch(url, { headers: { Accept: "application/json" } }); }
   catch { throw new Error(`Could not reach ${url}. Check your connection and try again.`); }
-  if (res.status === 429) throw new Error("Rate limit reached (10 live scorings per hour per visitor, 300 per day overall). Try again later.");
+  if (res.status === 429) {
+    let detail = "";
+    try { detail = (await res.json()).detail || ""; } catch { /* body not JSON */ }
+    throw Object.assign(new Error("Rate limit reached. Try again later."), { status: 429, detail });
+  }
   if (!res.ok) {
     let detail = "";
     try { const j = await res.json(); detail = j.detail || j.error || ""; } catch { /* body not JSON */ }
