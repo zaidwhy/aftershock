@@ -254,7 +254,7 @@ function forecastTable(fc) {
         h("td", { class: "why" }, f.why))))));
 }
 
-export { renderTry, renderScout } from "./judge.js";
+export { renderTry, renderScout } from "./audience.js";
 
 /* -------------------------------------------------------------- scorecard */
 export function renderScorecard(root, isCurrent) {
