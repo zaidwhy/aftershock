@@ -365,3 +365,9 @@ dd { margin: 0; font-size: 1.1rem; }
 /* Launch kit: brands are the lightest line */
 .kit-list .kit-minor dt { font-size: 0.68rem; color: var(--ink-soft); }
 .kit-list .kit-minor dd { font-size: 0.88rem; color: var(--ink-soft); }
+
+/* Ledger page */
+.ledger-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 24px; margin: 16px 0; padding: 0; }
+.ledger-stats dt { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.ledger-stats dd { margin: 2px 0 0; font-size: 1rem; }
+.ledger-raw { margin: 8px 0 20px; }

@@ -8,7 +8,7 @@ export const CONFIG = {
 };
 
 import { setConfig } from "./js/api.js";
-import { renderHome, renderStorm, renderRipple, renderTry, renderScout, renderScorecard, renderMethod, renderNotFound } from "./js/views.js";
+import { renderHome, renderStorm, renderRipple, renderTry, renderScout, renderScorecard, renderLedger, renderMethod, renderNotFound } from "./js/views.js";
 
 setConfig(CONFIG);
 
@@ -22,6 +22,7 @@ const routes = [
   [/^#\/try$/, () => renderTry],
   [/^#\/scout$/, () => renderScout],
   [/^#\/scorecard$/, () => renderScorecard],
+  [/^#\/ledger$/, () => renderLedger],
   [/^#\/method$/, () => renderMethod],
 ];
 
@@ -36,7 +37,7 @@ function route() {
   }
   document.querySelectorAll("nav [data-nav]").forEach((a) => {
     const key = a.dataset.nav;
-    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}`;
+    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "scorecard" && hash === "#/ledger");
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   app.replaceChildren();

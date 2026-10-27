@@ -42,3 +42,24 @@ def test_scorecard_matches_api(out):
 def test_replays_match_api_and_ripples_not_exported(out):
     assert not (out / "ripples.json").exists() and not (out / "ripples").exists()
     assert _file(out, "replays.json") == client.get("/api/replays").json()
+
+
+def test_ledger_page_counts_rows_status_and_chain(tmp_path):
+    from datetime import date, datetime, timezone
+    from aftershock import ledger
+    path = tmp_path / "forecasts.jsonl"
+    old = datetime(2026, 9, 1, 12, 0, tzinfo=timezone.utc)
+    new = datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc)
+    ledger.append([{"kind": "spillover", "title": ["Old Show", "N/A"], "origin_week": "2026-08-30", "target": "FR", "probability": 0.4},
+                   {"kind": "spillover", "title": ["Old Show", "N/A"], "origin_week": "2026-08-30", "target": "DE", "probability": 0.2}], path, now=old)
+    ledger.append([{"kind": "spillover", "title": ["New Show", "New Show: Season 2"], "origin_week": "2026-10-18", "target": "FR", "probability": 0.1},
+                   {"kind": "spillover", "title": ["New Show", "New Show: Season 2"], "origin_week": "2026-10-18", "target": "DE", "probability": 0.7}], path, now=new)
+    first = {("Old Show", "N/A"): {"FR": date(2026, 9, 6)}}
+    page = export_static.ledger_page(ledger.read(path), ledger.verify(path) is None, first, date(2026, 10, 25), {"FR": "France", "DE": "Germany"})
+    assert page["total"] == 4 and page["titles"] == 2 and page["intact"] is True
+    assert page["first_locked"] == "2026-09-01T12:00:00Z" and page["last_locked"] == "2026-10-26T12:00:00Z"
+    assert [(r["title"], r["country"], r["status"]) for r in page["rows"]] == [
+        ("New Show: Season 2", "Germany", "pending"), ("New Show: Season 2", "France", "pending"),
+        ("Old Show", "France", "hit"), ("Old Show", "Germany", "miss")]
+    path.write_text(path.read_text(encoding="utf-8").replace("0.4", "0.9"), encoding="utf-8")
+    assert ledger.verify(path) == 0

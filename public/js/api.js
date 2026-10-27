@@ -26,6 +26,7 @@ export const getStorms = () => stat("storms");
 export const getStorm = (id) => stat(`storms/${encodeURIComponent(id)}`, `storm-${encodeURIComponent(id)}`);
 export const getScorecard = () => stat("scorecard");
 export const getReplays = () => stat("replays");
+export const getLedger = () => stat("ledger");
 
 export async function scoutShow(show) {
   if (cfg.mock) throw new Error("Sync Scout needs the live API; mock mode has no scout data.");

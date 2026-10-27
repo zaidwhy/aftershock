@@ -1,6 +1,6 @@
 import { h } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
-import { getStorms, getStorm, getScorecard, getReplays, isMock } from "./api.js";
+import { getStorms, getStorm, getScorecard, getReplays, getLedger, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
 import { seismograph, ageLean, forecastMap, dumbbell, hotspotMap } from "./charts.js";
 import { ISO } from "./iso.js";
@@ -407,12 +407,38 @@ export function renderScorecard(root, isCurrent) {
       h("p", { class: "muted" }, `Ripple backtest: ${br.n_artists ?? "n/a"} artists placed in ${br.n_shows ?? "n/a"} shows (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
       h("h2", null, "Live ledger"),
       h("div", { class: "grid2" }, spillSection, rippleSection),
-      h("div", { class: "ledger-row" }, sc.ledger_url ? h("a", { class: "btn", href: sc.ledger_url, rel: "noopener" }, "Open the public ledger") : null,
+      h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),
         sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? "Ledger hash chain verified." : "Ledger hash chain FAILED verification."),
         sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
         h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test covers 229 artists in 24 shows (4 released 2024 or later), where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+  });
+}
+
+/* ----------------------------------------------------------------- ledger */
+export function renderLedger(root, isCurrent) {
+  setTitle("Ledger");
+  const box = h("div", null);
+  add(root, h("p", { class: "crumb" }, h("a", { href: "#/scorecard" }, "Scorecard")), h("h1", null, "The public forecast ledger"), mockNote(), box);
+  load(box, "the ledger", isCurrent, getLedger, (lg) => {
+    const when = (iso) => (iso ? dateLabel(iso) : "n/a");
+    const state = { pending: "Pending", hit: "Hit", miss: "Miss" };
+    add(box,
+      h("p", { class: "pitch" }, "Each line is fixed when it is written: it includes a fingerprint of the line before, so changing an old forecast would break every line after it. The raw file is on GitHub."),
+      h("dl", { class: "ledger-stats" },
+        [["Forecasts", whole(lg.total)], ["Distinct titles", whole(lg.titles)], ["First locked", when(lg.first_locked)], ["Last locked", when(lg.last_locked)],
+          ["Fingerprint chain", lg.intact ? "Verified" : "FAILED verification"]].map(([k, v]) => h("div", null, h("dt", null, k), h("dd", { class: "mono" }, v)))),
+      h("p", null, "Timing: every forecast was locked before Netflix published any later week for that title."),
+      h("p", { class: "ledger-raw" }, h("a", { class: "btn", href: lg.raw_url, rel: "noopener" }, "Open the raw ledger file on GitHub")),
+      h("h2", null, `The ${lg.rows.length} most recent forecasts`),
+      h("p", { class: "muted" }, "Newest lock first, likeliest first within one lock. Each row is the chance that the title charts in that country within 4 weeks. Status is Pending until Netflix's weekly data settles it."),
+      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Recent forecasts, scrolls sideways on narrow screens" },
+        h("table", { class: "plain ledger-table" }, h("caption", { class: "sr-only" }, "Most recent locked forecasts"),
+          h("thead", null, h("tr", null, ["Locked at", "Title", "Country", "Chance", "Status"].map((t, i) => h("th", { scope: "col", class: i === 3 ? "num" : null }, t)))),
+          h("tbody", null, lg.rows.map((r) => h("tr", null,
+            h("td", { class: "mono" }, dateLabel(r.locked_at)), h("th", { scope: "row" }, r.title), h("td", null, r.country),
+            h("td", { class: "num mono" }, pct(r.probability)), h("td", null, state[r.status] ?? r.status)))))));
   });
 }
 
