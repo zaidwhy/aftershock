@@ -371,3 +371,21 @@ dd { margin: 0; font-size: 1.1rem; }
 .ledger-stats dt { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
 .ledger-stats dd { margin: 2px 0 0; font-size: 1rem; }
 .ledger-raw { margin: 8px 0 20px; }
+
+/* Phones: forecast rows stack (country and chance on one line, why underneath); the worked example sits
+   right under the headline, above the paragraph. */
+@media (max-width: 640px) {
+  .fc-stack { min-width: 0; }
+  .fc-stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .fc-stack tbody tr { display: grid; grid-template-columns: 1.8rem minmax(0, 1fr) auto; column-gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .fc-stack th, .fc-stack td { border: 0; padding: 0; }
+  .fc-stack .why { grid-column: 2 / -1; min-width: 0; font-size: 0.85rem; padding-top: 2px; }
+}
+@media (max-width: 899px) {
+  .hero-copy { display: contents; }
+  .hero-top .eyebrow { order: 1; }
+  .hero-top h1 { order: 2; }
+  .hero-top .hero-side { order: 3; }
+  .hero-top .pitch { order: 4; }
+  .hero-top .hero-links { order: 5; }
+}

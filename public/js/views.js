@@ -303,11 +303,11 @@ function songTable(r, songs) {
 
 function forecastTable(fc) {
   return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Forecast table, scrolls sideways on narrow screens" },
-    h("table", { class: "fc" },
+    h("table", { class: "fc fc-stack" },
       h("caption", null, "Ranked forecast. Probability is the chance the title enters that country's Top 10 within the horizon."),
       h("thead", null, h("tr", null, ["#", "Country", "Probability", "Why"].map((t, i) => h("th", { scope: "col", class: i === 2 ? "num" : null }, t)))),
       h("tbody", null, fc.map((f, i) => h("tr", null,
-        h("td", { class: "mono" }, i + 1),
+        h("td", { class: "mono rank" }, i + 1),
         h("th", { scope: "row" }, f.name),
         h("td", { class: "num mono prob" }, pct(f.probability)),
         h("td", { class: "why" }, f.why))))));
