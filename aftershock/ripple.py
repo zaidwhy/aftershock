@@ -4,13 +4,13 @@ A placement pulls a song into the spotlight when the show puts it in front of an
 not reached. The score is the Qloo age gap: how far the artist's audience sits from the show's
 audience by age band, in [0, 1] (Qloo demographics for both).
 
-Why only the gap (scripts/test_ripple.py, scripts/test_ripple_controls.py; 195 artists, 24 shows):
-- Obscurity (low Wikipedia views before release) correlates with the spike, but it "predicts" a
-  placebo spike measured entirely before release almost as well (0.19 vs 0.27; 0.28 vs 0.29 on
-  2024+ releases): it is mostly regression to the mean, so it is shown as context, not scored.
-- The age gap does not predict the placebo (-0.13) but does predict the real spike (0.08 overall,
-  0.28 on 2024+); real minus placebo is significant (permutation p 0.04 overall, 0.03 on 2024+).
-- Qloo taste fit predicted nothing (0.00) and is shown as context only.
+Evidence: the score is the Qloo age gap. On licensed MusicBrainz data (README section 3) no Qloo
+signal predicted which songs spike: the age gap's mean Spearman was 0.02 (p 0.40) on 24 shows, and real
+minus placebo was p 0.14. So this is an explorer, not a predictor.
+
+Obscurity (low Wikipedia views before release) and Qloo taste fit are shown as context and are not
+scored: obscurity "predicts" a placebo spike measured before release almost as well, so it is mostly
+regression to the mean (scripts/test_ripple.py, scripts/test_ripple_controls.py).
 """
 import logging
 import math

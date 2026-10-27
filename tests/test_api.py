@@ -110,3 +110,20 @@ def test_scout_shares_the_ripple_limiter(monkeypatch):
     codes = [client.get("/api/scout", params={"show": "X"}).status_code for _ in range(api.RIPPLE_PER_HOUR + 1)]
     assert codes[:-1] == [200] * api.RIPPLE_PER_HOUR and codes[-1] == 429
     assert client.get("/api/ripple", params={"show": "X", "songs": "A|B"}).status_code == 429
+
+
+def test_ripple_response_has_no_raw_qloo_values(monkeypatch):
+    raw = {"resolved": True, "show": "X", "as_of": "2026-10-27",
+           "show_age": {"24_and_younger": 0.5, "25_to_29": 0.3, "30_to_34": 0.1, "35_to_44": -0.4, "45_to_54": -0.3, "55_and_older": -0.4},
+           "songs": [{"song": "S", "artist": "A", "resolved": True, "fit": 0.4, "score": 0.6, "age_gap": 0.6,
+                      "artist_age": {"24_and_younger": -0.2, "25_to_29": 0.0, "30_to_34": 0.2, "35_to_44": 0.3, "45_to_54": 0.3, "55_and_older": 0.1}}]}
+    monkeypatch.setattr(api, "score_placements", lambda *a, **k: raw)
+    monkeypatch.setattr(api, "Qloo", lambda **k: None)
+    api._ripple_hits.clear()
+    api._daily.update(day=None, count=0)
+    body = client.get("/api/ripple", params={"show": "X", "songs": "S|A"}).json()
+    assert "show_age" not in body and "show_leans" in body
+    song = body["songs"][0]
+    assert not {"fit", "artist_age", "show_age"} & set(song)
+    assert song["leans"][0] == "45_to_54" or song["leans"][0] == "35_to_44"
+    assert song["score"] == 0.6

@@ -1,9 +1,9 @@
 """Sync Scout: artists a show's taste neighbourhood likes whose audience sits outside the show's generation.
 
-The mechanism behind a song spike from a placement is an audience the show reaches that the song
-had not. Qloo's age gap (aftershock.ripple.age_gap) is the one signal that survived the placebo
-control (README section 3); taste fit did not predict anything, so taste only supplies the candidate
-pool and its order is reported as context. Output carries derived gaps and age-band names only.
+This is a discovery shortlist, not a predictor. The idea is an audience the show reaches that the song
+had not, measured by Qloo's age gap (aftershock.ripple.age_gap); in our licensed-data test the age gap
+did not predict which songs spiked (README section 3). Taste only supplies the candidate pool and its
+order is reported as context. Output carries derived gaps and age-band names only.
 """
 import logging
 
@@ -30,6 +30,18 @@ def leaning_bands(profile):
 def band_list(bands):
     labels = [BAND_LABELS[b] for b in bands]
     return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
+def public_ripple(result):
+    """A score_placements result without raw Qloo values: no taste fit and no per-band over-index numbers.
+    The age profiles become the band names each side leans to (show_leans, and leans per song)."""
+    out = {k: v for k, v in result.items() if k != "show_age"}
+    if result.get("show_age"):
+        out["show_leans"] = leaning_bands(result["show_age"])
+    out["songs"] = [{**{k: v for k, v in s.items() if k not in ("fit", "artist_age")},
+                     **({"leans": leaning_bands(s["artist_age"])} if s.get("artist_age") else {})}
+                    for s in result.get("songs", [])]
+    return out
 
 
 def why(show_age, artist_age):

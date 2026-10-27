@@ -37,24 +37,26 @@ SPILLOVER forecast for one breakout. Probabilities come from Netflix history onl
    "movie": [{"name": "Example Film A", "entity_id": "uuid"}],
    "brand": [{"name": "Example Brand A", "entity_id": "uuid"}]},
    "hotspots": {"cells": [[37.5665, 126.978, 1.0], [35.1796, 129.0756, 0.992]],
-                "places": ["Example City A", "Example City B", "Example City C"]}}]
+                "places": ["Example City A", "Example City B", "Example City C"]},
+   "control": {"artist": ["Example Artist X", "Example Artist A"], "tv_show": ["Example Show X"]},
+   "specificity": 0.62, "generic": false}]
 }
 ```
 `partners` is the one place Qloo appears here: artists the title's audience over-indexes on in each forecast country. It does not change the probabilities (Qloo gave no AUC lift in the backtest).
 
-`launch_kit` covers the same top three forecast countries. Per country, `kit` maps a domain (`artist`, `tv_show`, `movie`, `brand`) to up to five entities the title's audience there over-indexes on, in Qloo's order; a domain that returned nothing is omitted, and a country with no results is omitted. No affinity values are exposed. `hotspots` (same row) is where inside the country the title's audience concentrates: `cells` are up to 120 `[latitude, longitude, weight]` points (weight 1 is the strongest, from Qloo's `urn:heatmap` affinity rank) and `places` are up to three names from OpenStreetMap Nominatim reverse geocoding (place names © OpenStreetMap contributors); either list can be empty. The MCP tool `launch_kit(storm_id, country)` returns one country's kit and its hotspot place names (not the cells) from the same data.
+`launch_kit` covers the same top three forecast countries. Per country, `kit` maps a domain (`artist`, `tv_show`, `movie`, `brand`) to up to five entities the title's audience there over-indexes on, in Qloo's order; a domain that returned nothing is omitted, and a country with no results is omitted. No affinity values are exposed. `hotspots` (same row) is where inside the country the title's audience concentrates: `cells` are up to 120 `[latitude, longitude, weight]` points (weight 1 is the strongest, from Qloo's `urn:heatmap` affinity rank) and `places` are up to three names from OpenStreetMap Nominatim reverse geocoding (place names © OpenStreetMap contributors); either list can be empty. `control` is Qloo's country-only list for the same domains (the same `/v2/insights` call without the title signal): what the whole country over-indexes on anyway. `specificity` is the mean over domains where both lists are non-empty of 1 minus the Jaccard overlap between the kit's names and the control's (names lower-cased, accents and punctuation stripped), in [0,1], or null when no domain can be compared. `generic` is true when `specificity` is 0.4 or less (overlap of 0.6 or more), the threshold registered in `docs/EXPERIMENT_KITS.md`. `GET /api/storms` also carries `has_kit` and `kit_specific` per storm (`kit_specific` is false when every kit row is generic). The MCP tool `launch_kit(storm_id, country)` returns one country's kit, `specificity`, `generic` and its hotspot place names (not the cells, not the control lists) from the same data.
 
 ## GET /api/ripple?show=Example%20Show&songs=Song%20One%20by%20Artist%20One;Song%20Two|Artist%20Two
 Live scoring for any show and up to 8 songs, separated by `;`. Each song is `song|artist` (split on the first `|`) or `song by artist` (split on the last ` by `, case-insensitive, so `Stand by Me by Example Singer` is song `Stand by Me`, artist `Example Singer`); anything else is a 422 naming both formats. Optional an optional `as_of=YYYY-MM-DD` (between 2015-08-01 and today). `as_of` changes only the Wikipedia context window; Qloo audiences are today's. Limits: 10 scorings per hour per visitor (first address in `X-Forwarded-For`, else the socket peer) and 300 per day per server process; either returns HTTP 429 with the limit named.
 ```json
 {"resolved": true, "show": "Example Show", "as_of": "2026-10-27",
- "show_age": {"24_and_younger": 0.5, "25_to_29": 0.3, "30_to_34": 0.1, "35_to_44": -0.4, "45_to_54": -0.3, "55_and_older": -0.4},
+ "show_leans": ["24_and_younger", "25_to_29", "30_to_34"],
  "songs": [{"song": "Song One", "artist": "Artist One", "resolved": true,
-            "score": 0.68, "age_gap": 0.68, "fit": 0.4,
-            "artist_age": {"24_and_younger": 0.0, "25_to_29": 0.1, "30_to_34": 0.2, "35_to_44": 0.2, "45_to_54": 0.3, "55_and_older": 0.1},
+            "score": 0.68, "age_gap": 0.68,
+            "leans": ["45_to_54", "35_to_44", "55_and_older"],
             "prior_daily_views": 350.0, "wiki_article": "Song_One", "obscurity": -5.9}]}
 ```
-`score` equals `age_gap`, in [0,1]: how far the artist's audience sits from the show's audience by age band (the artist's over-index weighted by the age bands the show over-indexes on). `fit` (Qloo taste fit), `prior_daily_views` and `obscurity` are context only and are not scored. A song whose artist has no Qloo audience profile has `score: null`; an unmatched artist has `resolved: false`. When the show has no Qloo audience profile the response is `{"resolved": false, "show": "...", "songs": []}`.
+`score` equals `age_gap`, in [0,1]: how far the artist's audience sits from the show's audience by age band (the artist's over-index weighted by the age bands the show over-indexes on). `show_leans` and `leans` name the age bands each audience over-indexes on, strongest first; raw Qloo values (taste fit, per-band over-index numbers) are never returned. `prior_daily_views` and `obscurity` are context only and are not scored. A song whose artist has no Qloo audience profile has `score: null`; an unmatched artist has `resolved: false`. When the show has no Qloo audience profile the response is `{"resolved": false, "show": "...", "songs": []}`.
 
 ## GET /api/scorecard
 ```json
@@ -92,11 +94,11 @@ New releases with known song placements. A release's songs are locked in the led
 ## GET /api/ripples/{id}
 ```json
 {"id": "...", "show": "...", "show_type": "tv_show", "platform": "Netflix", "release_date": "2026-10-23",
- "qloo_show": "Show", "show_age": {"24_and_younger": 0.4, "...": 0},
+ "qloo_show": "Show", "show_leans": ["24_and_younger"],
  "lockable": true, "not_locked_reason": null, "locked_at": "...", "ledger_id": "...",
- "songs": [{"song": "...", "artist": "...", "resolved": true, "score": 0.61, "age_gap": 0.61, "fit": 0.3,
+ "songs": [{"song": "...", "artist": "...", "resolved": true, "score": 0.61, "age_gap": 0.61,
             "prior_daily_views": 66.3, "wiki_article": "Space_Song", "obscurity": -4.2,
-            "artist_age": {"24_and_younger": -0.2, "...": 0},
+            "leans": ["45_to_54"],
             "early_status": "pending", "early_ratio": 1.8, "early_after_mean": 120.4}]}
 ```
 `score` is the Qloo age gap. `early_ratio` is the mean daily Wikipedia views on days +7 to +35 after release over days -60 to -8, still accumulating while `early_status` is `pending`. Many new 2026 titles have no Qloo audience profile yet, so some releases have few or no scorable songs.

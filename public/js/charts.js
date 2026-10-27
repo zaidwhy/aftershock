@@ -56,26 +56,24 @@ export function seismograph(replay) {
   return svg;
 }
 
-/** Diverging bar pairs: show audience vs artist audience over six age bands. */
-export function generationGap(showAge, artistAge, label) {
-  const W = 300, H = 112, zero = 50, scale = 42, bw = 14;
-  const colW = (W - 10) / BANDS.length;
+/** Age bands each audience leans to: two rows of six cells, filled where the audience over-indexes.
+ *  Only the band names come from the API, never the raw over-index numbers. */
+export function ageLean(showLeans, artistLeans, label) {
+  const W = 300, H = 74, colW = (W - 10) / BANDS.length, cw = colW - 6;
+  const rows = [[showLeans || [], "bar-show", "Show", 6], [artistLeans || [], "bar-artist", "Artist", 30]];
   const g = [];
   BANDS.forEach(([key, short], i) => {
-    const x0 = 5 + i * colW + (colW - 2 * bw - 2) / 2;
-    const bars = [[showAge?.[key], "bar-show", "Show"], [artistAge?.[key], "bar-artist", "Artist"]];
-    bars.forEach(([v, cls, who], j) => {
-      if (v == null) return;
-      const hgt = Math.abs(v) * scale;
-      g.push(s("rect", { x: x0 + j * (bw + 2), y: v >= 0 ? zero - hgt : zero, width: bw, height: Math.max(hgt, 0.5), class: cls }, s("title", null, `${who}, ${short}: ${v >= 0 ? "+" : "-"}${Math.abs(v).toFixed(2)}`)));
+    rows.forEach(([leans, cls, who, y]) => {
+      const on = leans.includes(key);
+      g.push(s("rect", { x: 5 + i * colW + 3, y, width: cw, height: 18, class: on ? cls : "lean-off" }, s("title", null, `${who}, ${short}: ${on ? "leans here" : "does not lean here"}`)));
     });
-    g.push(s("text", { x: 5 + i * colW + colW / 2, y: H - 2, class: "ax-label", "text-anchor": "middle" }, short));
+    g.push(s("text", { x: 5 + i * colW + colW / 2, y: H - 4, class: "ax-label", "text-anchor": "middle" }, short));
   });
-  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "gap-chart", role: "img", "aria-label": label },
-    s("line", { x1: 0, x2: W, y1: zero, y2: zero, class: "sg-axis" }), g);
-  const rows = BANDS.map(([key, , long]) => h("tr", null, h("th", { scope: "row" }, long), h("td", null, showAge?.[key]?.toFixed(2) ?? "n/a"), h("td", null, artistAge?.[key]?.toFixed(2) ?? "n/a")));
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "gap-chart", role: "img", "aria-label": label }, g);
+  const text = (leans) => (leans?.length ? BANDS.filter(([k]) => leans.includes(k)).map(([, , long]) => long).join(", ") : "n/a");
   const table = h("table", { class: "sr-only" }, h("caption", null, label),
-    h("thead", null, h("tr", null, h("th", { scope: "col" }, "Age band"), h("th", { scope: "col" }, "Show audience"), h("th", { scope: "col" }, "Artist audience"))), h("tbody", null, rows));
+    h("tbody", null, h("tr", null, h("th", { scope: "row" }, "Show audience leans to"), h("td", null, text(showLeans))),
+      h("tr", null, h("th", { scope: "row" }, "Artist audience leans to"), h("td", null, text(artistLeans)))));
   return h("div", { class: "gap-wrap" }, svg, table);
 }
 
@@ -106,13 +104,12 @@ export function ripplePanel(ripple) {
           h("span", { style: `width:${Math.max(2, (x.score / maxScore) * 100)}%` }))),
       h("p", { class: "song-math mono" }, [
           x.age_gap != null ? `age gap ${x.age_gap.toFixed(2)} (score)` : "age gap n/a",
-          x.prior_daily_views != null ? `prior Wikipedia views ${Math.round(x.prior_daily_views)}/day (context)` : "no Wikipedia page (context)",
-          x.fit != null ? `taste fit ${x.fit.toFixed(2)} (context)` : null].filter(Boolean).join(" | "),
+          x.prior_daily_views != null ? `prior Wikipedia views ${Math.round(x.prior_daily_views)}/day (context)` : "no Wikipedia page (context)"].join(" | "),
         graded && x.observed_ratio != null ? ` | observed views ratio ${x.observed_ratio.toFixed(1)}x` : ""),
-      generationGap(ripple.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`));
+      ageLean(ripple.show_leans, x.leans, `Age bands the show audience and the audience of ${x.artist} lean to, for ${x.song}.`));
   });
   return h("div", { class: "ripple" },
-    h("p", { class: "legend" }, h("span", { class: "key key-show" }), "Show audience", h("span", { class: "key key-artist" }), "Artist audience", h("span", { class: "muted" }, " (over-index by age band)")),
+    h("p", { class: "legend" }, h("span", { class: "key key-show" }), "Show audience", h("span", { class: "key key-artist" }), "Artist audience", h("span", { class: "muted" }, " (age bands each leans to)")),
     h("ol", { class: "songs" }, items));
 }
 

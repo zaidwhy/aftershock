@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from aftershock.qloo import CACHE_DIR, Qloo, QlooError
 from aftershock.ripple import MAX_SONGS, score_placements
-from aftershock.sync_scout import MAX_QLOO_CALLS, scout
+from aftershock.sync_scout import MAX_QLOO_CALLS, public_ripple, scout
 
 log = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parent.parent
@@ -48,8 +48,11 @@ def health():
 @app.get("/api/storms")
 def storms():
     data = _load(PRIVATE / "storms.json")
+    def kit_rows(s):
+        return [r for r in s["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())]
+
     return {"week": data["week"], "storms": [
-        s["summary"] | {"has_kit": any(r.get("kit") and any(r["kit"].values()) for r in s["detail"].get("launch_kit", []))}
+        s["summary"] | {"has_kit": bool(kit_rows(s)), "kit_specific": any(not r.get("generic") for r in kit_rows(s))}
         for s in data["storms"]]}
 
 
@@ -75,7 +78,7 @@ def ripples():
 def ripple_title(ripple_id: str):
     for item in _load(PRIVATE / "storms.json").get("ripples", []):
         if item["id"] == ripple_id:
-            return item
+            return public_ripple(item)
     raise HTTPException(404, f"no scored release with id {ripple_id!r}")
 
 
@@ -145,7 +148,7 @@ def ripple(request: Request, show: str = Query(..., min_length=1, max_length=MAX
         raise HTTPException(422, f"as_of must be between {WIKI_FIRST_DAY} and today; got {as_of}")
     _take_live_slot(request)
     try:
-        return score_placements(Qloo(call_budget=40), show, placements, as_of=as_of)
+        return public_ripple(score_placements(Qloo(call_budget=40), show, placements, as_of=as_of))
     except QlooError as err:
         log.warning("ripple scoring failed: %s", err)
         raise HTTPException(502, "Qloo did not answer this request; try again in a minute") from err

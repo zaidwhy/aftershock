@@ -12,6 +12,8 @@ Domains were chosen by probing 4 titles x 2 countries (data/results/launch_kit_p
 Qloo's order within a response is the only use of affinity; values are not kept or shown.
 """
 import logging
+import re
+import unicodedata
 
 import httpx
 
@@ -27,6 +29,7 @@ DOMAINS = {
     "brand": "urn:entity:brand",
 }
 PER_DOMAIN = 5
+GENERIC_AT_OR_BELOW = 0.4  # specificity; overlap of 0.6 or more with the country-only kit (docs/EXPERIMENT_KITS.md)
 
 
 def repair_name(name):
@@ -37,6 +40,33 @@ def repair_name(name):
     except (UnicodeEncodeError, UnicodeDecodeError):
         return name
     return repaired
+
+
+def country_picks(client, country_name, entity_type):
+    """What a whole country over-indexes on, with no title signal: the control that shows how much of a
+    launch kit comes from the title and how much from the country (docs/EXPERIMENT_KITS.md)."""
+    body = client.get("/v2/insights", {"filter.type": entity_type, "signal.location.query": country_name,
+                                       "take": PER_DOMAIN})
+    return [repair_name(e["name"]) for e in body.get("results", {}).get("entities", []) if e.get("name")][:PER_DOMAIN]
+
+
+def name_key(name):
+    """Lower-cased, accents and punctuation stripped, for comparing names across lists."""
+    plain = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii").lower()
+    return re.sub(r"[^a-z0-9]+", " ", plain).strip()
+
+
+def specificity(kit_names, control_names):
+    """Mean over domains (both lists non-empty) of 1 - Jaccard(kit, control). None when no domain qualifies.
+    kit_names and control_names map domain -> [names]. 0 means the kit is the country's taste, 1 the title's."""
+    scores = []
+    for domain, names in kit_names.items():
+        control = control_names.get(domain) or []
+        if not names or not control:
+            continue
+        a, b = {name_key(n) for n in names}, {name_key(n) for n in control}
+        scores.append(1 - len(a & b) / len(a | b))
+    return sum(scores) / len(scores) if scores else None
 
 
 def domain_picks(client, entity_id, country_name, entity_type):

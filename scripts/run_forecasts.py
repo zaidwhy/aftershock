@@ -26,7 +26,8 @@ from aftershock.netflix import (  # noqa: E402
     HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
 from aftershock.hotspots import hotspots  # noqa: E402
-from aftershock.launch_kit import launch_kit  # noqa: E402
+from aftershock.launch_kit import (  # noqa: E402
+    DOMAINS, GENERIC_AT_OR_BELOW, country_picks, launch_kit, specificity)
 from aftershock.qloo import Qloo, QlooError, norm  # noqa: E402
 from aftershock.ripple import score_placements  # noqa: E402
 
@@ -295,6 +296,7 @@ def main():
     client = None if args.no_qloo else Qloo(call_budget=4000)
     titles = live_placements()
     storms, to_lock = [], []
+    controls = {}  # country code -> {domain: names}, Qloo country-only kit, one fetch per country per run
     entity_of = {e["title"]: resolve_title(client, e) for e in storms_now} if client else {}
     for event in storms_now:
         candidates = [c for c in countries if c not in event["origin_countries"]]
@@ -308,7 +310,17 @@ def main():
         # The kit's artist list is the partners list (top 3), so partners cost no separate call.
         kits = [(c, launch_kit(client, entity_id, names[c])) for c in ranked[:3]] if entity_id else []
         partner_rows = [{"code": c, "artists": [a["name"] for a in kit.get("artist", [])[:3]]} for c, kit in kits]
-        kit_rows = [{"code": c, "kit": kit, "hotspots": hotspots(client, entity_id, names[c])} for c, kit in kits if kit]
+        kit_rows = []
+        for c, kit in kits:
+            if not kit:
+                continue
+            if c not in controls:
+                controls[c] = {d: country_picks(client, names[c], t) for d, t in DOMAINS.items()}
+            control = {d: v for d, v in controls[c].items() if v}
+            score = specificity({d: [e["name"] for e in v] for d, v in kit.items()}, control)
+            kit_rows.append({"code": c, "kit": kit, "hotspots": hotspots(client, entity_id, names[c]), "control": control,
+                             "specificity": None if score is None else round(score, 3),
+                             "generic": score is not None and score <= GENERIC_AT_OR_BELOW})
         storm_id = slug(event["title"])
         summary = {"id": storm_id, "title": event["title"][0], "season": season_label(event["title"]),
                    "category": event["category"], "origin_week": str(event["origin_week"]),

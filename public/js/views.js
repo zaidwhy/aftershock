@@ -2,7 +2,7 @@ import { h } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm, getScorecard, getReplays, scoreSongs, scoutShow, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
-import { seismograph, ripplePanel, generationGap, forecastMap, dumbbell, hotspotMap } from "./charts.js";
+import { seismograph, ripplePanel, ageLean, forecastMap, dumbbell, hotspotMap } from "./charts.js";
 import { ISO } from "./iso.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
@@ -107,7 +107,7 @@ export function renderHome(root, isCurrent) {
       h("ul", { class: "storm-list" }, ranked.map((s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
-          h("span", { class: "storm-meta" }, `Origin: ${origins(s.origin_countries)}`, s.has_kit ? h("span", { class: "tag tag-kit" }, "Qloo kit") : null),
+          h("span", { class: "storm-meta" }, `Origin: ${origins(s.origin_countries)}`, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
@@ -179,23 +179,20 @@ function kitSection(st) {
       h("ul", { class: "partners" }, st.partners.filter((p) => p.artists?.length).map((p) => h("li", null,
         h("strong", null, countryName(p.code)), " ", h("span", null, p.artists.join(", ")))))) : null;
   }
-  // An entry present in every country's list for a domain says nothing local; mute it.
-  const key = (e) => e.name.trim().toLowerCase();
-  const shared = (d) => {
-    if (rows.length < 2) return new Set();
-    const [first, ...rest] = rows.map((r) => new Set((r.kit[d] || []).map(key)));
-    return new Set([...first].filter((k) => rest.every((s) => s.has(k))));
-  };
-  const sharedBy = Object.fromEntries(Object.keys(KIT_LABELS).map((d) => [d, shared(d)]));
-  const anyShared = Object.values(sharedBy).some((s) => s.size);
+  // A name that is also on the country's own Qloo list (no title) says nothing about this title; mute it.
+  const key = (n) => n.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const common = (r, d) => new Set((r.control?.[d] || []).map(key));
+  const anyCommon = rows.some((r) => Object.keys(KIT_LABELS).some((d) => (r.kit[d] || []).some((e) => common(r, d).has(key(e.name)))));
   const names = (r, d) => r.kit[d].flatMap((e, i) => [i ? ", " : null,
-    sharedBy[d].has(key(e)) ? h("span", { class: "kit-common" }, e.name) : e.name]);
+    common(r, d).has(key(e.name)) ? h("span", { class: "kit-common" }, e.name) : e.name]);
+  const specific = (r) => (r.specificity == null ? null : h("p", { class: "kit-spec" },
+    h("strong", null, r.generic ? "Mostly countrywide taste" : "Title-specific"), ` ${Math.round(r.specificity * 100)}% specific to this title`));
   return h("section", { "aria-labelledby": "par-h" },
     h("h2", { id: "par-h" }, "Launch kit: what this audience loves there"),
     h("p", { class: "muted" }, "From Qloo: what the title's audience over-indexes on in each forecast country, as a starting point for a local launch. Netflix history says where; this says what to do there. It does not change the probabilities."),
-    anyShared ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "muted"), ": same in every country") : null,
+    anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "muted"), ": what the whole country likes anyway (Qloo, no title)") : null,
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
-      h("h3", null, countryName(r.code)),
+      h("h3", null, countryName(r.code)), specific(r),
       h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", null,
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
       hotspotBlock(r)))),
@@ -227,7 +224,7 @@ function songTable(r, songs) {
         h("td", { class: "num mono prob" }, plain2(x.score)),
         h("td", { class: "num mono" }, x.prior_daily_views == null ? "n/a" : Math.round(x.prior_daily_views).toLocaleString("en-US")),
         h("td", { class: "num mono" }, earlyRead(x)),
-        h("td", null, x.artist_age ? generationGap(r.show_age, x.artist_age, `Generation gap for ${x.song} by ${x.artist}: show audience versus artist audience by age band, over-index from -1 to +1.`) : h("span", { class: "muted" }, "artist not in Qloo")))))));
+        h("td", null, x.leans ? ageLean(r.show_leans, x.leans, `Age bands the show audience and the audience of ${x.artist} lean to, for ${x.song}.`) : h("span", { class: "muted" }, "artist not in Qloo")))))));
 }
 
 function forecastTable(fc) {
@@ -278,7 +275,7 @@ export function renderTry(root, isCurrent) {
       h("p", { id: "asof-help", class: "help" }, "The release date, to replay a past show. It changes only the Wikipedia context (prior views are read before this date); the Qloo audiences, and so the score, are today's, so a past replay carries Qloo's later knowledge. Try Stranger Things as of 2022-05-27 with Running Up That Hill by Kate Bush, Master of Puppets by Metallica, Psycho Killer by Talking Heads.")),
     btn);
   add(root, h("h1", null, "Try it on any show"),
-    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each artist in Qloo and scores it as the Qloo age gap between each artist's audience and the show's: how far outside the show's generation a song reaches, from 0 to 1. It is an explorer, not a hit predictor. Prior Wikipedia views and Qloo taste fit are shown as context and are not scored."),
+    h("p", { class: "pitch" }, "Name a show and the songs placed in it. AFTERSHOCK resolves each artist in Qloo and scores it as the Qloo age gap between each artist's audience and the show's: how far outside the show's generation a song reaches, from 0 to 1. It is an explorer, not a hit predictor. Prior Wikipedia views are shown as context and are not scored."),
     mockNote(), form, out);
 }
 

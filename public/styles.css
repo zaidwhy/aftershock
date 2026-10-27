@@ -171,6 +171,7 @@ th.num, td.num { text-align: right; }
 .gap-chart { width: 100%; height: auto; display: block; }
 .bar-show { fill: var(--accent); }
 .bar-artist { fill: var(--ink); }
+.lean-off { fill: var(--paper-2); stroke: var(--rule); stroke-width: 0.5; }
 .ax-label { fill: var(--ink-soft); font: 400 9px var(--mono); }
 
 .try-form { display: grid; gap: 18px; max-width: 640px; margin: 20px 0 8px; }
@@ -236,6 +237,8 @@ dd { margin: 0; font-size: 1.1rem; }
   .kit-cols .kit-list > div { grid-template-columns: 1fr; gap: 0; padding: 6px 0; }
 }
 .kit-common { color: var(--ink-soft); opacity: 0.6; }
+.kit-spec { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 0 0 6px; }
+.kit-spec strong { color: var(--ink); font-weight: 600; }
 .kit-cap { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 4px 0 0; }
 
 /* ---- scorecard */

@@ -35,7 +35,10 @@ export async function scoreSongs(show, songs, asOf) {
     const norm = (s) => s.trim().toLowerCase();
     const canned = new Map(r.songs.map((s) => [norm(s.song), s]));
     const out = songs.map(({ song, artist }) => canned.get(norm(song)) || { song, artist, resolved: false });
-    return { show_age: r.show_age, songs: out, resolved: true };
+    // Derive band names like the API does: the bands each audience over-indexes on, strongest first.
+    const leans = (age) => (age ? Object.keys(age).filter((b) => age[b] > 0).sort((a, b) => age[b] - age[a]) : undefined);
+    const clean = out.map(({ fit, artist_age, ...rest }) => ({ ...rest, leans: leans(artist_age) }));
+    return { show_leans: leans(r.show_age), songs: clean, resolved: true };
   }
   const q = songs.map((s) => `${s.song}|${s.artist}`).join(";");
   const when = asOf ? `&as_of=${encodeURIComponent(asOf)}` : "";

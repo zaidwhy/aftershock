@@ -51,3 +51,20 @@ def test_repair_name_fixes_mac_roman_mojibake_and_leaves_clean_names():
     assert repair_name("Chav\u221a\u2265n La Escuela De Dise\u221a\u00b1o") == "Chav\u00f3n La Escuela De Dise\u00f1o"
     for clean in ("Chav\u00f3n", "S\u01a1n T\u00f9ng M-TP", "GoPro", "\u81fa\u5317\u5e02"):
         assert repair_name(clean) == clean
+
+
+def test_specificity_identical_is_zero_and_generic_disjoint_is_one_empty_skipped():
+    from aftershock.launch_kit import GENERIC_AT_OR_BELOW, specificity
+    same = {"artist": ["A", "B"], "brand": ["X"]}
+    assert specificity(same, same) == 0 and specificity(same, same) <= GENERIC_AT_OR_BELOW
+    assert specificity({"artist": ["A", "B"]}, {"artist": ["C", "D"]}) == 1
+    # tv_show has no control list and movie has no kit names: both skipped, only artist counts (1 - 1/3)
+    mixed = specificity({"artist": ["A", "B"], "tv_show": ["T"], "movie": []},
+                        {"artist": ["B", "C"], "movie": ["M"]})
+    assert abs(mixed - (1 - 1 / 3)) < 1e-9
+    assert specificity({"artist": []}, {"artist": ["A"]}) is None
+
+
+def test_name_key_strips_accents_case_and_punctuation():
+    from aftershock.launch_kit import name_key
+    assert name_key("Señor  D.J.") == "senor d j"
