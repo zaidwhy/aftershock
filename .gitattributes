@@ -1,0 +1,3 @@
+# CSV writers emit CRLF; store data with LF so daily bot commits show only real changes
+*.csv text eol=lf
+*.jsonl text eol=lf
