@@ -1,4 +1,4 @@
-// Plain-language "Try it" and "Sync Scout" pages. Written for a reader who has never seen Qloo or an age gap.
+// Plain-language "Song check" and "Sync Scout" pages. Written for a reader who has never seen Qloo or an age gap.
 import { h, loading, errorBox, add } from "./dom.js";
 import { scoreSongs, scoutShow, isMock } from "./api.js";
 import { BANDS } from "./format.js";
@@ -101,7 +101,7 @@ const TRY_EXAMPLES = [
 ];
 
 export function renderTry(root, isCurrent) {
-  setTitle("Try it");
+  setTitle("Song check");
   const out = h("div", { class: "try-out", "aria-live": "polite" });
   const netflix = h("div", { class: "try-out", "aria-live": "polite" });
   const show = h("input", { id: "show", name: "show", type: "text", required: true, autocomplete: "off", placeholder: "Stranger Things", maxlength: "120" });
@@ -198,7 +198,7 @@ export function renderScout(root, isCurrent) {
   };
   const form = h("form", { class: "try-form", novalidate: true, onsubmit: (e) => { e.preventDefault(); submit(); } },
     h("div", { class: "field" }, h("label", { for: "scout-show" }, "Show or film"), show,
-      h("p", { class: "help" }, "Each lookup counts toward 10 live lookups per hour per visitor, shared with Try it.")),
+      h("p", { class: "help" }, "Each lookup counts toward 10 live lookups per hour per visitor, shared with Song check.")),
     btn);
   add(root, h("h1", null, "Find artists who could bring a show a new audience"),
     steps(["You type a show.", "Qloo lists the artists that show's fans love.",

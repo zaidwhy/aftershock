@@ -61,7 +61,7 @@ export function renderHome(root, isCurrent) {
           h("ul", { class: "hero-links" },
             h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")),
             h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find artists from outside a show's generation")),
-            h("li", null, h("a", { href: "#/try" }, "Try it - explore songs placed in any show")))),
+            h("li", null, h("a", { href: "#/try" }, "Song check - see whether a song reaches a new crowd")))),
         h("div", { class: "hero-side" },
           h("p", { class: "buyer mono" }, "For local distributors, music publishers and promoters: know where a breakout goes next and what to pair it with there, before the competition does."),
           heroBox)),
