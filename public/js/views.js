@@ -652,8 +652,7 @@ export function renderMethod(root) {
         h("li", null, h("strong", null, "MusicBrainz"), " (CC0): soundtrack songs."),
         h("li", null, h("strong", null, "OpenStreetMap Nominatim"), ": place names, credited to OpenStreetMap contributors."),
         h("li", null, h("strong", null, "Gemini"), ": only for the pre-registered comparison.")),
-      h("p", null, "An earlier song dataset collected from Tunefind was deleted after we read its terms; nothing derived from it is used."),
-      h("p", null, "AFTERSHOCK is not affiliated with Netflix or Qloo.")));
+      h("p", null, "An earlier song dataset collected from Tunefind was deleted after we read its terms; nothing derived from it is used.")));
 }
 
 export function renderNotFound(root) {

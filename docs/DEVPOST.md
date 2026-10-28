@@ -76,7 +76,7 @@ Local media and creators can act fastest, on the same cities. We have no custome
 
 ## Data rights
 
-Netflix's public Top 10 (credited; we use the published per-country lists), Qloo responses cached privately and never committed, MusicBrainz (CC0), Wikimedia pageviews, OpenStreetMap Nominatim (ODbL, credited), Tunefind data dropped over its terms. We claim no permission beyond what each source publishes. AFTERSHOCK is not affiliated with Netflix or Qloo.
+Netflix's public Top 10 (credited; we use the published per-country lists), Qloo responses cached privately and never committed, MusicBrainz (CC0), Wikimedia pageviews, OpenStreetMap Nominatim (ODbL, credited), Tunefind data dropped over its terms. We claim no permission beyond what each source publishes.
 
 ## Testing instructions for judges
 

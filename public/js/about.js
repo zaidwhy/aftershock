@@ -4,7 +4,7 @@ import { h, add } from "./dom.js";
 
 const TEAM = {
   name: "Solstine",
-  members: ["Zaid Ali Syed", "Hasnat", "Shravni", "Farhan"],
+  members: ["Zaid Ali Syed", "Hasnat Shaikh", "Shravni Gorde", "Farhan Khan"],
   email: "sidzaid72@gmail.com",
   repo: "https://github.com/zaidwhy/aftershock",
 };
@@ -47,6 +47,5 @@ export function renderAbout(root) {
         h("h3", null, `Team ${TEAM.name}`),
         h("p", { class: "team-line" }, TEAM.members.join("  ·  ")),
         h("p", null, "Contact: ", h("span", { class: "mono", style: "user-select:all" }, TEAM.email)),
-        h("p", null, h("a", { href: TEAM.repo }, "Code, method and every test on GitHub")),
-        h("p", { class: "muted" }, "AFTERSHOCK is not affiliated with Netflix or Qloo."))));
+        h("p", null, h("a", { href: TEAM.repo }, "Code, method and every test on GitHub"))))));
 }
