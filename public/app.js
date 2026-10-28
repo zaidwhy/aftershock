@@ -17,7 +17,7 @@ const app = document.getElementById("app");
 let token = 0;
 
 const routes = [
-  [/^#\/?$/, () => renderHome],
+  [/^#\/?(?:\?(.*))?$/, (m) => (el, t) => renderHome(el, t, new URLSearchParams(m[1] || "").get("follow"))],
   [/^#\/storm\/([^/]+)$/, (m) => (el, t) => renderStorm(el, decodeURIComponent(m[1]), t)],
   [/^#\/ripple\/([^/]+)$/, (m) => (el, t) => renderRipple(el, decodeURIComponent(m[1]), t)],
   [/^#\/try$/, () => renderTry],
@@ -39,7 +39,7 @@ function route() {
   }
   document.querySelectorAll("nav [data-nav]").forEach((a) => {
     const key = a.dataset.nav;
-    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "scorecard" && hash === "#/ledger");
+    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "scorecard" && hash === "#/ledger");
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   app.replaceChildren();

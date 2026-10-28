@@ -186,13 +186,13 @@ export async function weekMap(map, pick) {
     .attr("aria-label", `World map shaded by the chance that at least one of this week's breakouts reaches each country. Darkest: ${map.countries.slice(0, 3).map((c) => c.name).join(", ")}. A list of the top countries follows.`);
   svg.append("path").attr("d", path({ type: "Sphere" })).attr("class", "map-sphere");
   const listen = (sel, codeOf) => sel.on("mouseenter", (e, d) => pick(codeOf(d))).on("click", (e, d) => pick(codeOf(d)));
-  listen(svg.append("g").selectAll("path").data(feats).join("path").attr("d", path)
+  const countryEls = svg.append("g").selectAll("path").data(feats).join("path").attr("d", path)
     .attr("data-code", (d) => NUMERIC_TO_CODE[+d.id] ?? null)
     .attr("class", (d) => {
       const code = NUMERIC_TO_CODE[+d.id];
       return "country" + (originSet.has(code) ? " is-origin" : "") + (byCode.has(code) ? " has-fc" : "");
-    }).attr("style", (d) => { const c = byCode.get(NUMERIC_TO_CODE[+d.id]); return c ? shade(c) : null; }),
-  (d) => NUMERIC_TO_CODE[+d.id]);
+    }).attr("style", (d) => { const c = byCode.get(NUMERIC_TO_CODE[+d.id]); return c ? shade(c) : null; });
+  listen(countryEls, (d) => NUMERIC_TO_CODE[+d.id]);
   // Outlines that project to a few pixels (or have no 110m outline at all) get a dot at their centroid.
   const SMALL_AREA = 150;
   const dots = [];
@@ -206,14 +206,41 @@ export async function weekMap(map, pick) {
   map.countries.forEach((c) => {
     if (!seen.has(c.code) && MICRO_LONLAT[c.code] && !originSet.has(c.code)) dots.push([c.code, proj(MICRO_LONLAT[c.code])]);
   });
-  listen(svg.append("g").attr("class", "fc-dots").selectAll("circle").data(dots.filter(([, xy]) => xy)).join("circle")
+  const dotEls = svg.append("g").attr("class", "fc-dots").selectAll("circle").data(dots.filter(([, xy]) => xy)).join("circle")
     .attr("cx", ([, xy]) => xy[0]).attr("cy", ([, xy]) => xy[1])
     .attr("r", ([c]) => 3.5 + (byCode.get(c).chance / max) * 4.5).attr("data-code", ([c]) => c)
-    .attr("class", "fc-dot").attr("style", ([c]) => shade(byCode.get(c))), ([c]) => c);
+    .attr("class", "fc-dot").attr("style", ([c]) => shade(byCode.get(c)));
+  listen(dotEls, ([c]) => c);
   const node = svg.node();
   const names = new Map(feats.map((d) => [NUMERIC_TO_CODE[+d.id], d.properties?.name]).filter(([c, n]) => c && n));
   const select = (code) => node.querySelectorAll("[data-code]").forEach((el) => el.classList.toggle("is-selected", el.dataset.code === code));
-  return { node, select, names };
+  const baseLabel = "the chance that at least one of this week's breakouts reaches each country";
+  /** Recolour in place (no rebuild). `values`: Map of country code to probability; `origins`: codes to outline;
+   *  `label`: what the shading means, used for the svg's accessible name. Called with no arguments it restores the week view. */
+  const recolor = (values, origins, label) => {
+    const vals = values ?? new Map(map.countries.map((c) => [c.code, c.chance]));
+    const orig = new Set(origins ?? map.origins);
+    const top = Math.max(0.01, ...vals.values());
+    const sh = (p) => `fill:color-mix(in srgb, var(--accent) ${Math.round(12 + (p / top) * 88)}%, var(--map-base))`;
+    countryEls.each(function (d) {
+      const code = NUMERIC_TO_CODE[+d.id];
+      this.classList.toggle("is-origin", orig.has(code));
+      this.classList.toggle("has-fc", vals.has(code));
+      if (vals.has(code)) this.setAttribute("style", sh(vals.get(code))); else this.removeAttribute("style");
+    });
+    dotEls.each(function ([code]) {
+      const on = vals.has(code) && !orig.has(code);
+      if (on) {
+        this.setAttribute("style", sh(vals.get(code)));
+        this.setAttribute("r", 3.5 + (vals.get(code) / top) * 4.5);
+        this.removeAttribute("display");
+      } else this.setAttribute("display", "none");
+    });
+    const darkest = [...vals].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c]) => byCode.get(c)?.name ?? names.get(c) ?? ISO[c]?.[1] ?? c);
+    node.setAttribute("aria-label", `World map shaded by ${label ?? baseLabel}.${darkest.length ? ` Darkest: ${darkest.join(", ")}.` : ""} A list of the top countries follows.`);
+  };
+  recolor();
+  return { node, select, names, recolor };
 }
 
 /** Dumbbell chart: per row, a real-spike marker and a placebo-spike marker on one shared axis with a zero line.

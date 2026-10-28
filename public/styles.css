@@ -429,3 +429,12 @@ dd { margin: 0; font-size: 1.1rem; }
 .agent-text { margin: 0; font-size: 1.05rem; }
 .agent-detail { margin: 2px 0 0; font-size: 0.85rem; color: var(--ink-soft); }
 @media (max-width: 480px) { .agent-steps li { grid-template-columns: 1fr; } .agent-n { text-align: left; } }
+
+.wm-follow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; }
+.wm-follow label { font-weight: 600; }
+.wm-select { font: 400 1rem var(--sans); color: var(--ink); background: var(--paper-2); border: 1.5px solid var(--ink); padding: 8px 12px; min-height: 44px; border-radius: 0; max-width: 100%; }
+.wm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wm-chips .chip { min-height: 44px; max-width: 100%; text-align: left; }
+.follow-link { margin: 0 0 10px; }
+.country, .fc-dot { transition: fill 600ms ease; }
+@media (prefers-reduced-motion: reduce) { .country, .fc-dot { transition: none; } }

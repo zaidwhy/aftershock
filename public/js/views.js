@@ -45,7 +45,7 @@ function load(container, what, isCurrent, fetcher, render, notFound) {
 }
 
 /* ---------------------------------------------------------------- landing */
-export function renderHome(root, isCurrent) {
+export function renderHome(root, isCurrent, followId = null) {
   setTitle("");
   const chartBox = h("div", { class: "hero-chart" });
   const stormBox = h("div", null);
@@ -102,7 +102,7 @@ export function renderHome(root, isCurrent) {
   agentLine(agentBox, isCurrent);
 
   stormsP.then((st) => {
-    if (isCurrent() && st.map?.countries?.length) mapBox.append(weekMapSection(st.map, st.week, isCurrent));
+    if (isCurrent() && st.map?.countries?.length) mapBox.append(weekMapSection(st.map, st.week, isCurrent, st.storms, followId));
   }).catch(() => {});
 
   stormsP.then((st) => {
@@ -176,6 +176,7 @@ export function renderStorm(root, id, isCurrent) {
       mockNote(),
       h("section", { "aria-labelledby": "map-h" },
         h("h2", { id: "map-h" }, `Where it charts next (${st.spillover?.horizon_weeks ?? "?"} week horizon)`),
+        h("p", { class: "follow-link" }, h("a", { href: `#/?follow=${encodeURIComponent(st.id)}` }, "Follow it on the world map")),
         mapBox,
         h("p", { class: "legend" }, h("span", { class: "key key-origin" }), "Origin countries (outlined)", h("span", { class: "key key-ramp" }), "Darker = higher probability"),
         fc.length ? forecastTable(fc) : h("p", { class: "status" }, "No forecast rows for this title.")),
