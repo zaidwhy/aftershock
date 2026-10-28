@@ -46,15 +46,18 @@ const joinList =(items) => (items.length < 2 ? items.join("") : `${items.slice(0
 /** Plain-text-to-Markdown for the downloaded file, built from the brief alone. */
 export function briefMarkdown(b, url) {
   const list = (items) => items.map((x) => `- ${x}`);
-  const group = (gs) => gs.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) =>
-    p.name + (p.source === "ai_confirmed" ? (p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's kit)" : " (AI pick confirmed by Qloo)") : " (Qloo's kit)"))), ""]);
+  const kitFirst = b.partner_basis === "qloo_kit_first";
+  const mark = (p) => (p.source === "ai_confirmed"
+    ? (kitFirst ? " (also confirmed by Qloo from the AI's suggestions)" : p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's kit)" : " (AI pick confirmed by Qloo)")
+    : " (Qloo's kit)");
+  const group = (gs) => gs.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) => p.name + mark(p))), ""]);
   const { partners, watches } = splitPartners(b.partners);
-  return [`# Launch brief: ${b.title} in ${b.country}`, "", b.headline, "",
+  return [`# Launch brief: ${b.title} in ${b.country}`, "", ...(b.window ? [`*${b.window}.*`, ""] : []), b.headline, "",
     `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
     ...((b.moves || []).length ? ["## This week's moves", ...(b.moves || []).map((m) => `- **${m.buyer}:** ${m.text}`), ""] : []),
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
     ...((b.event_ideas || []).length ? ["## Quick-turn activation ideas", "Tours are booked months ahead; these are short activations where both audiences already live.", "", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
-    "## Partners to approach", ...group(partners),
+    "## Partners to approach", ...(b.kit_lead ? [b.kit_lead, ""] : []), ...group(partners),
     ...(watches.length ? ["## This audience also watches (for creative and ad targeting)", ...group(watches)] : []),
     "## What not to claim", ...list(b.avoid), "",
     "## Evidence", ...list(b.evidence), "", url ? `Source: ${url}` : ""].join("\n");
@@ -75,7 +78,7 @@ function statTiles(b, row) {
   const plan = row.plan || {}, dropped = plan.dropped || {};
   const proposed = (plan.confirmed?.length ?? 0) + (dropped.not_placed ?? 0) + (dropped.not_in_qloo ?? 0);
   const ideas = (b.event_ideas || []).length;
-  const checked = b.partner_basis === "ai_confirmed"
+  const checked = b.partner_basis !== "qloo_kit"
     ? [`${plan.confirmed.length} of ${proposed}`, "AI picks confirmed by Qloo"]
     : ["Qloo's own kit", "fewer than 3 AI picks confirmed"];
   const tiles = [
@@ -107,24 +110,34 @@ function cityMap(b, row) {
   return box;
 }
 
-function partnerList(groups) {
-  return h("dl", { class: "plan-partners" }, groups.map((g) => h("div", null,
-    h("dt", null, g.label),
-    h("dd", null, g.picks.flatMap((p, i) => [i ? ", " : null, g.domain === "artist" ? artistName(p.name) : p.name,
-      p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))));
+function partnerList(groups, kitFirst) {
+  const name = (g, p) => (g.domain === "artist" ? artistName(p.name) : p.name);
+  return h("dl", { class: "plan-partners" }, groups.map((g) => {
+    const lead = kitFirst ? g.picks.filter((p) => p.source === "qloo_kit") : g.picks;
+    const extra = kitFirst ? g.picks.filter((p) => p.source === "ai_confirmed") : [];
+    return h("div", null,
+      h("dt", null, g.label),
+      h("dd", null, lead.flatMap((p, i) => [i ? ", " : null, name(g, p),
+        !kitFirst && p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null]),
+        extra.length ? h("span", { class: "plan-ai-extra" }, h("span", { class: "plan-both" }, "Also confirmed by Qloo from the AI's suggestions: "),
+          extra.flatMap((p, i) => [i ? ", " : null, name(g, p)])) : null));
+  }));
 }
 
 /** "Partners to approach" (artists and brands) and, apart, what the audience also watches (shows and films). */
 function partnerSection(b) {
   const { partners, watches } = splitPartners(b.partners);
+  const kitFirst = b.partner_basis === "qloo_kit_first";
   return h("div", null,
     h("section", { "aria-labelledby": "bs-partners" },
       h("h3", { id: "bs-partners" }, "Partners to approach"),
-      h("p", { class: "plan-note mono" }, b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),
-      partnerList(partners)),
+      b.kit_lead ? h("p", { class: "plan-kit-lead" }, b.kit_lead) : null,
+      h("p", { class: "plan-note mono" }, b.partner_basis === "qloo_kit_first" ? "Qloo's own kit for this title and country leads; AI picks that Qloo also confirmed follow."
+        : b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),
+      partnerList(partners, kitFirst)),
     watches.length ? h("section", { "aria-labelledby": "bs-watches" },
       h("h3", { id: "bs-watches" }, "This audience also watches (for creative and ad targeting)"),
-      partnerList(watches)) : null);
+      partnerList(watches, kitFirst)) : null);
 }
 
 function briefCard(st, made, row) {
@@ -133,6 +146,7 @@ function briefCard(st, made, row) {
   return h("article", { class: "plan-brief", "aria-labelledby": "brief-h" },
     h("p", { class: "eyebrow" }, "Deliverable"),
     h("h2", { id: "brief-h" }, `Launch brief: ${b.title} in ${b.country}`),
+    b.window ? h("p", { class: "plan-window" }, b.window) : null,
     statTiles(b, row),
     h("p", { class: "plan-headline" }, b.headline),
     h("section", { "aria-labelledby": "bs-sum" },

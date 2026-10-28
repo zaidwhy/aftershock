@@ -214,5 +214,48 @@ def test_where_next_for_a_title_netflix_never_charted_says_so_and_suggests_break
 
 def test_help_example_uses_the_featured_plan(ctx):
     ctx["featured"] = {"title": "Nightwatch: Demons Are Forever", "country": "Sweden"}
-    msg = ask.answer("blah blah", ctx)["answer"]["message"]
+    msg = ask.answer("zzz yyy xxx www vvv uuu ttt sss", ctx)["answer"]["message"]
     assert "What should Nightwatch: Demons Are Forever pair with in Sweden?" in msg and "Fukrey Returns pair" not in msg
+
+
+PHRASINGS = ["visionquest in india", "forecast for visionquest", "will visionquest chart in brazil?", "how will visionquest do",
+             "visionquest", "next countries for visionquest", "which countries will visionquest reach", "what about visionquest?",
+             "plan a launch for visionquest in nepal", "launch visionquest in brazil", "is visionquest a breakout",
+             "visionquest nepal", "where will visionquest go next", "What should visionquest pair with in Brazil?",
+             "spread of visionquest to brazil", "tell me about visionquest", "how far will visionquest travel",
+             "which brands fit visionquest fans in nepal", "where will nightwach go next", "is fukrey retuns a breakout",
+             "forecast for fukrey retuns in nepal", "Where Will Visionquest Chart Next", "Visionquest in NP", "visionquest?!"]
+
+
+@pytest.mark.parametrize("question", PHRASINGS)
+def test_no_phrasing_about_a_title_dead_ends(ctx, question):
+    r = ask.answer(question, ctx)
+    msg = r["answer"].get("message", "")
+    assert "could not tell what you are asking" not in msg and r["intent"] != "none"
+
+
+def test_unknown_title_answer_names_the_title_without_intent_words_or_country(ctx):
+    r = ask.answer("plan a launch for Vision Quest in Nepal", ctx)
+    assert r["answer"]["message"].startswith("Vision Quest has not been in Netflix's Top 10 in any country since 2024, so there")
+    assert 'ask "What is heading to Nepal?"' in r["answer"]["message"]
+    assert r["answer"]["did_you_mean"] is None
+    assert "Fukrey Returns" in r["answer"]["message"]
+
+
+def test_did_you_mean_links_a_storm_and_names_an_index_title(ctx):
+    r = ask.answer("where will fkry rtrns go next", ctx)
+    assert r["answer"]["did_you_mean"] == {"title": "Fukrey Returns", "href": "#/storm/fukrey-returns"}
+    assert "Did you mean Fukrey Returns?" in r["answer"]["message"]
+    assert r["links"][0] == {"label": "Storm page for Fukrey Returns", "href": "#/storm/fukrey-returns"}
+
+
+def test_whats_heading_to_a_country_routes_to_the_country_answer(ctx):
+    for q in ("what's heading to Brazil", "whats heading to Brazil", "What’s coming to Brazil?"):
+        a = ask.answer(q, ctx)["answer"]
+        assert a["kind"] == "country" and a["name"] == "Brazil"
+
+
+def test_questions_that_are_not_about_a_title_still_get_help(ctx):
+    for q in ("who will win the world cup", "zzz yyy xxx www vvv uuu ttt sss", "   "):
+        assert ask.answer(q, ctx)["answer"]["kind"] == "help"
+        assert "could not tell" in ask.answer(q, ctx)["answer"]["message"] or q.strip() == ""

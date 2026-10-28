@@ -102,9 +102,10 @@ export function renderHome(root, isCurrent, followId = null) {
       const spread = lt.breakouts_that_spread_at_all;
       const whole0 = (x) => `${Math.round(x * 100)}%`;
       const times = lt.baseline.hit_rate ? (lt.model.hit_rate / lt.baseline.hit_rate).toFixed(1) : null;
-      leadLine.append(`Backtest on ${whole(lt.model.breakouts)} past breakouts it never saw. Of the ${whole(spread)} that spread, its top ${lt.top_k} named a next country `,
-        `${whole0(lt.model.hit_breakouts / spread)} of the time (${whole0(lt.baseline.hit_breakouts / spread)} for the busiest-countries baseline); `,
-        `counting all ${whole(lt.model.breakouts)}, ${share1(lt.model.hit_rate)} against ${share1(lt.baseline.hit_rate)}${times ? `, ${times} times the baseline` : ""}. `,
+      leadLine.append(`Backtest on ${whole(lt.model.breakouts)} past breakouts it never saw: counting all ${whole(lt.model.breakouts)}, `,
+        `${share1(lt.model.hit_rate)} against ${share1(lt.baseline.hit_rate)}${times ? `, ${times} times the baseline` : ""}. `,
+        `Of the ${whole(spread)} that spread at all, its top ${lt.top_k} named a next country `,
+        `${whole0(lt.model.hit_breakouts / spread)} of the time (${whole0(lt.baseline.hit_breakouts / spread)} for the busiest-countries baseline). `,
         h("a", { href: "#/scorecard", onclick: () => { wantWarning = true; } }, "The full test, misses included"));
       leadLine.hidden = false;
     }
@@ -112,7 +113,15 @@ export function renderHome(root, isCurrent, followId = null) {
     if (gc) {
       const { confirmed: c, not_placed: np, not_in_qloo: nq } = gc, n = c + np + nq;
       const p = (x) => `${Math.round((x / n) * 100)}%`;
-      heroFact.append(h("strong", null, `Qloo could back only ${p(c)} of what an AI alone named for an audience in a country.`),
+      const ke = sc.kit_experiment, sp = sc.grounded_plan?.specificity_plan;
+      if (ke?.qloo != null && ke?.llm != null && sp != null) {
+        const two = (x) => x.toFixed(2);
+        heroFact.append(h("span", { class: "hero-cmp-h" }, "How specific to the title are the picks? (0 to 1, higher is more specific)"),
+          h("span", { class: "hero-cmp", role: "list" },
+            [[two(ke.qloo), "Qloo alone"], [two(ke.llm), "LLM alone"], [two(sp), "LLM checked by Qloo (exploratory)"]].map(([v, l]) =>
+              h("span", { class: "hero-cmp-i", role: "listitem" }, h("strong", null, v), " ", l))));
+      }
+      heroFact.append(h("strong", null, `${p(np + nq)} of the names an LLM proposed are not backed by Qloo.`),
         ` Of ${whole(n)} names an AI proposed, ${p(c + np)} are names Qloo knows and ${p(c)} are ones it links to that audience there, so ${p(np + nq)} are not backed: `,
         `${p(nq)} Qloo has no data on, ${p(np)} it knows but does not place with that audience. `,
         h("a", { href: "#/scorecard" }, "How we measured it"));
@@ -174,6 +183,7 @@ export function renderHome(root, isCurrent, followId = null) {
             : "No forecast yet"))))));
   });
 }
+
 
 /* ------------------------------------------------------------------ storm */
 export function renderStorm(root, id, isCurrent) {
@@ -492,6 +502,11 @@ function llmSection(sc) {
   // Lead with the result that shapes the product; the registered test stays below it in full.
   return h("section", { "aria-labelledby": "llm-h" },
     h("h2", { id: "llm-h" }, `An LLM alone: Qloo could not back ${share(gp.unbacked_share)} of what it named`),
+    ex && ex.qloo != null && ex.llm != null && gp.specificity_plan != null ? h("div", { class: "kit-cmp" },
+      h("p", { class: "hero-cmp-h" }, "How specific to the title are the picks? (0 to 1, higher is more specific)"),
+      h("p", { class: "hero-cmp" }, [[ex.qloo, "Qloo alone"], [ex.llm, "LLM alone"], [gp.specificity_plan, "LLM checked by Qloo (exploratory)"]].map(([v, l]) =>
+        h("span", { class: "hero-cmp-i" }, h("strong", null, v.toFixed(2)), " ", l))),
+      h("p", null, `${share(gp.unbacked_share)} of the LLM's names are not backed by Qloo.`)) : null,
     gp.counts ? numbersExplained(gp) : h("p", null, `Across ${gp.pairs} title-country pairs an LLM named ${whole(gp.picks_checked)} artists, brands, films and shows for the audience. Qloo placed ${share(1 - gp.unbacked_share)} of them with that audience; the rest it either does not know or does not link to these viewers. Only the confirmed names go into a launch brief.`),
     gp.specificity_plan != null ? h("p", null, `The combined plan (the LLM's names, kept only when Qloo confirms them) is `, h("strong", null, `${gp.specificity_plan.toFixed(2)} title-specific`),
       `, against ${gp.specificity_llm.toFixed(2)} for the LLM's raw picks, on ${gp.specificity_pairs} pairs.`) : null,

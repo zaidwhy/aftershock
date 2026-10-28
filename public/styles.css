@@ -533,3 +533,13 @@ dd { margin: 0; font-size: 1.1rem; }
   .hero-top .hero-fact { order: 2; }
   .hero-top .lead-line { order: 6; }
 }
+
+.hero-fact .hero-cmp-h { display: block; font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 6px; }
+.hero-cmp { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 10px; }
+.hero-cmp-i { font-size: 0.9rem; }
+.hero-fact .hero-cmp-i strong { display: inline; font: 600 1.5rem var(--mono); margin: 0 4px 0 0; }
+.plan-window { font: 400 0.85rem var(--mono); color: var(--ink-soft); margin: 0 0 8px; }
+.plan-kit-lead { margin: 0 0 4px; font-weight: 600; }
+.plan-ai-extra { display: block; margin-top: 2px; }
+.kit-cmp .hero-cmp-h { font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 6px; }
+.kit-cmp .hero-cmp-i strong { font: 600 1.5rem var(--mono); margin-right: 4px; }

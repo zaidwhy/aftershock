@@ -8,8 +8,8 @@
 
 | Question | Result |
 |---|---|
-| An AI alone, checked by Qloo | Of 1,615 names an AI proposed for 81 title-country pairs, Qloo could back 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not backed, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not place with that audience. Only confirmed names ship in a plan. |
-| Forecast backtest (829 held-out breakouts) | Of the 113 that spread at all, its top 3 named a next country 72% of the time against 30% for the three busiest countries. Counting all 829: 9.8% against 4.1%. |
+| Qloo alone, an LLM alone, an LLM checked by Qloo | How specific to the title the picks are (0 to 1, same 81 title-country pairs): Qloo alone 0.62, LLM alone 0.81, LLM checked by Qloo 0.86 (exploratory, not pre-registered). 71% of the LLM's names are not backed by Qloo. Of 1,615 names an AI proposed, Qloo could back 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not backed, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not place with that audience. Only confirmed names ship in a plan. |
+| Forecast backtest (829 held-out breakouts) | Counting all 829: its top 3 named a next country for 9.8% of breakouts against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. |
 | Forecasts locked in public | 3,240 so far, each fixed before its outcome exists; grading starts 15 Nov 2026. |
 
 ## Why this only works with Qloo
@@ -26,21 +26,11 @@ A breakout travels country by country: that is what we forecast from Netflix his
 
 ## What it does
 
-- **Plan a launch (start here).** Pick a breakout and a country. The agent works through visible steps, each with what it found and the rule it applied: forecast, ask Qloo what the audience likes, ask an AI for more names, check every AI name against Qloo, find the cities, match artists to cities, write the Launch Brief. The brief names partners to approach (artists and brands), what the audience also watches (for creative and ad targeting), quick-turn activation ideas, and what the evidence does not support. Download, print or share it.
+- **Plan a launch (start here).** Pick a breakout and a country. The agent works through visible steps, each with what it found and the rule it applied: forecast, ask Qloo what the audience likes, ask an AI for more names, check every AI name against Qloo, find the cities, match artists to cities, write the Launch Brief. When Qloo's own kit is clearly specific to the title (at least 60% different from the country's general taste), the partners lead with Qloo's kit and the AI names Qloo confirmed follow, labelled as such; platform brands such as Spotify are left out. The brief names partners to approach (artists and brands), what the audience also watches (for creative and ad targeting), quick-turn activation ideas, and what the evidence does not support. Download, print or share it.
 - **Live check box.** Type any artist, brand, show or film on the plan page; Qloo confirms or rejects it for that audience, now. Names Qloo has no data on are listed separately, never struck through.
 - **For artists.** Every artist Qloo links to a breakout's audience has a page: which titles' viewers over-index on their music, where, and the cities where both audiences concentrate. Artists that appear only in countrywide kits are tagged.
 - **World map.** Follow one title and the map recolours by its chance in each country.
 - **Public ledger.** Every week's forecasts are locked in a hash-chained ledger before the outcome exists, then graded. An MCP server exposes the same tools to any agent.
-
-## Who would pay
-
-Each buyer has one move that fits in the week between a breakout and its peak:
-
-- **Labels:** push an artist's catalogue and a playlist to listeners in the cities where Qloo links that artist to the title's viewers.
-- **Artists:** a post, a DJ set or a playlist push aimed at those cities while the title is charting.
-- **Brand marketers:** local ads in the title's hotspot cities, only for brands Qloo confirms for that audience.
-
-Local media and creators can act fastest, on the same cities. We have no customers or pilots. **Pricing hypothesis (untested):** a weekly per-territory brief for labels and agencies, artist pages free. We have not tested it with anyone.
 
 ## Qloo calls we make
 
@@ -53,6 +43,16 @@ Local media and creators can act fastest, on the same cities. We have no custome
 | `filter.type=urn:heatmap` with `signal.interests.entities` = the title and `filter.location.query` = the country | The cities where the title's audience concentrates (hotspots). |
 | The same with an artist as the signal | Each partner artist's cities; a title city within 30 km of one of the artist's 5 strongest cells becomes an activation idea. |
 | `filter.type=urn:demographics` with a show or artist as the signal | Age bands for Song check; with `urn:entity:artist` candidates, the ranking in Sync Scout. |
+
+## Who would pay
+
+Each buyer has one move that fits in the week between a breakout and its peak:
+
+- **Labels:** push an artist's catalogue and a playlist to listeners in the cities where Qloo links that artist to the title's viewers.
+- **Artists:** a post, a DJ set or a playlist push aimed at those cities while the title is charting.
+- **Brand marketers:** local ads in the title's hotspot cities, only for brands Qloo confirms for that audience.
+
+Local media and creators can act fastest, on the same cities. We have no customers or pilots. **Pricing hypothesis (untested):** a weekly per-territory brief for labels and agencies, artist pages free. We have not tested it with anyone.
 
 ## What it can't do
 
@@ -90,5 +90,6 @@ From an AI agent: the MCP server (`python -m aftershock.mcp_server`, README sect
 
 - Demo: https://aftershock-qloo.vercel.app
 - Code: https://github.com/zaidwhy/aftershock (MIT)
+- Demo video: (YouTube link to be added)  <!-- PLACEHOLDER for Zaid: paste the unlisted YouTube link before submitting -->
 
 **Built with:** a fixed plan of tool calls with visible decision rules; the LLM (Gemini `gemini-3.5-flash`) only proposes names and drafts a validated summary. python, fastapi, httpx, d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel

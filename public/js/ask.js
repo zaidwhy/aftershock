@@ -9,14 +9,19 @@ import { hotspotMap } from "./charts.js";
 import { bandText } from "./crowd.js";
 
 const FALLBACK_KIT = "What should Fukrey Returns pair with in Bangladesh?";
-/** The example questions. The launch-kit one names this week's hero title and country so it always resolves. */
-export function examples(hero) {
+const FALLBACK_FORECAST = "Where will Fukrey Returns go next?";
+/** The example questions, all built from this week's data so each one returns an answer: the forecast question names
+ *  the week's top breakout, the launch-kit one the hero title and country. The song questions live on their own pages. */
+export function examples(hero, top) {
   return [
-    "Where will Squid Game go next?",
+    top?.title ? `Where will ${top.title} go next?` : FALLBACK_FORECAST,
     hero?.title && hero?.country ? `What should ${hero.title} pair with in ${hero.country}?` : FALLBACK_KIT,
-    "Find songs for Stranger Things",
-    "Running Up That Hill by Kate Bush for Stranger Things",
   ];
+}
+
+/** The storm with the highest top-forecast chance, or null. */
+export function topBreakout(storms) {
+  return [...(storms || [])].filter((s) => s.top_forecast).sort((a, b) => b.top_forecast.probability - a.top_forecast.probability)[0] || null;
 }
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 const poss = (n) => (/s$/i.test(n) ? `${n}'` : `${n}'s`);
@@ -109,7 +114,8 @@ function answerCard(res, run) {
     case "scout": return scoutCard(a, run);
     case "title": return h("div", { class: "ask-card" }, a.note ? h("p", { class: "plain" }, a.note) : null,
       a.focus ? h("p", { class: "plain" }, a.focus) : null, titlePanel(a.history));
-    default: return h("div", { class: "status", role: "status" }, h("p", null, a.message));
+    default: return h("div", { class: "status", role: "status" }, h("p", null, a.message),
+      a.did_you_mean ? h("p", null, a.did_you_mean.href ? h("a", { href: a.did_you_mean.href }, `Open ${a.did_you_mean.title}`) : null) : null);
   }
 }
 
@@ -147,7 +153,7 @@ export function askBox(isCurrent, stormsP) {
   drawChips();
   if (stormsP) stormsP.then((st) => {
     if (!isCurrent()) return;
-    EXAMPLES = examples(st?.hero);
+    EXAMPLES = examples(st?.hero, topBreakout(st?.storms));
     if (!input.value && document.activeElement !== input) input.placeholder = EXAMPLES[0];
     drawChips();
   }).catch(() => {});

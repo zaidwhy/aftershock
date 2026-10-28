@@ -12,10 +12,17 @@ import re
 
 from aftershock import llm_kits
 from aftershock.grounded_plan import clean_rows
+from aftershock.launch_kit import name_key
 
 log = logging.getLogger(__name__)
 
 MIN_CONFIRMED = 3  # fewer Qloo-confirmed AI picks than this and the brief uses Qloo's own kit
+KIT_FIRST_SPECIFICITY = 0.6  # a kit at least this different from the country's taste leads the partners
+KIT_LEAD_DOMAINS = ("tv_show", "movie", "artist")  # the data line names the first of these in Qloo's order
+# Platforms every audience uses: naming one as a partner to approach says nothing about this title's viewers, and a
+# local ad or label move built around one is not actionable. Dropped from brand partners and moves.
+PLATFORM_BRANDS = {"Spotify", "Netflix", "YouTube", "Apple Music", "Amazon Prime Video", "Disney+", "TikTok",
+                   "Instagram", "Facebook", "Google", "Amazon"}
 CITIES = 3
 PICKS_PER_DOMAIN = 3
 BRIEFS_PER_CALL = 15
@@ -61,6 +68,30 @@ def uses_plan(row):
     return len(((row.get("plan") or {}).get("confirmed")) or []) >= MIN_CONFIRMED
 
 
+def kit_first(row):
+    """True when the kit row is title-specific (not countrywide, specificity at least KIT_FIRST_SPECIFICITY) and has
+    names: then Qloo's own kit leads the partners and AI-confirmed names follow."""
+    spec = row.get("specificity")
+    return (not row.get("generic") and spec is not None and spec >= KIT_FIRST_SPECIFICITY
+            and any((row.get("kit") or {}).values()))
+
+
+def kit_lead(row):
+    """"Qloo's kit for this audience is led by A, B and C." from the first three TV shows, films or artists in
+    Qloo's order (shows first); None when the kit is not led by title-specific names."""
+    if not kit_first(row):
+        return None
+    names = [e["name"] for d in KIT_LEAD_DOMAINS for e in (row["kit"].get(d) or []) if e.get("name")][:3]
+    return f"Qloo's kit for this audience is led by {_join(names)}." if names else None
+
+
+_PLATFORM_KEYS = {name_key(n) for n in PLATFORM_BRANDS}
+
+
+def _is_platform(name):
+    return name_key(name) in _PLATFORM_KEYS
+
+
 def partner_artists(row):
     """The brief's artist partners for a kit row, in brief order: [{name, source, also_in_qloo_kit}], at most
     PICKS_PER_DOMAIN. Live events reuses this so the artists checked are the artists the brief names."""
@@ -68,17 +99,32 @@ def partner_artists(row):
     return group["picks"] if group else []
 
 
+def partner_names(row, domain, n):
+    """The first n partner names of one domain, in the order the brief shows them (the home example uses this so
+    home and brief agree)."""
+    group = next((g for g in _partners(row, uses_plan(row)) if g["domain"] == domain), None)
+    return [p["name"] for p in group["picks"]][:n] if group else []
+
+
 def _partners(row, use_plan):
-    """By domain, up to PICKS_PER_DOMAIN picks. With a usable plan, Qloo-confirmed AI picks come first (marked when
-    Qloo's own kit also named them); a domain with none falls back to Qloo's kit."""
+    """By domain, up to PICKS_PER_DOMAIN picks (platform brands never). A title-specific kit (`kit_first`) leads with
+    Qloo's own kit, then the AI picks Qloo confirmed that the kit did not already name, up to PICKS_PER_DOMAIN more.
+    Otherwise, with a usable plan, Qloo-confirmed AI picks come first (marked when Qloo's own kit also named them) and
+    a domain with none falls back to Qloo's kit."""
     confirmed = ((row.get("plan") or {}).get("confirmed") or []) if use_plan else []
+    lead_kit = kit_first(row)
     out = []
     for domain, label in DOMAIN_LABELS.items():
-        picks = [{"name": c["name"], "source": "ai_confirmed", "also_in_qloo_kit": bool(c.get("both"))}
-                 for c in confirmed if c.get("domain") == domain][:PICKS_PER_DOMAIN]
-        if not picks:
-            picks = [{"name": e["name"], "source": "qloo_kit", "also_in_qloo_kit": True}
-                     for e in (row["kit"].get(domain) or [])[:PICKS_PER_DOMAIN]]
+        keep = (lambda n: not _is_platform(n)) if domain == "brand" else (lambda n: True)
+        kit_picks = [{"name": e["name"], "source": "qloo_kit", "also_in_qloo_kit": True}
+                     for e in (row["kit"].get(domain) or []) if keep(e["name"])]
+        ai_picks = [{"name": c["name"], "source": "ai_confirmed", "also_in_qloo_kit": bool(c.get("both"))}
+                    for c in confirmed if c.get("domain") == domain and keep(c["name"])]
+        if lead_kit and kit_picks:
+            seen = {name_key(p["name"]) for p in kit_picks[:PICKS_PER_DOMAIN]}
+            picks = kit_picks[:PICKS_PER_DOMAIN] + [p for p in ai_picks if name_key(p["name"]) not in seen][:PICKS_PER_DOMAIN]
+        else:
+            picks = ai_picks[:PICKS_PER_DOMAIN] or kit_picks[:PICKS_PER_DOMAIN]
         if picks:
             out.append({"domain": domain, "label": label, "picks": picks,
                         "group": "partner" if domain in PARTNER_DOMAINS else "watches"})
@@ -93,7 +139,7 @@ def template_summary(b):
             f"{b['horizon_weeks']} weeks, rank {b['rank']} of {b['of_countries']}.{where}{pair}")
 
 
-def _moves(title, country, chance_label, horizon, cities, partners, event_ideas):
+def _moves(title, country, chance_label, horizon, cities, partners, event_ideas, lead_kit=False):
     """One move per buyer, each doable within about a week, built only from the brief's own facts: [{buyer, text}].
     A move is left out when its facts do not exist (no brand move without a Qloo-confirmed brand, no artist move
     without an activation idea, no cities means no label, artist or brand move). Wording states steps, never outcomes."""
@@ -115,10 +161,10 @@ def _moves(title, country, chance_label, horizon, cities, partners, event_ideas)
                       f"{_join(idea['cities'])} this week, while {title} is charting; Qloo's maps show your audience "
                       "and this title's overlap there."})
     brands = next((g["picks"] for g in partners if g["domain"] == "brand"), [])
-    brand = next((p["name"] for p in brands if p["source"] == "ai_confirmed"), None)
+    brand = next((p["name"] for p in brands if p["source"] == "ai_confirmed" or lead_kit), None)
     if brand and cities:
         moves.append({"buyer": "Brand marketer", "text": f"Run local ads in {_join(cities)} next to {title} while it "
-                      f"charts; Qloo confirms {brand} for this audience."})
+                      f"charts; Qloo's data for this audience {'lists' if lead_kit else 'confirms'} {brand}."})
     moves.append({"buyer": "Distributor", "text": f"Prepare {country} promotion "
                   f"now: {chance_label} chance it charts there within {horizon} weeks; in our backtest, {LEAD_ONE_WEEK} of "
                   f"the {LEAD_CHARTED} forecast picks that charted did so one week after the breakout week."})
@@ -184,11 +230,16 @@ def brief(detail, code):
         check["decision"] = "There is no AI plan for this country, so the brief uses Qloo's own kit."
     elif not use_plan:
         check["decision"] = f"Qloo confirmed fewer than {MIN_CONFIRMED} AI picks, so the brief uses Qloo's own kit."
+    elif kit_first(row):
+        check["decision"] = (f"Qloo's own kit is {round(spec * 100)}% different from the country's general taste, so the "
+                             f"brief leads with it; the {n_conf} AI picks Qloo confirmed follow as extra names.")
     elif generic:
         check["decision"] = ("The kit mostly matches the country's general taste, so the brief leans on the AI "
                              "picks Qloo confirmed.")
     else:
-        check["decision"] = f"Qloo confirmed {n_conf} AI picks, so the brief puts them ahead of Qloo's own kit."
+        check["decision"] = (f"Qloo confirmed {n_conf} AI picks and the kit is not clearly title-specific "
+                             f"(under {round(KIT_FIRST_SPECIFICITY * 100)}% different from the country's taste), so the "
+                             "brief puts the AI picks ahead of Qloo's own kit.")
     steps.append(check)
 
     cities = list((row.get("hotspots") or {}).get("places") or [])[:CITIES]
@@ -228,22 +279,29 @@ def brief(detail, code):
     if use_plan:
         evidence.append("AI picks are checked only for whether Qloo links them to this audience, not for sales or views.")
     partners = _partners(row, use_plan)
+    lead = kit_first(row)
     out = {"title": title, "country": country, "code": code, "storm_id": detail.get("id"), "rank": rank,
            "of_countries": len(forecasts), "chance": fc["probability"], "chance_label": _pct(fc["probability"]),
            "horizon_weeks": horizon,
            "headline": f"{title} has a {_pct(fc['probability'])} chance of charting in {country} within {horizon} "
                        f"weeks (rank {rank} of {len(forecasts)}).",
            "kit_scope": "countrywide" if generic else "title-specific",
-           "partner_basis": "ai_confirmed" if use_plan else "qloo_kit",
+           "partner_basis": "qloo_kit_first" if lead and use_plan else "ai_confirmed" if use_plan else "qloo_kit",
+           "kit_lead": kit_lead(row),
+           "window": (f"Window: about one week ({LEAD_ONE_WEEK} of the {LEAD_CHARTED} forecast countries that charted "
+                      "did so one week after the breakout)"),
            "cities": cities, "partners": partners,
            "event_ideas": [{"artist": e["artist"], "cities": list(e["cities"]),
                             "text": f"{e['artist']} in {_join(e['cities'])}: both audiences concentrate there."}
                            for e in events],
            "avoid": avoid, "evidence": evidence}
-    out["moves"] = _moves(title, country, out["chance_label"], horizon, cities, partners, out["event_ideas"])
+    out["moves"] = _moves(title, country, out["chance_label"], horizon, cities, partners, out["event_ideas"], lead)
     summary = row.get("brief_summary") or {}
-    out["summary"] = summary.get("text") or template_summary(out)
-    out["summary_source"] = summary.get("source") if summary.get("text") else SUMMARY_TEMPLATE
+    # A stored AI summary was checked against the facts of the run that wrote it; one that no longer fits today's
+    # partner order (for instance it names a platform brand now dropped) gives way to the template.
+    stored = summary.get("text") if validate_summary(summary.get("text"), out) else None
+    out["summary"] = stored or template_summary(out)
+    out["summary_source"] = summary.get("source") if stored else SUMMARY_TEMPLATE
     steps.append({"key": "brief", "title": "Assemble the brief",
                   "found": f"Brief ready: {len(partners)} partner groups, {len(cities)} cities, "
                            f"{len(avoid)} {'caveat' if len(avoid) == 1 else 'caveats'} on what not to claim."})
@@ -264,7 +322,7 @@ def attach(detail):
 
 
 def _facts_text(b):
-    parts = [b["title"], b["country"], b["headline"], " ".join(b["cities"]), b["kit_scope"]]
+    parts = [b["title"], b["country"], b["headline"], " ".join(b["cities"]), b["kit_scope"], b.get("kit_lead") or ""]
     for group in b["partners"]:
         parts.append(group["label"] + " " + " ".join(p["name"] for p in group["picks"]))
     parts += [e["text"] for e in b.get("event_ideas") or []]

@@ -28,7 +28,7 @@ launch kit market markets forecast forecasts a an of and find me tell about how 
 after likely be there song songs music travel travels land lands good best top who when why please give picks pick
 suggest recommend s whats""".split())
 COUNTRY_OK = set("""what is are heading coming arriving arrive arrives going go trending popular new this week now
-next here there breaking out spreading to the in for from will be which titles shows show films netflix""".split())
+next here there breaking out spreading to the in for from will be which titles shows show films netflix s whats""".split())
 KIT_WORDS = re.compile(r"\b(pair|pairs|pairing|partner|partners|brand|brands|artist|artists|launch|market|marketing"
                        r"|promote|promotion|collab|collaborate|kit)\b")
 SONGS_FOR = re.compile(r"\b(?:songs?|artists?|music|musicians?|tracks?|soundtrack|singers?)\s+(?:for|to go with|to pair with"
@@ -43,6 +43,13 @@ WHERE_NEXT = re.compile(r"^(?:where\s+(?:will|would|could|does|is|might)\s+|wher
                         r"(?:go|going|head|heading|chart|charting|travel|traveling|travelling|spread|spreading|land)"
                         r"(?:\s+next)?\s*\??$", re.I)
 SUGGEST = 3
+# Words around a title in a forecast question ("plan a launch for X in Sweden", "is X a breakout"). They are stripped
+# from both ends of the question, never from the middle, so "Where the Crawdads Sing" keeps its "the".
+INTENT = STOP | set("""plan planning breakout breakouts breaking countries country doing hit hits trend trending popular
+chart charting forecasted travelling traveling expand expands expanding market fit fits fans fan""".split())
+NOT_ABOUT_A_TITLE = {"who", "why"}  # "who will win the world cup" is not a question about a title
+MAX_TITLE_WORDS = 6
+DID_YOU_MEAN_CUTOFF = 0.8
 
 
 def _help(ctx):
@@ -175,6 +182,57 @@ def resolve_title(ctx, norm_text, country):
         if rec:
             return _from_history(ctx, rec, base)
     return None
+
+
+def _unknown_title(raw, country):
+    """The title a forecast-style question is about when nothing matched: the question's words with the country phrase
+    removed and intent words trimmed off both ends, as typed. None when nothing title-like is left."""
+    words = raw.split()
+    if not words or _norm(words[0]) in NOT_ABOUT_A_TITLE:
+        return None
+    if country:
+        phrase = country[2]
+        for start in range(len(words)):
+            hit = next((n for n in range(1, 5) if start + n <= len(words)
+                        and " ".join(_norm(w) for w in words[start:start + n]).strip() == phrase), None)
+            if hit:
+                del words[start:start + hit]
+                break
+
+    def intent(word):
+        pieces = _norm(word).split()
+        return bool(pieces) and all(p in INTENT for p in pieces)
+
+    while words and intent(words[0]):
+        words.pop(0)
+    while words and intent(words[-1]):
+        words.pop()
+    name = " ".join(words).strip(" ,;:\"'")
+    if not name or len(name) > MAX_FIELD or len(words) > MAX_TITLE_WORDS or not re.search(r"[A-Za-z0-9]", name):
+        return None
+    return name
+
+
+def _did_you_mean(ctx, name):
+    """{title, href} for the closest title (storm titles first, then Netflix's Top 10 index) at ratio >= 0.8, or None.
+    A storm links to its page; an index title has no page of its own, so href is None."""
+    key = _norm(name)
+    if len(key) < 3:
+        return None
+    pool = {}
+    for item in ctx["storms"]:
+        title = item["summary"]["title"]
+        for variant in dict.fromkeys([_norm(title), _norm(title.split(":")[0])]):
+            pool.setdefault(variant, (title, f"#/storm/{item['summary']['id']}"))
+    loaded = ctx.get("titles")
+    if loaded is not None:
+        for k, recs in loaded[1].items():
+            pool.setdefault(k, (recs[0]["show"], None))
+    close = difflib.get_close_matches(key, sorted(pool), n=1, cutoff=DID_YOU_MEAN_CUTOFF)
+    if not close:
+        return None
+    title, href = pool[close[0]]
+    return {"title": title, "href": href}
 
 
 def _step(tool, inp, ok, note):
@@ -468,19 +526,27 @@ def answer(question, ctx):
     if country and not [t for t in _mask(norm, country[2]).split() if t not in COUNTRY_OK]:
         return _done("country", steps, _country_answer(ctx, country, steps))
 
-    # f) a forecast question about a title Netflix never charted: answer it as asked, then point at this week's breakouts
+    # f) a forecast-style question about a title Netflix never charted: answer it as asked, suggest the nearest
+    #    title, then point at this week's breakouts
     m = WHERE_NEXT.match(raw)
-    if m and len(m.group("title")) <= MAX_FIELD:
-        name = m.group("title").strip(" \"'")
+    name = m.group("title").strip(" \"'") if m and len(m.group("title")) <= MAX_FIELD else _unknown_title(raw, country)
+    if name:
         since = ctx["titles"][0]["since"][:4] if ctx.get("titles") else "2024"
         steps.append(_step("understand", None, True, f"Next countries for {name}."))
         steps.append(_step("title_lookup", name, False, f"{name} is not in Netflix's Top 10 in any country since {since}."))
+        mean = _did_you_mean(ctx, name)
+        if mean:
+            steps.append(_step("did_you_mean", name, True, f"The closest title is {mean['title']}."))
         links = _breakout_links(ctx)
         picks = ", ".join(link["label"] for link in links)
-        msg = (f"{name} has not been in Netflix's Top 10 in any country since {since}, so there is no breakout to forecast. "
-               f"AFTERSHOCK follows titles that have just broken out on Netflix" + (f"; this week's include {picks}." if picks else "."))
-        done = _done("forecast", steps, {"kind": "help", "message": msg})
-        done["links"] = links
+        msg = f"{name} has not been in Netflix's Top 10 in any country since {since}, so there is no breakout to forecast."
+        if mean:
+            msg += f" Did you mean {mean['title']}?"
+        if country:
+            msg += f" For {country[1]}, ask \"What is heading to {country[1]}?\"."
+        msg += " AFTERSHOCK follows titles that have just broken out on Netflix" + (f"; this week's include {picks}." if picks else ".")
+        done = _done("forecast", steps, {"kind": "help", "message": msg, "did_you_mean": mean})
+        done["links"] = ([{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []) + links
         return done
 
     # g) fallback

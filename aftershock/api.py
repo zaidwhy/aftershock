@@ -82,15 +82,15 @@ def _hero(items, featured=None):
     picked = _featured_hero(items, featured) if featured else None
     if picked:
         summ, row, top, places = picked
-        confirmed = (row.get("plan") or {}).get("confirmed") or []
         meta = summ.get("meta") or {}
         origin_year = int(summ["origin_week"][:4]) if summ.get("origin_week") else None
         return {"id": summ["id"], "title": summ["title"], "origin_countries": summ["origin_countries"],
                 "year": meta.get("year"), "genres": meta.get("genres") or [],
                 "just_added": bool(meta.get("year") and origin_year and origin_year - meta["year"] > 1),
                 "country": top["name"], "code": top["code"], "probability": top["probability"], "why": top.get("why"),
-                "artists": [c["name"] for c in confirmed if c["domain"] == "artist"][:3],
-                "brands": [c["name"] for c in confirmed if c["domain"] == "brand"][:2],
+                "artists": launch_brief.partner_names(row, "artist", 3),
+                "brands": launch_brief.partner_names(row, "brand", 2),
+                "kit_first": launch_brief.kit_first(row),
                 "places": places[:3], "specificity": row.get("specificity")}
     best = None
     for item in items:

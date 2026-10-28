@@ -362,12 +362,18 @@ def test_unknown_storm_404_sentence(tmp_path, monkeypatch):
 def test_hero_follows_the_featured_plan_with_its_confirmed_names():
     detail = {"launch_kit": [{"code": "SE", "kit": {"artist": [{"name": "Kit Artist"}]}, "hotspots": {"places": ["Gothenburg"]},
                               "plan": {"confirmed": [{"domain": "artist", "name": "Veronica Maggio", "both": False},
-                                                     {"domain": "brand", "name": "Volvo", "both": False}]}}],
+                                                     {"domain": "brand", "name": "Volvo", "both": False},
+                                                     {"domain": "brand", "name": "Spotify", "both": False}]}}],
               "spillover": {"forecasts": [{"code": "NO", "name": "Norway", "probability": 0.17, "why": "w"},
                                           {"code": "SE", "name": "Sweden", "probability": 0.14, "why": "v"}]}}
     summary = {"id": "nw", "title": "Nightwatch", "origin_countries": ["DK"], "origin_week": "2026-10-18",
                "top_forecast": {"code": "NO", "name": "Norway", "probability": 0.17, "why": "w"}}
     hero = api._hero([{"summary": summary, "detail": detail}], {"id": "nw", "code": "SE"})
     assert (hero["country"], hero["probability"], hero["artists"], hero["brands"]) == ("Sweden", 0.14, ["Veronica Maggio"], ["Volvo"])
+    # With a title-specific kit the home example follows the brief: Qloo's own kit first, then the confirmed AI names.
+    detail["launch_kit"][0] |= {"specificity": 0.9, "generic": False}
+    hero = api._hero([{"summary": summary, "detail": detail}], {"id": "nw", "code": "SE"})
+    assert hero["artists"] == ["Kit Artist", "Veronica Maggio"] and hero["kit_first"] is True
+    assert "Spotify" not in hero["brands"]
     # An unknown featured plan falls back to the top-forecast rule; Norway has no kit row here, so nothing qualifies.
     assert api._hero([{"summary": summary, "detail": detail}], {"id": "missing", "code": "SE"}) is None
