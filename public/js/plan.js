@@ -52,7 +52,7 @@ export function briefMarkdown(b, url) {
     : " (Qloo's kit)");
   const group = (gs) => gs.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) => p.name + mark(p))), ""]);
   const { partners, watches } = splitPartners(b.partners);
-  return [`# Launch brief: ${b.title} in ${b.country}`, "", ...(b.window ? [`*${b.window}.*`, ""] : []), b.headline, "",
+  return [`# Launch brief: ${b.title} in ${b.country}`, "", ...(b.window ? [`*${b.window}.*`, ""] : []), b.headline, "", ...(b.scale ? [b.scale, ""] : []),
     `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
     ...((b.moves || []).length ? ["## This week's moves", ...(b.moves || []).map((m) => `- **${m.buyer}:** ${m.text}`), ""] : []),
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
@@ -149,6 +149,7 @@ function briefCard(st, made, row) {
     b.window ? h("p", { class: "plan-window" }, b.window) : null,
     statTiles(b, row),
     h("p", { class: "plan-headline" }, b.headline),
+    b.scale ? h("p", { class: "plan-note" }, b.scale) : null,
     h("section", { "aria-labelledby": "bs-sum" },
       h("h3", { id: "bs-sum" }, "Summary"), h("p", null, b.summary), h("p", { class: "plan-note mono" }, note)),
     (b.moves || []).length ? h("section", { "aria-labelledby": "bs-moves" },

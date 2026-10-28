@@ -30,6 +30,9 @@ MAX_CALLS = 6
 BACKTEST_AUC = 0.817
 # data/results/lead_time.json: of the 131 top-3 picks that charted in the backtest, 117 did so one week after the breakout week.
 LEAD_CHARTED, LEAD_ONE_WEEK = 131, 117
+# data/results/spillover_backtest.json: 758 of 76,760 held-out country-breakout pairs charted within the horizon, so a
+# bare "14%" reads as weak unless it is set against the roughly 1% a typical country gets.
+BASE_CHARTED, BASE_PAIRS = 758, 76760
 DOMAIN_LABELS = {"artist": "Artists", "tv_show": "TV shows", "movie": "Films", "brand": "Brands"}
 # Artists and brands are who you approach; shows and films say what the audience watches (creative and ad targeting).
 PARTNER_DOMAINS = ("artist", "brand")
@@ -49,6 +52,16 @@ _warned = []
 def _row(detail, code):
     return next((r for r in detail.get("launch_kit") or [] if r.get("code") == code and r.get("kit")
                  and any(r["kit"].values())), None)
+
+
+def scale_line(probability):
+    """The chance set against the backtest's base rate, or None when it is not at least twice that rate."""
+    base = BASE_CHARTED / BASE_PAIRS
+    if probability < 2 * base:
+        return None
+    return (f"For scale: a typical country charts a given breakout about {_pct(base)} of the time "
+            f"({BASE_CHARTED:,} of {BASE_PAIRS:,} held-out country-breakout pairs), so {_pct(probability)} is about "
+            f"{round(probability / base)} times that.")
 
 
 def _pct(p):
@@ -285,6 +298,7 @@ def brief(detail, code):
            "horizon_weeks": horizon,
            "headline": f"{title} has a {_pct(fc['probability'])} chance of charting in {country} within {horizon} "
                        f"weeks (rank {rank} of {len(forecasts)}).",
+           "scale": scale_line(fc["probability"]),
            "kit_scope": "countrywide" if generic else "title-specific",
            "partner_basis": "qloo_kit_first" if lead and use_plan else "ai_confirmed" if use_plan else "qloo_kit",
            "kit_lead": kit_lead(row),

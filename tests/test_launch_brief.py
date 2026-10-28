@@ -229,3 +229,10 @@ def test_no_overlap_states_the_decision_and_adds_no_caveat():
                                         "quick-turn activation idea.")
     assert made["brief"]["event_ideas"] == []
     assert not any("Activation ideas" in a for a in made["brief"]["avoid"])
+
+
+def test_scale_line_sets_the_chance_against_the_base_rate():
+    from aftershock.launch_brief import scale_line
+    assert scale_line(0.1412).endswith("so 14% is about 14 times that.")
+    assert "758 of 76,760" in scale_line(0.1412)
+    assert scale_line(0.015) is None  # under twice the base rate: no line, rather than a flattering-sounding 1x
