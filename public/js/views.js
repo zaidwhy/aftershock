@@ -1,4 +1,4 @@
-import { h } from "./dom.js";
+import { h, s } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm, getScorecard, getReplays, getLedger, isMock } from "./api.js";
 import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
@@ -55,6 +55,7 @@ export function renderHome(root, isCurrent, followId = null) {
   const mapBox = h("div", null);
   const agentBox = h("p", { class: "agent-line", hidden: true });
   const planCta = h("a", { class: "btn btn-primary", href: "#/plan" }, "Plan a launch");
+  const leadLine = h("p", { class: "lead-line", hidden: true });
   defaultPlan().then((d) => {
     if (!isCurrent() || !d) return;
     planCta.href = `#/plan/${encodeURIComponent(d.id)}/${encodeURIComponent(d.code)}`;
@@ -69,6 +70,7 @@ export function renderHome(root, isCurrent, followId = null) {
           h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next, and what travels with it?")),
           h("p", { class: "plan-cta" }, planCta),
           h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to pair it with there: the artists and brands that title's audience loves in each country, and the cities where that audience lives. Every forecast is locked publicly before the outcome exists."),
+          leadLine,
           h("ul", { class: "hero-links" },
             h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")),
             h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find artists from outside a show's generation")),
@@ -96,6 +98,13 @@ export function renderHome(root, isCurrent, followId = null) {
     const bt = sc.backtest || {};
     const kits = st.storms.filter((x) => x.has_kit).length;
     const locked = (sc.spillover?.locked ?? 0) + (sc.ripple?.locked ?? 0);
+    const lt = sc.lead_time;
+    if (lt?.model?.lead_weeks?.median != null) {
+      leadLine.append(`Backtest: in ${whole(lt.model.breakouts)} past breakouts it never saw, one of its top ${lt.top_k} countries charted the title ${share1(lt.model.hit_rate)} of the time `,
+        `(${share1(lt.baseline.hit_rate)} for the ${lt.top_k} countries that chart most titles), a median of ${weeks(lt.model.lead_weeks.median)} after the breakout. `,
+        h("a", { href: "#/scorecard", onclick: () => { wantWarning = true; } }, "How much warning it gives"));
+      leadLine.hidden = false;
+    }
     const items = [
       ["Forecasts locked", whole(locked), "forecasts locked publicly before the outcome"],
       sc.top_pick?.breakouts > 0 ? ["Top picks already charted", `${sc.top_pick.top_pick_hits} of ${sc.top_pick.breakouts}`, `expected ${sc.top_pick.expected_hits} if calibrated`]
@@ -393,6 +402,64 @@ function kitCheckSection(sc) {
     h("ul", { class: "kit-examples" }, example("Title-specific", kc.example_specific), example("Countrywide", kc.example_generic)));
 }
 
+const share1 = (n) => (n == null ? "n/a" : `${(n * 100).toFixed(1)}%`);
+const weeks = (n) => `${n} ${n === 1 ? "week" : "weeks"}`;
+const COUNTRY = (code) => ISO[code]?.[1] || code;
+const dayLabel = (iso) => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]} ${iso.slice(0, 4)}`;
+let wantWarning = false;
+
+/** Grouped bars: for 1..horizon weeks of warning, the model's picks that charted (solid) and the baseline's (outlined). */
+function leadChart(lt) {
+  const hz = lt.horizon_weeks, dist = (a) => lt[a].lead_weeks.distribution;
+  const max = Math.max(1, ...["model", "baseline"].flatMap((a) => Object.values(dist(a))));
+  const W = 360, left = 56, top = 14, rowH = 44, H = top + hz * rowH + 4, scale = (W - left - 44) / max;
+  const g = [];
+  for (let w = 1; w <= hz; w++) {
+    const y = top + (w - 1) * rowH;
+    g.push(s("text", { x: 0, y: y + 20, class: "db-label" }, `${w} wk`));
+    [["model", 0, "lw-model"], ["baseline", 17, "lw-base"]].forEach(([arm, dy, cls]) => {
+      const n = dist(arm)[String(w)] ?? 0;
+      g.push(s("rect", { x: left, y: y + dy, width: Math.max(n * scale, 1.5), height: 14, class: cls }),
+        s("text", { x: left + Math.max(n * scale, 1.5) + 6, y: y + dy + 11, class: "db-vals" }, String(n)));
+    });
+  }
+  const label = `Bar chart of weeks of warning for picks that charted, model against baseline. ${Array.from({ length: hz }, (_, i) => `${i + 1} week${i ? "s" : ""}: model ${dist("model")[String(i + 1)] ?? 0}, baseline ${dist("baseline")[String(i + 1)] ?? 0}`).join("; ")}.`;
+  return h("div", { class: "db-box" },
+    h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Model's top 3 (solid)", h("span", { class: "dot dot-placebo" }), "Baseline: the 3 countries that chart most titles (outlined)"),
+    s("svg", { viewBox: `0 0 ${W} ${H}`, class: "lw-svg", role: "img", "aria-label": label }, g));
+}
+
+function caseStudy(c) {
+  const [title, season] = c.title;
+  const shown = season && season !== "N/A" && !season.startsWith(title) ? `${title}: ${season}` : title;
+  const picks = c.top3.map((p) => `${COUNTRY(p.country)} (${Math.round(p.probability * 100)}%${p.charted_after_weeks == null ? ", did not chart" : `, charted ${weeks(p.charted_after_weeks)} later`})`);
+  const hit = c.top3.some((p) => p.charted_after_weeks != null);
+  const others = c.all_countries_charted_within_horizon.length ? `Within 4 weeks it charted in ${c.all_countries_charted_within_horizon.map(COUNTRY).join(", ")}.` : "Within 4 weeks it charted nowhere else.";
+  return h("li", null,
+    h("strong", null, shown), ` (${c.category === "Films" ? "film" : "series"}, broke out ${dayLabel(c.breakout_week)} in ${c.origin_countries.map(COUNTRY).join(", ")}). `,
+    h("span", { class: "mono" }, hit ? "Hit. " : "Miss. "), `Top 3 forecast: ${picks.join("; ")}. ${others}`);
+}
+
+/** How much warning the held-out backtest says a distributor would have had; nothing without the measurement. */
+function warningSection(sc) {
+  const lt = sc.lead_time;
+  if (!lt) return null;
+  const m = lt.model, b = lt.baseline, spread = lt.breakouts_that_spread_at_all;
+  return h("section", { "aria-labelledby": "warning-h" },
+    h("h2", { id: "warning-h" }, "How much warning it gives"),
+    h("p", null, `In ${whole(m.breakouts)} breakouts the model had not seen, at least one of its top ${lt.top_k} countries charted the title within ${lt.horizon_weeks} weeks `,
+      h("strong", { class: "mono" }, `${share1(m.hit_rate)} of the time`), ` (${m.hit_breakouts} breakouts), against ${share1(b.hit_rate)} (${b.hit_breakouts}) for the ${lt.top_k} countries that chart the most titles. `,
+      `Of the ${whole(m.picks)} top-${lt.top_k} picks, ${share1(m.per_pick_precision)} charted (${share1(b.per_pick_precision)} for the baseline).`),
+    spread != null ? h("p", null, `Most breakouts do not spread at all: only ${spread} of ${whole(m.breakouts)} charted in any other country within ${lt.horizon_weeks} weeks. The top ${lt.top_k} caught ${m.hit_breakouts} of those ${spread}; the baseline caught ${b.hit_breakouts}.`) : null,
+    m.lead_weeks.median != null ? h("p", null, "When a pick did chart, it did so a median of ", h("strong", { class: "mono" }, weeks(m.lead_weeks.median)),
+      ` after the breakout week (mean ${m.lead_weeks.mean.toFixed(1)}). That is the warning a distributor or promoter would have had.`) : null,
+    m.lead_weeks.median != null ? leadChart(lt) : null,
+    h("h3", null, "Three cases, chosen by a rule fixed before looking"),
+    h("p", { class: "muted" }, `The rule: ${lt.case_study_rule}. Misses are included.`),
+    h("ul", { class: "kit-examples" }, lt.case_studies.map(caseStudy)),
+    h("p", { class: "muted" }, "A backtest on history-only forecasts (no Qloo data), March to October 2026: each forecast made from the breakout week using only earlier breakouts. It is not the live ledger."));
+}
+
 /** The pre-registered Qloo-versus-LLM result; an honest empty slot until the scored run exists. */
 function llmSection(sc) {
   const ex = sc.kit_experiment;
@@ -458,6 +525,7 @@ export function renderScorecard(root, isCurrent) {
       h("tbody", null, rows)));
     add(box,
       kitCheckSection(sc),
+      warningSection(sc),
       llmSection(sc),
       h("section", { "aria-labelledby": "bt-h" },
         h("h2", { id: "bt-h" }, "Where a breakout goes next: the country backtest"),
@@ -500,6 +568,7 @@ export function renderScorecard(root, isCurrent) {
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
         h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test collected 490 songs from 34 soundtracks; 229 artists in 24 of those shows (4 released 2024 or later) had enough Qloo audience profiles to be scored, where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+    if (wantWarning) { wantWarning = false; document.getElementById("warning-h")?.scrollIntoView(); }
   });
 }
 

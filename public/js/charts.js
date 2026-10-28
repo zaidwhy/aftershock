@@ -302,19 +302,19 @@ export function dumbbell(rows, label) {
 
 /** Small per-country map of where the title's audience concentrates: outline fitted to the box,
  *  one dot per heatmap cell (opacity by weight). Territories with no 110m outline fit the cells' bounds. */
-export async function hotspotMap(code, cells) {
+export async function hotspotMap(code, cells, { places = [], width = 260, height = 180, label } = {}) {
   if (!window.d3 || !window.topojson || !cells?.length) return null;
   const { d3, topojson } = window;
   if (!hotspotMap.world) hotspotMap.world = fetch(WORLD_URL).then((r) => { if (!r.ok) throw new Error("atlas"); return r.json(); });
   const world = await hotspotMap.world;
-  const W = 260, H = 180, pad = 8;
+  const W = width, H = height, pad = places.length ? 18 : 8;
   const numeric = ISO[code]?.[0];
   const feat = topojson.feature(world, world.objects.countries).features.find((f) => +f.id === numeric);
   const points = { type: "MultiPoint", coordinates: cells.map((c) => [c[1], c[0]]) };
   const proj = d3.geoMercator();
   const path = d3.geoPath(proj);
   const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("class", "hs-map").attr("role", "img")
-    .attr("aria-label", `Map of the ${cells.length} strongest audience cells in ${ISO[code]?.[1] || code}.`);
+    .attr("aria-label", label || `Map of the ${cells.length} strongest audience cells in ${ISO[code]?.[1] || code}.`);
   if (feat) {
     // Keep only the polygons that hold cells, so far-flung parts (Alaska, French Guiana) do not shrink the outline.
     const g = feat.geometry;
@@ -333,5 +333,17 @@ export async function hotspotMap(code, cells) {
   svg.append("g").selectAll("circle").data(cells.filter((c) => proj([c[1], c[0]]))).join("circle")
     .attr("cx", (c) => proj([c[1], c[0]])[0]).attr("cy", (c) => proj([c[1], c[0]])[1])
     .attr("r", 2.6).attr("class", "hs-dot").attr("fill-opacity", (c) => (0.15 + 0.8 * c[2]).toFixed(2));
+  // Named places: a numbered dot (the numbers are listed with the names beside the map); a place with an event idea
+  // also gets a ring, so shape and text, not colour, carry the meaning.
+  const named = places.map((p) => ({ ...p, xy: proj([p.cell[1], p.cell[0]]) })).filter((p) => p.xy && p.xy.every(Number.isFinite));
+  if (named.length) {
+    const pg = svg.append("g").attr("class", "hs-places-g");
+    named.forEach((p, i) => {
+      const [x, y] = p.xy;
+      if (p.event) pg.append("circle").attr("cx", x).attr("cy", y).attr("r", 12.5).attr("class", "hs-ring");
+      pg.append("circle").attr("cx", x).attr("cy", y).attr("r", 8).attr("class", "hs-place");
+      pg.append("text").attr("x", x).attr("y", y + 4).attr("text-anchor", "middle").attr("class", "hs-name").text(i + 1);
+    });
+  }
   return svg.node();
 }

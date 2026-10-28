@@ -57,6 +57,17 @@ Every backtest and test number here comes from a script in this repo and a file 
 | Each country's general rate | 0.558 | 0.015 |
 | Uniform | 0.500 | 0.012 |
 
+**How much warning the spillover forecast gives** (`scripts/measure_lead_time.py` -> `lead_time.json`; a backtest on history-only forecasts, same 829 held-out breakouts, split, model and 4-week horizon as above; the forecast week is the breakout week and the model is fit on earlier breakouts only). Top-3 hit rate is the share of breakouts where at least one of the three forecast countries charted the title within 4 weeks; the baseline is the three countries with the highest overall join rate (the "general rate" row above: Maldives, Singapore, Malaysia for nearly every title).
+
+| | Model's top 3 | Baseline top 3 |
+|---|---|---|
+| Breakouts with at least one hit | 81 of 829 (9.8%) | 34 of 829 (4.1%) |
+| Per-pick precision | 131 of 2,487 (5.3%) | 49 of 2,487 (2.0%) |
+| Lead time, median / mean (weeks) | 1 / 1.20 | 1 / 1.39 |
+| Picks that charted after 1 / 2 / 3 / 4 weeks | 117 / 6 / 4 / 4 | 39 / 5 / 1 / 4 |
+
+Only 113 of the 829 breakouts charted in any other country within 4 weeks, so the ceiling is low: the model's top 3 caught 81 of those 113, the baseline 34. Lead time counts only picks that charted (a miss has no lead time) and is measured from the breakout week, so most of the warning is one week. Three case studies were chosen by a rule fixed in the script before the results were read (the three held-out breakouts with the highest top-1 probability); they are on the Scorecard and in `lead_time.json`, and two of the three are misses.
+
 Does Qloo help? `scripts/test_spillover_qloo.py` added each title's location-conditioned Qloo affinity as features on a 200-breakout subset (1,432 Qloo calls): AUC 0.8188 history-only vs 0.8182 with Qloo, so no lift. Qloo returned an in-country value for only 2.8% of title-country pairs (975 of 35,344, `qloo_value_coverage` in the same file); top-5 precision was identical (0.052) with and without Qloo, and 147 of the 200 test breakouts resolved in Qloo. The country forecast is therefore history-only.
 
 **RIPPLE.** Ground truth: 490 songs from the official song soundtracks of 34 titles in MusicBrainz (`scripts/build_placements_musicbrainz.py` -> `data/placements.csv`; release and source per title in `data/placements_sources.csv`), with Wikipedia spikes in `data/ripple_truth.csv`. A placement here means "on the title's official song soundtrack", which is broader than "used in a scene". Main test (`scripts/test_ripple.py --outcome artist` -> `ripple_test_artist.json`): one row per artist per show, artists without a Qloo audience profile excluded, 229 artists in 24 shows with at least 4 scored artists. Mean within-show Spearman with the log spike, one-sided permutation p-value:

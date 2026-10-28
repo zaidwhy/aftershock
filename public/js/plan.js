@@ -2,6 +2,7 @@
 // The steps and the brief are built by aftershock/launch_brief.py and ride on each launch_kit row as `brief`.
 import { h, loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm } from "./api.js";
+import { hotspotMap } from "./charts.js";
 
 const STEP_MS = 450;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -50,18 +51,57 @@ function stepCard(s, n) {
     s.decision ? h("p", { class: "plan-decision" }, h("span", { class: "plan-rule mono" }, "Rule applied"), " ", s.decision) : null);
 }
 
-function briefCard(st, made) {
+/** Four stat tiles for the top of the brief, in the home page's proof-tile style. */
+function statTiles(b, row) {
+  const plan = row.plan || {}, dropped = plan.dropped || {};
+  const proposed = (plan.confirmed?.length ?? 0) + (dropped.not_placed ?? 0) + (dropped.not_in_qloo ?? 0);
+  const ideas = (b.event_ideas || []).length;
+  const checked = b.partner_basis === "ai_confirmed"
+    ? [`${plan.confirmed.length} of ${proposed}`, "AI picks confirmed by Qloo"]
+    : ["Qloo's own kit", "fewer than 3 AI picks confirmed"];
+  const tiles = [
+    [b.chance_label, `chance to chart in ${b.horizon_weeks} weeks`],
+    [`${b.rank} of ${b.of_countries}`, "countries, ranked by chance"],
+    checked,
+    [String(ideas), ideas === 1 ? "event idea" : "event ideas"],
+  ];
+  return h("div", { class: "proof plan-tiles", role: "group", "aria-label": "Brief at a glance" },
+    tiles.map(([v, n]) => h("div", { class: "proof-item" }, h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, n))));
+}
+
+/** Hotspot cities as labelled dots on the country map (the storm page's renderer); event-idea cities get a ring.
+ *  The same facts follow as text, so the map is never the only carrier. Nothing without named cities with coordinates. */
+function cityMap(b, row) {
+  const hs = row.hotspots || {};
+  const names = (hs.places || []).slice(0, b.cities.length);
+  const cells = hs.cells || [];
+  if (!names.length || !cells.length || (hs.place_cells || []).length < names.length) return null;
+  const ideaCities = new Map();
+  (b.event_ideas || []).forEach((e) => e.cities.forEach((c) => ideaCities.set(c, [...(ideaCities.get(c) || []), e.artist])));
+  const places = names.map((name, i) => ({ name, cell: hs.place_cells[i], event: ideaCities.has(name) }));
+  const ringed = places.filter((p) => p.event).map((p) => `${p.name} (${ideaCities.get(p.name).join(", ")})`);
+  const summary = `Map of ${b.country} with ${names.length} numbered hotspot ${names.length === 1 ? "city" : "cities"}: ${names.map((n, i) => `${i + 1} ${n}`).join(", ")}.${ringed.length ? ` Ringed, with an event idea: ${ringed.join("; ")}.` : " No city has an event idea."}`;
+  const box = h("div", { class: "plan-map" });
+  hotspotMap(b.code, cells, { places, width: 440, height: 360, label: summary }).then((svg) => { if (svg) { svg.classList.add("hs-map-brief"); box.prepend(svg); } }).catch(() => {});
+  box.append(h("p", { class: "plan-note mono" }, "Numbered dots: ", h("strong", null, names.map((n, i) => `${i + 1} ${n}`).join(", ")), ". ",
+    ringed.length ? ["Ring means an event idea: ", h("strong", null, ringed.join("; ")), "."] : "No event idea in these cities."));
+  return box;
+}
+
+function briefCard(st, made, row) {
   const b = made.brief;
   const note = b.summary_source === "template" ? "Template summary, no AI wrote it." : "Written by AI from this brief; every name and number in it checked against the brief.";
   return h("article", { class: "plan-brief", "aria-labelledby": "brief-h" },
     h("p", { class: "eyebrow" }, "Deliverable"),
     h("h2", { id: "brief-h" }, `Launch brief: ${b.title} in ${b.country}`),
+    statTiles(b, row),
     h("p", { class: "plan-headline" }, b.headline),
     h("section", { "aria-labelledby": "bs-sum" },
       h("h3", { id: "bs-sum" }, "Summary"), h("p", null, b.summary), h("p", { class: "plan-note mono" }, note)),
     h("section", { "aria-labelledby": "bs-cities" },
       h("h3", { id: "bs-cities" }, "Where to start"),
-      b.cities.length ? h("ul", null, b.cities.map((c) => h("li", null, c))) : h("p", null, "Qloo returned no named places for this country.")),
+      b.cities.length ? h("ul", null, b.cities.map((c) => h("li", null, c))) : h("p", null, "Qloo returned no named places for this country."),
+      cityMap(b, row)),
     (b.event_ideas || []).length ? h("section", { "aria-labelledby": "bs-events" },
       h("h3", { id: "bs-events" }, "Event ideas"),
       h("p", { class: "plan-note mono" }, "Cities where Qloo's map of the title's audience and of the artist's audience overlap."),
@@ -160,7 +200,7 @@ export function renderPlan(root, isCurrent, id, code) {
     add(body, h("h2", { class: "plan-run-h no-print" }, `The agent's steps: ${st.title} in ${row.brief.brief.country}`), region);
     const finish = () => {
       if (!isCurrent()) return;
-      add(body, briefCard(st, made), controls(st, made));
+      add(body, briefCard(st, made, row), controls(st, made));
     };
     let shown = 0;
     const next = () => {

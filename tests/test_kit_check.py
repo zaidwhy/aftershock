@@ -48,3 +48,22 @@ def test_scorecard_adds_the_experiment_only_when_its_file_exists(tmp_path, monke
     out = api.scorecard()["kit_experiment"]
     assert out["verdict"] == "no difference shown" and out["grounding_share"] == 0.4 and out["scored_pairs"] == 80
     assert (out["grounded_pairs"], out["grounded_qloo"], out["grounded_llm"]) == (51, 0.57, 0.83)
+
+
+def test_scorecard_carries_lead_time_only_when_its_file_exists(tmp_path, monkeypatch):
+    private = tmp_path / "private"
+    private.mkdir()
+    (private / "scorecard.json").write_text(json.dumps({"data_week": "2026-10-18"}), encoding="utf-8")
+    monkeypatch.setattr(api, "PRIVATE", private)
+    monkeypatch.setattr(api, "ROOT", tmp_path)
+    assert "lead_time" not in api.scorecard()
+    (tmp_path / "data" / "results").mkdir(parents=True)
+    arm = {"breakouts": 10, "hit_breakouts": 3, "hit_rate": 0.3, "picks": 30, "picks_charted": 4,
+           "per_pick_precision": 4 / 30, "lead_weeks": {"median": 2, "mean": 2.0, "distribution": {"2": 4}}}
+    (tmp_path / "data" / "results" / "lead_time.json").write_text(json.dumps({
+        "horizon_weeks": 4, "top_k": 3, "test_events": 10, "breakouts_that_spread_at_all": 5, "model": arm,
+        "baseline": {**arm, "hit_rate": 0.1}, "case_studies": [{"title": ["T", "N/A"]}], "extra_field": "dropped"}), encoding="utf-8")
+    out = api.scorecard()["lead_time"]
+    assert out["model"]["hit_rate"] == 0.3 and out["baseline"]["hit_rate"] == 0.1
+    assert out["model"]["lead_weeks"]["median"] == 2 and out["case_studies"][0]["title"] == ["T", "N/A"]
+    assert "extra_field" not in out

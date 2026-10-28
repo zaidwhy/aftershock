@@ -188,7 +188,21 @@ def scorecard():
     experiment = ROOT / "data" / "results" / "kit_experiment.json"
     if experiment.exists():
         body = {**body, "kit_experiment": _kit_experiment(json.loads(experiment.read_text(encoding="utf-8")))}
+    lead = ROOT / "data" / "results" / "lead_time.json"
+    if lead.exists():
+        body = {**body, "lead_time": _lead_time(json.loads(lead.read_text(encoding="utf-8")))}
     return body
+
+
+def _lead_time(raw):
+    """The held-out lead-time measurement, reduced to what the scorecard and home page show (titles and countries only)."""
+    keep = ("breakouts", "hit_breakouts", "hit_rate", "picks", "picks_charted", "per_pick_precision", "lead_weeks")
+    return {"horizon_weeks": raw.get("horizon_weeks"), "top_k": raw.get("top_k"), "test_events": raw.get("test_events"),
+            "breakouts_that_spread_at_all": raw.get("breakouts_that_spread_at_all"),
+            "model": {k: (raw.get("model") or {}).get(k) for k in keep},
+            "baseline": {k: (raw.get("baseline") or {}).get(k) for k in keep},
+            "baseline_most_common_picks": raw.get("baseline_most_common_picks"),
+            "case_study_rule": raw.get("case_study_rule"), "case_studies": raw.get("case_studies") or []}
 
 
 def _kit_experiment(raw):

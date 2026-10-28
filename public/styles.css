@@ -472,6 +472,13 @@ dd { margin: 0; font-size: 1.1rem; }
 .plan-partners dt { font: 400 0.75rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding-top: 3px; }
 .plan-partners dd { margin: 0; }
 .plan-both { font: 400 0.72rem var(--mono); color: var(--ink-soft); }
+.plan-tiles { margin: 14px 0 16px; }
+.plan-tiles .proof-v { font-size: clamp(1.4rem, 2.6vw, 1.9rem); overflow-wrap: anywhere; }
+.plan-map { margin: 8px 0 12px; }
+.hs-map-brief { max-width: 440px; margin-top: 6px; }
+.hs-place { fill: var(--ink); stroke: var(--paper); stroke-width: 1.2; }
+.hs-ring { fill: none; stroke: var(--accent); stroke-width: 2; }
+.hs-name { font: 700 11px var(--sans); fill: var(--paper); }
 .plan-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 0; }
 @media (max-width: 480px) { .plan-partners > div { grid-template-columns: 1fr; } .plan-brief { padding: 16px 14px 4px; } }
 @keyframes plan-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -481,4 +488,15 @@ dd { margin: 0; font-size: 1.1rem; }
   body { background: #fff; color: #000; display: block; }
   main { padding: 0; max-width: none; }
   .plan-brief { border: 0; padding: 0; max-width: none; animation: none; }
+  .hs-name { fill: #fff; }
+  .hs-place { fill: #000; stroke: #fff; }
+  .hs-outline { fill: #f3f3f3; stroke: #555; }
+  .hs-dot { fill: #b33619; }
+  .hs-ring { stroke: #b33619; }
 }
+
+/* ---- lead time: home line and scorecard chart */
+.lead-line { font-size: 0.95rem; max-width: 62ch; margin: 0 0 14px; padding-left: 12px; border-left: 3px solid var(--accent); }
+.lw-svg { display: block; width: 100%; max-width: 420px; height: auto; }
+.lw-model { fill: var(--accent); stroke: var(--ink); stroke-width: 1; }
+.lw-base { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }

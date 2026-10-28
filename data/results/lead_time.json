@@ -1,0 +1,163 @@
+{
+  "note": "Backtest on history-only forecasts (no Qloo data). Forecast week = breakout week; model fit on earlier breakouts only.",
+  "horizon_weeks": 4,
+  "top_k": 3,
+  "cutoff": "2026-03-22",
+  "last_week": "2026-10-18",
+  "train_events": 8696,
+  "test_events": 829,
+  "baseline_picks": "the 3 countries with the highest overall chart-join rate, skipping the title's origin countries",
+  "baseline_most_common_picks": [
+    [
+      "MV",
+      828
+    ],
+    [
+      "SG",
+      791
+    ],
+    [
+      "MY",
+      774
+    ],
+    [
+      "VN",
+      64
+    ],
+    [
+      "HK",
+      30
+    ]
+  ],
+  "breakouts_that_spread_at_all": 113,
+  "model": {
+    "breakouts": 829,
+    "hit_breakouts": 81,
+    "hit_rate": 0.097708082026538,
+    "picks": 2487,
+    "picks_charted": 131,
+    "per_pick_precision": 0.052673904302372336,
+    "lead_weeks": {
+      "median": 1,
+      "mean": 1.1984732824427482,
+      "distribution": {
+        "1": 117,
+        "2": 6,
+        "3": 4,
+        "4": 4
+      }
+    }
+  },
+  "baseline": {
+    "breakouts": 829,
+    "hit_breakouts": 34,
+    "hit_rate": 0.04101326899879373,
+    "picks": 2487,
+    "picks_charted": 49,
+    "per_pick_precision": 0.019702452754322478,
+    "lead_weeks": {
+      "median": 1,
+      "mean": 1.3877551020408163,
+      "distribution": {
+        "1": 39,
+        "2": 5,
+        "3": 1,
+        "4": 4
+      }
+    }
+  },
+  "case_study_rule": "the 3 held-out breakouts with the highest top-1 forecast probability (ties: earlier week, then title)",
+  "case_studies": [
+    {
+      "title": [
+        "Kesari",
+        "N/A"
+      ],
+      "category": "Films",
+      "breakout_week": "2026-05-24",
+      "origin_countries": [
+        "PK"
+      ],
+      "top3": [
+        {
+          "country": "BD",
+          "probability": 0.3836,
+          "charted_after_weeks": null
+        },
+        {
+          "country": "MV",
+          "probability": 0.2894,
+          "charted_after_weeks": null
+        },
+        {
+          "country": "IN",
+          "probability": 0.2443,
+          "charted_after_weeks": null
+        }
+      ],
+      "all_countries_charted_within_horizon": []
+    },
+    {
+      "title": [
+        "Sheriff Labrador",
+        "Sheriff Labrador: Season 2"
+      ],
+      "category": "TV",
+      "breakout_week": "2026-09-06",
+      "origin_countries": [
+        "GT"
+      ],
+      "top3": [
+        {
+          "country": "EC",
+          "probability": 0.3099,
+          "charted_after_weeks": null
+        },
+        {
+          "country": "HN",
+          "probability": 0.2689,
+          "charted_after_weeks": null
+        },
+        {
+          "country": "BO",
+          "probability": 0.2166,
+          "charted_after_weeks": null
+        }
+      ],
+      "all_countries_charted_within_horizon": []
+    },
+    {
+      "title": [
+        "\u062f\u0631\u0648\u0628 \u0623\u0631\u064a\u0643\u0629",
+        "\u062f\u0631\u0648\u0628 \u0623\u0631\u064a\u0643\u0629: Season 1"
+      ],
+      "category": "TV",
+      "breakout_week": "2026-04-26",
+      "origin_countries": [
+        "KW"
+      ],
+      "top3": [
+        {
+          "country": "SA",
+          "probability": 0.2964,
+          "charted_after_weeks": 1
+        },
+        {
+          "country": "OM",
+          "probability": 0.1936,
+          "charted_after_weeks": 1
+        },
+        {
+          "country": "JO",
+          "probability": 0.1754,
+          "charted_after_weeks": null
+        }
+      ],
+      "all_countries_charted_within_horizon": [
+        "BH",
+        "OM",
+        "SA"
+      ]
+    }
+  ]
+}
