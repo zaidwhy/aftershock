@@ -13,6 +13,7 @@ from mcp.server.mcpserver import MCPServer
 
 from aftershock import artist_view
 from aftershock import ask as ask_agent
+from aftershock import grounded_plan
 from aftershock import launch_brief as brief_builder
 from aftershock import release_plan as release_planner
 from aftershock import titles as title_index
@@ -47,7 +48,10 @@ server = MCPServer(
 def _storms():
     if not STORMS.exists():
         return []
-    return json.loads(STORMS.read_text(encoding="utf-8"))["storms"]
+    storms = json.loads(STORMS.read_text(encoding="utf-8"))["storms"]
+    for item in storms:
+        grounded_plan.clean_rows(item.get("detail") or {})  # read-time place names, as the API serves them
+    return storms
 
 
 @server.tool(description="List this week's breakouts: titles that entered the Netflix Top 10 in 1 to 3 countries.")
@@ -130,6 +134,8 @@ def artist_opportunities(artist_name: str) -> dict:
     if not STORMS.exists():
         return {"error": "storms.json has not been generated yet; run scripts/run_forecasts.py"}
     data = json.loads(STORMS.read_text(encoding="utf-8"))
+    for item in data["storms"]:
+        grounded_plan.clean_rows(item.get("detail") or {})
     index = artist_view.build(data["storms"])
     want = artist_view.slugify(name) or name.casefold()
     found = next((a for a in index["artists"] if a["slug"] == want or a["name"].casefold() == name.casefold()), None)

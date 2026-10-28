@@ -12,6 +12,12 @@ from aftershock import api  # noqa: E402
 import export_static  # noqa: E402
 
 client = TestClient(api.app)
+
+
+@pytest.fixture(autouse=True)
+def no_metro_file():
+    """Overrides conftest's isolation: these tests compare the export with the API on the real local files, metro names
+    included, and the module-scoped `out` below is built once outside any per-test patch."""
 pytestmark = pytest.mark.skipif(not (api.PRIVATE / "storms.json").exists(), reason="forecast files not generated")
 
 

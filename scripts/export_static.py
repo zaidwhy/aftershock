@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from datetime import date, timedelta  # noqa: E402
 
-from aftershock import api, ledger, storm_archive  # noqa: E402
+from aftershock import api, grounded_plan, ledger, storm_archive  # noqa: E402
 from aftershock.netflix import first_entries, load_rows  # noqa: E402
 
 OUT = ROOT / "public" / "data"
@@ -80,7 +80,8 @@ def export(out=OUT):
     for week, sid, detail in storm_archive.all_storms(api.ARCHIVE):
         if sid not in current:
             current.add(sid)
-            _write(out / "storms" / f"{sid}.json", detail | {"archived_week": week})
+            # The API cleans an archived storm at read time (launch_brief.attach); the raw archive file would not be.
+            _write(out / "storms" / f"{sid}.json", grounded_plan.clean_rows(detail) | {"archived_week": week})
     artists = api.artists()
     _write(out / "artists.json", artists)
     for a in artists["artists"]:

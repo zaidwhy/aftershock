@@ -14,6 +14,7 @@ import logging
 
 import httpx
 
+from aftershock import metro_names
 from aftershock.hotspots import distance_km, heat_cells
 from aftershock.launch_brief import partner_artists
 from aftershock.launch_kit import name_key
@@ -51,6 +52,8 @@ def events_for_row(client, row, country_name):
     if not places or len(place_cells) < len(places):
         return {"events": events, "events_checked": checked}
     kit_artists = (row.get("kit") or {}).get("artist") or []
+    # Each overlap is found on the cell the place was named from, then named for its metro city (Lidingö -> Stockholm).
+    renamed = metro_names.relabel(places, place_cells, metro_names.load().get(row.get("code")) or [])[2]
     for pick in partner_artists(row)[:MAX_ARTISTS]:
         try:
             entity_id = _entity_id(client, pick["name"], kit_artists)
@@ -63,7 +66,7 @@ def events_for_row(client, row, country_name):
         if not cells:
             continue
         checked += 1
-        cities = overlap_cities(places, place_cells, cells)
+        cities = list(dict.fromkeys(renamed.get(c, c) for c in overlap_cities(places, place_cells, cells)))
         if cities:
             events.append({"artist": pick["name"], "cities": cities})
     return {"events": events, "events_checked": checked}

@@ -17,7 +17,7 @@ import os
 import httpx
 
 from aftershock import llm_kits
-from aftershock.hotspots import clean_place_name
+from aftershock import metro_names
 from aftershock.launch_kit import DOMAINS, name_key, repair_name
 from aftershock.qloo import QlooError, norm, resolve
 
@@ -55,18 +55,14 @@ def clean_plan(plan, title):
 
 
 def clean_rows(detail):
-    """Apply `clean_plan` to every launch-kit row of a storm detail, in place, and strip administrative wording
-    ("Lidingö kommun") from place names and event-idea cities, so stored names read well without a rerun;
-    returns detail."""
+    """Apply `clean_plan` to every launch-kit row of a storm detail, in place, and name hotspot places and event-idea
+    cities for the metro city (`metro_names`, which also strips administrative wording such as "Lidingö kommun"), so
+    stored names read well without a rerun; returns detail."""
+    metros = metro_names.load()
     for row in detail.get("launch_kit") or []:
         if row.get("plan"):
             row["plan"] = clean_plan(row["plan"], detail.get("title"))
-        hot = row.get("hotspots") or {}
-        if hot.get("places"):
-            hot["places"] = [clean_place_name(n) for n in hot["places"]]
-        for event in row.get("events") or []:
-            if event.get("cities"):
-                event["cities"] = [clean_place_name(n) for n in event["cities"]]
+        metro_names.relabel_row(row, metros)
     return detail
 
 
