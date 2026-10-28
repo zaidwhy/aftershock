@@ -2,6 +2,10 @@
 
 Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (Discord says keys live to 16 Nov); top 3 present on air 5 Nov.
 
+## Latest (29 Oct, ~03:30 IST): city names live; what is left is Zaid's
+
+Live and verified: hotspots named by Qloo destination popularity within 35 km (aftershock/metro_names.py, data/private/metro_names.json via scripts/build_metro_names.py; rerun it after a weekly run adds countries). Devpost draft, team brief (artifact v8 + PDF) and Q&A sheet updated. Netflix still shows 2026-10-18 as the latest week (checked 28 Oct 21:54 UTC). projects/aftershock-team/netflix_watch.sh now loops 130 x 15 min, rebuilds metro names before export and deploys with --scope syzayds-projects; starting it was blocked by the auto-mode classifier (it deploys), so Zaid starts it in his own terminal. Left for Zaid: start the watcher, video + voice-over, Devpost submit (draft 30 Oct 22:00 IST, final 31 Oct 06:00), Gemini key rotation, Mubaid reply and poll counts, the non-affiliation line decision.
+
 ## Latest (29 Oct, early): judge review applied, live and verified
 
 Cold judge review (avg ~6.4: Tech 7, Design 7, Impact 5, Idea 6.5) applied and deployed: chat routing (tour, names, privacy, fans-in-country, origin, aliases), Plan a release (Korean aka match, cross-type retry, region/home/goal, all-country scores, tiered world heatmap, venue filter, Kevin Hart example, shareable URL, staged progress, schedule from release month, "Why this ranking"), honest wording (locked before Netflix published the outcome; only streamer we found; artist pages third person; privacy footer), impact evidence (forecast vs busiest-countries baseline on home, who-uses-it decision table, brief "decision this supports" and per-claim evidence/gaps table). 415 tests incl. an ES-module parse test. Open: metro naming of hotspot cities (Lidingo -> Stockholm, 2-3 h), Zaid's call on re-adding a non-affiliation line, demo video (VIDEO_BRIEF.md), Mubaid reply, poll counts.
