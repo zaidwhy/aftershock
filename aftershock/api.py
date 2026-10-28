@@ -118,7 +118,9 @@ def storms():
 
 @app.get("/api/storms/{storm_id}")
 def storm(storm_id: str):
-    for item in _load(PRIVATE / "storms.json")["storms"]:
+    current = PRIVATE / "storms.json"
+    # A missing current week (fresh clone, or between runs) still lets archived storm links resolve.
+    for item in _load(current)["storms"] if current.exists() else []:
         if item["summary"]["id"] == storm_id:
             return item["detail"]
     found = storm_archive.find(ARCHIVE, storm_id)

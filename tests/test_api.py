@@ -336,6 +336,7 @@ def _archive_with(tmp_path, monkeypatch, sid="gone-show", week="2026-01-04"):
     detail = {"title": "Gone Show", "origin_week": week}
     storm_archive.write_week(tmp_path, week, [{"summary": {"id": sid}, "detail": detail}])
     monkeypatch.setattr(api, "ARCHIVE", tmp_path)
+    monkeypatch.setattr(api, "PRIVATE", tmp_path / "no-current-week")  # as on a fresh clone: CI has no storms.json
 
 
 def test_storm_falls_back_to_archive(tmp_path, monkeypatch):
