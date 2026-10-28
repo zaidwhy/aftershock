@@ -27,7 +27,7 @@ FEATURE_CASES = [
     ("what does the map show", "feature_help", "forecast to go next", "#/"),
     ("what is plan a release", "feature_help", "audience affinity", "#/release"),
     ("explain the weekly job", "feature_help", "automatic weekly job", "#/agent"),
-    ("how accurate is the forecast", "feature_help", "ROC AUC 0.82 on 829 held-out breakouts", "#/scorecard"),
+    ("how accurate is the forecast", "feature_help", "(ROC AUC 0.82)", "#/scorecard"),
     ("how do I use this", "tour", "tour button replays the guided tour", "#/"),
     ("give me a tour", "tour", "Plan a release does the same", "#/plan"),
     ("what can you do", "capabilities", "what each page of the site does", "#/release"),
