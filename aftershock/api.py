@@ -180,9 +180,12 @@ def scorecard():
 def _kit_experiment(raw):
     """The pre-registered Qloo-versus-LLM kit result, reduced to what the scorecard shows."""
     spec, ground = raw.get("title_specificity") or {}, raw.get("llm_grounding") or {}
+    grounded = raw.get("title_specificity_grounded_llm_only") or {}
     return {"verdict": spec.get("verdict"), "qloo": spec.get("qloo"), "llm": spec.get("llm"),
             "p_qloo_greater": spec.get("p_qloo_greater"), "scored_pairs": raw.get("scored_pairs"),
-            "grounding_share": ground.get("share_resolving_in_qloo"), "model": raw.get("model")}
+            "grounding_share": ground.get("share_resolving_in_qloo"), "model": raw.get("model"),
+            "grounded_pairs": grounded.get("pairs"), "grounded_qloo": grounded.get("qloo"),
+            "grounded_llm": grounded.get("llm_grounded")}
 
 
 @app.get("/api/replays")

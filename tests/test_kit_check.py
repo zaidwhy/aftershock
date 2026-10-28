@@ -43,6 +43,8 @@ def test_scorecard_adds_the_experiment_only_when_its_file_exists(tmp_path, monke
     (tmp_path / "data" / "results").mkdir(parents=True)
     (tmp_path / "data" / "results" / "kit_experiment.json").write_text(json.dumps({
         "title_specificity": {"verdict": "no difference shown", "qloo": 0.61, "llm": 0.58},
-        "llm_grounding": {"share_resolving_in_qloo": 0.4}, "scored_pairs": 80, "model": "m"}), encoding="utf-8")
+        "llm_grounding": {"share_resolving_in_qloo": 0.4}, "scored_pairs": 80, "model": "m",
+        "title_specificity_grounded_llm_only": {"pairs": 51, "qloo": 0.57, "llm_grounded": 0.83}}), encoding="utf-8")
     out = api.scorecard()["kit_experiment"]
     assert out["verdict"] == "no difference shown" and out["grounding_share"] == 0.4 and out["scored_pairs"] == 80
+    assert (out["grounded_pairs"], out["grounded_qloo"], out["grounded_llm"]) == (51, 0.57, 0.83)

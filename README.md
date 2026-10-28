@@ -72,6 +72,16 @@ Placebo control (`scripts/test_ripple_controls.py` -> `ripple_controls.json`): t
 
 What this says: no Qloo signal predicts which soundtrack songs spike on this data. The age gap points the right way (real above placebo) but is not significant (real minus placebo p 0.14 on all shows, 0.15 on the 4 recent ones), and taste fit predicts nothing. Holding obscurity fixed, the age gap's partial correlation on the 4 recent shows is 0.42 (permutation p 0.07): suggestive, from 4 shows, not significant. Obscurity sits further above its placebo here than in the earlier data (0.22 against 0.11 on all shows), so part of its effect may be real attention from the show; we did not test that difference for significance.
 
+**Qloo against an LLM** (`scripts/experiment_kits.py` -> `kit_experiment.json`, pre-registered in `docs/EXPERIMENT_KITS.md` on 27 Oct before any LLM answer existed). Same 81 title-country pairs, four arms (Qloo and Gemini `gemini-3.5-flash`, each with and without the title), scored by name overlap with no LLM judge.
+
+| | Qloo | LLM |
+|---|---|---|
+| Title-specificity, all 81 pairs (primary) | 0.617 | 0.812 |
+| Title-specificity, the 51 pairs where the LLM's picks resolve in Qloo | 0.575 | 0.831 |
+| Cross-title distinctness, 62 title pairs (secondary) | 0.852 | 0.804 |
+
+By the registered rule the LLM is more title-specific (paired difference -0.195, one-sided permutation p below 0.001 in the LLM's favour). This is the result we said we would report whichever way it landed, and it went against Qloo. Two things qualify it without reversing it: only 66% of the LLM's 1,620 picks resolve to a Qloo entity of the right type (the rest may be real names Qloo lacks, or not audience taste at all, such as the title's own cast), and the LLM still leads when only resolving picks count. Qloo's lists differ more between titles in the same country, a secondary metric with no registered test. What we changed: nothing in the product claims a kit beats an LLM; each kit is compared with Qloo's country-only answer and the 33 of 81 that mostly match it are labelled countrywide on the storm page.
+
 How we got here, for the record: an earlier version of this test used placement lists collected from Tunefind and showed a significant age-gap effect on releases from 2024 on. We then found that Tunefind's terms do not permit automated collection, discarded that data and everything computed from it, and rebuilt the ground truth from MusicBrainz (CC0). The effect did not replicate. The song score is therefore shown as an explorer, not a predictor, and nothing in the product claims otherwise.
 
 ## 4. The ledger

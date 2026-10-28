@@ -361,7 +361,10 @@ function llmSection(sc) {
   const slot = ex
     ? h("div", { class: "kit-exp" },
       h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} title-country pairs.` : "."),
-      h("p", null, `Title-specificity: Qloo ${share(ex.qloo)}, LLM ${share(ex.llm)}. Share of the LLM's picks that Qloo recognises as the right kind of entity: ${share(ex.grounding_share)}.`),
+      h("p", null, `How much each list changes once the title is named, against the same source's list for the country alone (higher means more about this title): Qloo ${share(ex.qloo)}, LLM ${share(ex.llm)}.`),
+      h("p", null, `Only ${share(ex.grounding_share)} of the LLM's picks are names Qloo recognises as the right kind of thing, so some are not audience taste at all.`,
+        ex.grounded_pairs ? ` Counting only those, the LLM still leads (${share(ex.grounded_llm)} against Qloo's ${share(ex.grounded_qloo)} on ${ex.grounded_pairs} pairs).` : ""),
+      h("p", null, "What we do about it: every kit is checked against Qloo's country-only answer and labelled countrywide when it mostly matches it, so a kit never claims to be about a title when it is not."),
       h("p", null, h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "How it was registered and scored")))
     : h("p", { class: "muted" }, "Registered on 27 Oct before any data was collected; results will appear here. ",
       h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "Read the registration"));
