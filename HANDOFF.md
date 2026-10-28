@@ -4,6 +4,8 @@ Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (
 
 ## Start here (written 28 Oct, 02:25 IST)
 
+**Experiment done 28 Oct 07:01 UTC:** by the registered rule the LLM was more title-specific (Qloo 0.617, LLM 0.812, p below 0.001; still leads on the 51 grounded pairs, 0.831 vs 0.575). Written into README section 3, docs/DEVPOST.md, the live Scorecard and the LinkedIn draft. Team brief and its PDF still show the result as pending.
+
 **History rewritten 28 Oct, about 12:00 IST:** every Tunefind file (pre-MusicBrainz placements and ripple_truth CSVs, the scrapers, the daily scrape workflow, the two results built on them) is gone from every commit; the final tree is unchanged and IDs all changed. Pushed before the 25 Oct Netflix week and before the experiment ran, so every "locked before the outcome" claim still holds. Old commits stay reachable by old ID on GitHub until Zaid asks GitHub Support to purge cached views. Teammates must re-clone.
 
 State: live at https://aftershock-qloo.vercel.app, repo github.com/zaidwhy/aftershock in sync, 133 tests passing locally and in CI (tests.yml, green badge), weekly Action verified under the current code (run 40581939996, 8.5 min).
