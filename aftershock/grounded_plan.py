@@ -44,28 +44,33 @@ def clean_names(names):
 
 
 def _placed_with_audience(client, title_entity_id, country_name, entity_type, entity_ids):
-    """{entity_id: affinity} for those of entity_ids that Qloo places with this audience; absent ones are not placed."""
+    """{entity_id: (affinity, Qloo's name)} for those of entity_ids that Qloo places with this audience; absent
+    ones are not placed. The insights answer carries Qloo's canonical spelling ("JBL"), which /search can lack ("Jbl")."""
     body = client.get("/v2/insights", {"filter.type": entity_type, "signal.interests.entities": title_entity_id,
                                        "signal.location.query": country_name,
                                        "filter.results.entities": ",".join(entity_ids), "take": INSIGHTS_TAKE})
     placed = {}
     for entity in body.get("results", {}).get("entities", []):
         if entity.get("entity_id"):
-            placed[entity["entity_id"]] = float((entity.get("query") or {}).get("affinity") or 0.0)
+            placed[entity["entity_id"]] = (float((entity.get("query") or {}).get("affinity") or 0.0),
+                                           repair_name(entity["name"]) if entity.get("name") else None)
     return placed
 
 
 def ground(client, title_entity_id, country_name, proposals, kit=None):
     """Check `proposals` ({domain: [names]}) against Qloo for one title and country. `kit` is Qloo's own launch
     kit for the same pair ({domain: [{name, entity_id?}]}) and marks confirmed picks it also named.
-    Returns {"confirmed": [{domain, name, both}], "dropped": {not_placed, not_in_qloo}} with confirmed names
-    ordered by affinity within each domain, or None when nothing could be checked."""
+    Returns {"confirmed": [{domain, name, both}], "dropped": {not_placed, not_in_qloo},
+    "rejected": [{domain, name, verdict}]} with confirmed names ordered by affinity within each domain, or None
+    when nothing could be checked. `rejected` lists the AI's own names (not Qloo data) that did not pass, verdict
+    "not_placed" or "not_in_qloo"."""
     if not title_entity_id:
         return None
     kit = kit or {}
-    confirmed, not_placed, not_in_qloo, checked = [], 0, 0, 0
+    confirmed, rejected, not_placed, not_in_qloo, checked = [], [], 0, 0, 0
     for domain, entity_type in DOMAINS.items():
         resolved = {}  # entity_id -> Qloo's name
+        proposed = {}  # entity_id -> the name the AI proposed
         for name in clean_names((proposals or {}).get(domain)):
             try:
                 hit = resolve(client, name, entity_type)
@@ -75,8 +80,10 @@ def ground(client, title_entity_id, country_name, proposals, kit=None):
             if not hit or not hit.get("entity_id"):
                 not_in_qloo += 1
                 checked += 1
+                rejected.append({"domain": domain, "name": name, "verdict": "not_in_qloo"})
             elif hit["entity_id"] not in resolved:
                 resolved[hit["entity_id"]] = repair_name(hit.get("name") or name)
+                proposed[hit["entity_id"]] = name
         if not resolved:
             continue
         try:
@@ -85,16 +92,20 @@ def ground(client, title_entity_id, country_name, proposals, kit=None):
             log.warning("grounded plan: %s check failed for %s: %s", domain, country_name, err)
             continue
         checked += len(resolved)
-        not_placed += sum(1 for entity_id in resolved if entity_id not in placed)
+        for entity_id in resolved:
+            if entity_id not in placed:
+                not_placed += 1
+                rejected.append({"domain": domain, "name": proposed[entity_id], "verdict": "not_placed"})
         kit_ids = {e.get("entity_id") for e in kit.get(domain) or [] if e.get("entity_id")}
         kit_names = {name_key(e["name"]) for e in kit.get(domain) or [] if e.get("name")}
-        for entity_id in sorted((i for i in resolved if i in placed), key=lambda i: -placed[i]):
-            name = resolved[entity_id]
+        for entity_id in sorted((i for i in resolved if i in placed), key=lambda i: -placed[i][0]):
+            name = placed[entity_id][1] or resolved[entity_id]
             confirmed.append({"domain": domain, "name": name,
                               "both": entity_id in kit_ids or name_key(name) in kit_names})
     if not checked:
         return None
-    return {"confirmed": confirmed, "dropped": {"not_placed": not_placed, "not_in_qloo": not_in_qloo}}
+    return {"confirmed": confirmed, "dropped": {"not_placed": not_placed, "not_in_qloo": not_in_qloo},
+            "rejected": rejected}
 
 
 def add_plans(client, storms):

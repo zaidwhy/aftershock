@@ -102,7 +102,10 @@ def brief(detail, code):
     origins = _join([o["name"] for o in detail.get("origin_countries") or []]) or "its home markets"
     steps = [{"key": "forecast", "title": "Forecast where it goes next",
               "found": f"{title} is breaking out in {origins}; Netflix history gives {country} a {_pct(fc['probability'])} "
-                       f"chance of charting it within {horizon} weeks, rank {rank} of {len(forecasts)} countries."}]
+                       f"chance of charting it within {horizon} weeks, rank {rank} of {len(forecasts)} countries.",
+              "note": "The country ranking comes from where past breakouts from the same origin spread (Netflix "
+                          "history only), so titles from the same origin get similar rankings. Qloo is what makes "
+                          "the plan specific to this title."}]
 
     kit = row["kit"]
     names = sum(len(v) for v in kit.values())
@@ -136,6 +139,8 @@ def brief(detail, code):
         steps.append({"key": "ai_proposals", "title": "Let an AI propose more names",
                       "found": f"No AI picks were made for {country} this week."})
         check = {"key": "qloo_check", "title": "Check each AI name against Qloo", "found": "There was nothing to check."}
+    if (plan or {}).get("rejected"):
+        check["rejected"] = [dict(r) for r in plan["rejected"]]
     if not plan:
         check["decision"] = "There is no AI plan for this country, so the brief uses Qloo's own kit."
     elif not use_plan:

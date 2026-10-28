@@ -8,14 +8,18 @@ All endpoints are GET and return JSON. The Qloo key never leaves the server. Eve
 ## GET /api/storms
 Current breakouts: titles that entered the Netflix Top 10 in 1 to 3 countries in the latest published week.
 ```json
-{"week": "2026-10-25", "storms": [
-  {"id": "example-show-s1", "title": "Example Show", "season": "Season 1",
+{"week": "2026-10-25",
+ "featured_plan": {"id": "example-show-s1", "code": "KR", "title": "Example Show", "country": "South Korea"},
+ "storms": [
+  {"id": "example-show-s1", "title": "Example Show", "season": "Season 1", "label": "Example Show Season 1",
    "category": "TV (Non-English)", "origin_countries": [{"code": "JP", "name": "Japan"}],
    "origin_week": "2026-10-25", "qloo_entity": "uuid-or-null",
    "top_forecast": {"code": "KR", "name": "South Korea", "probability": 0.21,
                     "why": "South Korea joined 23 of 100 past breakouts that started in Japan"}}
 ]}
 ```
+
+`featured_plan` is the plan the site opens on (`null` when no storm has a launch kit): among title-specific kit rows with at least 3 Qloo-confirmed AI picks and at least 1 event idea, titles released within 5 years of the data week come first, then the most confirmed picks, then the country's chance; with no such row, the older rule (first title-specific row with 3 confirmed picks among the 8 likeliest storms, else the top storm's first kit row). `label` tells storms apart when titles repeat (the season, plus category and year if that still collides).
 
 ## GET /api/storms/{id}
 SPILLOVER forecast for one breakout. Probabilities come from Netflix history only: how often the country followed past breakouts from the same origin countries, smoothed toward the same-category rate, then toward the country's base rate. Every candidate country is listed and locked in the ledger.
@@ -42,7 +46,7 @@ SPILLOVER forecast for one breakout. Probabilities come from Netflix history onl
    "specificity": 0.62, "generic": false}]
 }
 ```
-Each `launch_kit` row may also carry `plan`, added only when the weekly run had a `GEMINI_API_KEY` (the GitHub Action has none, so rows from that run have no `plan`): `{"confirmed": [{"domain": "artist", "name": "Example Artist C", "both": true}], "dropped": {"not_placed": 6, "not_in_qloo": 5}, "model": "gemini-3.5-flash"}`. An LLM proposed up to 5 names per domain for this title and country; Qloo's strict exact-name search resolved each to an entity and one filtered `/v2/insights` call per domain kept those Qloo places with this audience. `confirmed` is those names, grouped by domain in kit order and ordered by Qloo's affinity within a domain (the values are not exposed); `both` is true when Qloo's own kit for the row also named it. `dropped.not_placed` counts names Qloo knows but does not place with this audience there; `dropped.not_in_qloo` counts names with no exact match. A name whose search or check failed is in neither count, so the three can sum to less than the names proposed. See `aftershock/grounded_plan.py`.
+Each `launch_kit` row may also carry `plan`, added only when the weekly run had a `GEMINI_API_KEY` (the GitHub Action has none, so rows from that run have no `plan`): `{"confirmed": [{"domain": "artist", "name": "Example Artist C", "both": true}], "dropped": {"not_placed": 6, "not_in_qloo": 5}, "rejected": [{"domain": "artist", "name": "Example Artist D", "verdict": "not_placed"}, {"domain": "brand", "name": "Example Brand E", "verdict": "not_in_qloo"}], "model": "gemini-3.5-flash"}`. An LLM proposed up to 5 names per domain for this title and country; Qloo's strict exact-name search resolved each to an entity and one filtered `/v2/insights` call per domain kept those Qloo places with this audience. `confirmed` is those names, grouped by domain in kit order and ordered by Qloo's affinity within a domain (the values are not exposed); `both` is true when Qloo's own kit for the row also named it. `dropped.not_placed` counts names Qloo knows but does not place with this audience there; `dropped.not_in_qloo` counts names with no exact match. `rejected` lists those same names one by one, `{domain, name, verdict}` with verdict `not_placed` or `not_in_qloo`: the name is what the LLM proposed (not Qloo response data), the verdict is ours; the site strikes them through with the reason (up to 8, then "and N more"), and the `qloo_check` step of the brief carries the same list. Confirmed names use the spelling Qloo's insights answer gives. A name whose search or check failed is in neither count, so the three can sum to less than the names proposed. See `aftershock/grounded_plan.py`.
 
 Each `launch_kit` row also carries `events` and `events_checked`, added by the weekly run (`aftershock/live_events.py`): `"events": [{"artist": "Example Artist A", "cities": ["Example City A", "Example City B"]}]`, `"events_checked": 3`. For up to three artists (the ones the launch brief names as partners, Qloo-confirmed AI picks first, otherwise Qloo's own kit) Qloo's heatmap for the artist in the same country is compared with the title's hotspots: a place in `hotspots.places` is an event city for the artist when one of the artist's 5 strongest cells lies within 30 km of the title cell that place was named from (`hotspots.place_cells`, `[lat, lon]` per place, same order). `cities` are in the title's hotspot order, strongest first; artists with no overlapping city are left out of `events` but counted in `events_checked`. Rows from older weeks have neither field. This is where two audiences overlap, not a ticket-demand forecast.
 
@@ -92,7 +96,7 @@ Live scoring for any show and up to 8 songs, separated by `;`. Each song is `son
  "ledger_url": "https://github.com/zaidwhy/aftershock/blob/main/ledger/forecasts.jsonl",
  "ledger_intact": true, "data_week": "2026-10-25"}
 ```
-`locked` for spillover counts ledger rows (one per candidate country per title); grading happens once a title's 4-week horizon has passed in Netflix's weekly data. The placebo block holds mean within-show Spearman against the real spike and against a spike measured entirely before release.
+`locked` for spillover counts ledger rows (one per candidate country per title); grading happens once a title's 4-week horizon has passed in Netflix's weekly data. The placebo block holds mean within-show Spearman against the real spike and against a spike measured entirely before release. When `data/results/grounded_plan.json` exists the response also carries `grounded_plan`: `{"status": "exploratory, ...", "pairs": 81, "picks_checked": 1600, "unbacked_share": 0.71, "specificity_plan": 0.86, "specificity_llm": 0.81, "specificity_pairs": 79}` (synthetic values; `unbacked_share` is the share of the LLM's names Qloo did not confirm), which the Scorecard leads its Qloo-versus-LLM section with.
 
 ## GET /api/replays
 Famous ripples with real Wikipedia monthly views, for the intro animation.

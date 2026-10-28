@@ -3,6 +3,7 @@
 import { h, loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm } from "./api.js";
 import { hotspotMap } from "./charts.js";
+import { rejectedList } from "./rejected.js";
 
 const STEP_MS = 450;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -12,11 +13,13 @@ const kitRows = (st) => (st.launch_kit || []).filter((r) => r.brief);
 const DEFAULT_SEARCH = 8;
 const MIN_CONFIRMED = 3;
 
-/** The plan to open on: among the week's top storms, the first title-specific kit country where Qloo confirmed at
- *  least MIN_CONFIRMED AI picks, so the first plan a visitor sees shows the agent's check doing its job. Falls back
- *  to the top storm's first kit country. {id, title, code, country}, or null. */
+/** The plan to open on. The weekly run picks it server-side (`featured_plan` in the storms list: aftershock/api.py
+ *  featured_plan, rule in the README). Without it (older data, mock mode) the older rule: among the week's top storms,
+ *  the first title-specific kit country where Qloo confirmed at least MIN_CONFIRMED AI picks, else the top storm's
+ *  first kit country. {id, title, code, country}, or null. */
 export async function defaultPlan() {
-  const { storms } = await getStorms();
+  const { storms, featured_plan: featured } = await getStorms();
+  if (featured?.id && featured.code && featured.title && featured.country) return featured;
   const ranked = storms.filter((s) => s.has_kit).sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
   let fallback = null;
   for (const s of ranked.slice(0, DEFAULT_SEARCH)) {
@@ -48,6 +51,8 @@ function stepCard(s, n) {
     h("p", { class: "plan-step-n mono" }, `Step ${n}`),
     h("h3", null, s.title),
     h("p", { class: "plan-found" }, s.found),
+    s.note ? h("p", { class: "plan-note" }, s.note) : null,
+    rejectedList(s.rejected),
     s.decision ? h("p", { class: "plan-decision" }, h("span", { class: "plan-rule mono" }, "Rule applied"), " ", s.decision) : null);
 }
 
@@ -182,7 +187,7 @@ export function renderPlan(root, isCurrent, id, code) {
     return;
   }
 
-  Promise.all([getStorms(), getStorm(id)]).then(([{ storms }, st]) => {
+  Promise.all([getStorms(), getStorm(id)]).then(([{ storms, week }, st]) => {
     if (!isCurrent()) return;
     const options = storms.filter((s) => s.has_kit);
     if (!options.some((s) => s.id === st.id)) options.unshift({ id: st.id, title: st.title, season: st.season });
@@ -197,7 +202,9 @@ export function renderPlan(root, isCurrent, id, code) {
     const region = h("div", { class: "plan-steps-region", "aria-live": "polite", "aria-label": "The agent's steps" });
     const list = h("ol", { class: "plan-steps no-print" });
     region.append(list);
-    add(body, h("h2", { class: "plan-run-h no-print" }, `The agent's steps: ${st.title} in ${row.brief.brief.country}`), region);
+    add(body, h("h2", { class: "plan-run-h no-print" }, `The agent's steps: ${st.title} in ${row.brief.brief.country}`),
+      h("p", { class: "plan-note mono no-print" }, `Replay of the weekly run for the week of ${st.archived_week ?? week}. The steps were computed then and are shown one by one; nothing runs live.`),
+      region);
     const finish = () => {
       if (!isCurrent()) return;
       add(body, briefCard(st, made, row), controls(st, made));

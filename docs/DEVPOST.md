@@ -4,6 +4,14 @@
 
 **Tagline:** A launch agent for breakout shows. It forecasts which country a show reaches next, plans the launch there with Qloo, and throws out every AI suggestion Qloo cannot back.
 
+### Results at a glance
+
+| Question | Result |
+|---|---|
+| LLM alone against the agent | Qloo could not back 71% of the names an LLM proposed (81 title-country pairs); only Qloo-confirmed names ship in a plan. |
+| Forecast backtest (829 held-out breakouts) | ROC AUC 0.82: the model ranks a country that went on to chart above one that did not 82% of the time. Of the 113 breakouts that spread at all, its top 3 named a next country 72% of the time against 30% for the three busiest countries. |
+| Forecasts locked in public | 3,240 so far, each fixed before its outcome exists; grading starts 15 Nov 2026. |
+
 ## Inspiration
 
 Shows now break out one country at a time. In the week of 18 Oct 2026, Fukrey Returns entered Netflix's Top 10 in Pakistan; history says Bangladesh is likely next (Bangladesh joined 19 of 47 past breakouts that started in Pakistan). The people who could act on that, a local distributor, a dubbing studio, a music label with songs in the show, a brand looking for a tie-in, usually find out after the peak, and then plan the launch from gut feel or a chatbot. We asked a chatbot. It answered fluently, and most of what it named was either unknown to Qloo or not something this audience in this country actually over-indexes on. That gap is the product.
@@ -29,7 +37,7 @@ The hackathon asks for an agent that does better than an LLM alone. We tested th
 
 **Follow one title on the world map.** One click and the map recolours by that title's chance in every country; click a country for the cities and the Qloo-checked picks.
 
-**Every forecast is locked in public first.** Each week the agent reads Netflix's public per-country Top 10, finds the titles that just broke out in one to three countries (35 in the week of 18 Oct 2026), forecasts every other country, builds kits, plans and hotspots, and locks every probability in a hash-chained ledger before the outcome exists. A GitHub Action runs it every Tuesday; grading starts when the first four-week horizons close on 15 Nov 2026.
+**Every forecast is locked in public first.** Each week the agent reads Netflix's public per-country Top 10, finds the titles that just broke out in one to three countries (35 in the week of 18 Oct 2026), forecasts every other country, builds kits, plans and hotspots, and locks every probability in a hash-chained ledger before the outcome exists. A GitHub Action runs it every Tuesday.
 
 **For agents too.** An MCP server exposes the same tools (`list_storms`, `spillover_forecast`, `launch_kit`, `launch_brief`, `ripple_score`, `sync_scout`, `netflix_history`, `ask`), so Claude Desktop or any MCP agent can plan a launch.
 
@@ -43,13 +51,12 @@ The agent is a fixed plan of tool calls with explicit decision rules, so every s
 
 ## What we measured, including what did not work
 
-- **Where next:** Netflix history alone reaches ROC AUC 0.817 on 829 held-out breakouts (top-5 precision 0.041, against 0.012 for a uniform guess). Adding Qloo's in-country affinity to the probability gave no lift (0.8182 vs 0.8188 on a 200-breakout subset), so the probability is history-only. Qloo's job is the part history cannot answer: what this audience loves in each country, and where they are.
+- **Where next:** Netflix history alone reaches ROC AUC 0.817 on 829 held-out breakouts, meaning it ranks a country that went on to chart above one that did not 82% of the time (top-5 precision 0.041, against 0.012 for a uniform guess). Adding Qloo's in-country affinity to the probability gave no lift (0.8182 vs 0.8188 on a 200-breakout subset), so the probability is history-only. Qloo's job is the part history cannot answer: what this audience loves in each country, and where they are.
 - **How much warning (backtest, history-only forecasts):** on the same 829 held-out breakouts (March to October 2026, each forecast made in the breakout week from earlier breakouts only; `scripts/measure_lead_time.py` -> `data/results/lead_time.json`), at least one of the model's top 3 countries charted the title within 4 weeks for 9.8% of them (81), against 4.1% (34) for the 3 countries that chart the most titles. Most breakouts never spread: only 113 of the 829 charted in any other country in 4 weeks, and the top 3 caught 81 of those 113. When a pick did chart, the median lead was 1 week (117 of 131 charted picks within 1 week, 6 at 2, 4 at 3, 4 at 4). That is modest warning, and the backtest does not show the Qloo part helps it.
 - **Is the kit about the title?** Measured against Qloo's country-only answer: 48 of 81 kits this week are title-specific; the other 33 mostly repeat the country's general taste, and the site labels them so.
 - **Qloo against an LLM:** pre-registered before any data was collected (`docs/EXPERIMENT_KITS.md`): the same 81 title-country pairs, four arms (Qloo with and without the title, an LLM with and without the title), scored by overlap, not by an LLM judge. Result: by the registered rule the LLM's kits were more title-specific (0.812 against Qloo's 0.617, permutation p below 0.001), and it still led when only picks Qloo could resolve were counted. We report it as registered. Only 66% of the LLM's picks resolve to a Qloo entity, and Qloo's lists differed more between titles; neither reverses the verdict. The product consequence: the countrywide label on kits that mostly match Qloo's country-only answer, and the agent design above, where the LLM proposes and Qloo decides.
-- **Which songs spike:** we tested whether Qloo signals predict which soundtrack songs get a burst of Wikipedia attention, with a placebo window measured before release. On 229 artists from 24 soundtracks none did (age gap p 0.14 against the placebo; taste fit about 0). So Sync Scout is a discovery tool, and we do not present it as a forecast.
 - **Graded in public, with the rules fixed first:** how many of last week's top picks have already charted is reported every week against a calibrated expectation and a naive baseline, defined in `docs/EARLY_GRADE.md` before the data existed.
-- **We threw away our best result.** An earlier version of that song test, built on placement lists collected from Tunefind, showed a significant Qloo effect. When we read Tunefind's terms and saw they do not allow automated collection, we deleted that data and everything computed from it, rebuilt the ground truth from MusicBrainz, and reran the identical test. The effect did not replicate, and the site says so.
+- **Which songs spike, and the result we threw away:** we tested whether Qloo signals predict which soundtrack songs get a burst of Wikipedia attention, with a placebo window measured before release. On 229 artists from 24 soundtracks none did (age gap p 0.14 against the placebo; taste fit about 0). So Sync Scout is a discovery tool, not a forecast. An earlier version, built on Tunefind placement lists, showed a significant effect; when we read Tunefind's terms (no automated collection) we deleted that data and everything computed from it, rebuilt the ground truth from MusicBrainz, and reran the identical test. The effect did not replicate, and the site says so.
 
 ## Challenges
 
@@ -61,7 +68,7 @@ The agent is a fixed plan of tool calls with explicit decision rules, so every s
 
 ## Who would pay, and why now
 
-The buyer is whoever spends money on a title in a market it has not reached yet: a local distributor or dubbing studio choosing which markets to back this month, a label or publisher whose songs are in the show, a brand or promoter looking for a tie-in. Their decision is which countries, which cities and which partners, and it has to be made in the weeks between a breakout and its peak.
+The first buyers are labels and publishers whose songs sit in a show, promoters deciding where an artist should play, and brands looking for a tie-in: they decide which artist, which city and which partner, and have to decide in the weeks between a breakout and its peak. Local distributors come second. For a Netflix original Netflix holds the rights, so the local buyers are dubbing studios, marketing partners and promoters rather than licensing buyers. These are the people we think would use it; we have no customers or pilots.
 
 | | Today | With AFTERSHOCK |
 |---|---|---|
@@ -96,7 +103,7 @@ AFTERSHOCK is not affiliated with Netflix or Qloo.
 
 No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app:
 
-1. **Plan a launch** (second item in the menu): it opens on this week's clearest breakout. Watch the seven steps, then read, download or print the Launch Brief. Pick another title or country from the two menus.
+1. **Plan a launch:** open the featured plan directly, Nightwatch: Demons Are Forever in Sweden, at https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (the Plan a launch menu item opens the same one). Watch the steps replay, then read, download or print the Launch Brief. Pick another title or country from the two menus.
 2. **Home, the map:** click one of the "Follow one title" buttons; the map recolours by that title's chance in each country. Click a country for its cities and Qloo-checked picks.
 3. **Any storm page:** the launch kit per country, its "title-specific" or "countrywide" label, and under it "AI plan, checked by Qloo" with how many AI suggestions Qloo confirmed, did not link to these viewers, or did not know.
 4. **Scorecard:** what we measured, including what went against us, and the pre-registered tests. **Ledger:** every locked forecast.

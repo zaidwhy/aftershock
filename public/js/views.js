@@ -1,8 +1,8 @@
 import { h, s } from "./dom.js";
 import { loading, errorBox, add } from "./dom.js";
-import { getStorms, getStorm, getScorecard, getReplays, getLedger, isMock } from "./api.js";
-import { pct, plain2, dateLabel, monthLabel, views } from "./format.js";
-import { seismograph, ageLean, forecastMap, dumbbell, hotspotMap } from "./charts.js";
+import { getStorms, getStorm, getScorecard, getLedger, isMock } from "./api.js";
+import { pct, plain2, dateLabel } from "./format.js";
+import { ageLean, forecastMap, hotspotMap } from "./charts.js";
 import { ISO } from "./iso.js";
 import { lookupBox } from "./netflix.js";
 import { weekMapSection } from "./weekmap.js";
@@ -10,6 +10,7 @@ import { launchBrief } from "./brief.js";
 import { askBox } from "./ask.js";
 import { agentLine } from "./agent.js";
 import { defaultPlan } from "./plan.js";
+import { rejectedList } from "./rejected.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -48,7 +49,6 @@ function load(container, what, isCurrent, fetcher, render, notFound) {
 /* ---------------------------------------------------------------- landing */
 export function renderHome(root, isCurrent, followId = null) {
   setTitle("");
-  const chartBox = h("div", { class: "hero-chart" });
   const stormBox = h("div", null);
   const heroBox = h("div", null);
   const proof = h("aside", { class: "proof", "aria-label": "Evidence at a glance" });
@@ -72,11 +72,9 @@ export function renderHome(root, isCurrent, followId = null) {
           h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to pair it with there: the artists and brands that title's audience loves in each country, and the cities where that audience lives. Every forecast is locked publicly before the outcome exists."),
           leadLine,
           h("ul", { class: "hero-links" },
-            h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")),
-            h("li", null, h("a", { href: "#/scout" }, "Sync Scout - find artists from outside a show's generation")),
-            h("li", null, h("a", { href: "#/try" }, "Song check - see whether a song reaches a new crowd")))),
+            h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")))),
         h("div", { class: "hero-side" },
-          h("p", { class: "buyer mono" }, "For local distributors, music publishers and promoters: know where a breakout goes next and what to pair it with there, before the competition does."),
+          h("p", { class: "buyer mono" }, "For labels, promoters, brands and local distributors: know where a breakout goes next and what to pair it with there, before the competition does."),
           heroBox)),
       askBox(isCurrent, stormsP),
       proof,
@@ -87,11 +85,7 @@ export function renderHome(root, isCurrent, followId = null) {
     h("section", { "aria-labelledby": "live-h" },
       h("h2", { id: "live-h" }, "Live storms this week"),
       h("p", { class: "muted" }, "Storms: titles that just broke out in 1 to 3 countries."),
-      stormBox),
-    h("section", { "aria-labelledby": "lift-h" },
-      h("h2", { id: "lift-h" }, "How a show can lift an old song"),
-      h("p", { class: "muted" }, "Not a forecast. A replay of one known case: how a show's placement moved a song's English Wikipedia pageviews."),
-      chartBox));
+      stormBox));
 
   Promise.all([getScorecard(), stormsP]).then(([sc, st]) => {
     if (!isCurrent()) return;
@@ -141,24 +135,6 @@ export function renderHome(root, isCurrent, followId = null) {
         step("4 Start in", h("p", null, `Start in ${join(x.places)}`))),
       h("p", { class: "ex-link" }, h("a", { href: `#/storm/${encodeURIComponent(x.id)}` }, "See the full forecast"))));
   }).catch(() => {});
-
-  load(chartBox, "the replay", isCurrent, getReplays, ({ replays }) => {
-    if (!replays?.length) { chartBox.append(h("p", { class: "status" }, "No replays are published yet.")); return; }
-    const caption = h("p", { class: "hero-cap" });
-    const stage = h("div", { class: "stage" });
-    const picks = h("div", { class: "picks", role: "group", "aria-label": "Choose a replay" });
-    const show = (i) => {
-      const r = replays[i];
-      stage.replaceChildren(seismograph(r));
-      const peak = r.monthly_views.reduce((a, b) => (b[1] > a[1] ? b : a));
-      const base = r.monthly_views[0][1];
-      caption.replaceChildren(h("strong", null, r.song), ` by ${r.artist}, placed in ${r.show} (released ${r.release}). English Wikipedia views went from about ${views(base)} in ${monthLabel(r.monthly_views[0][0])} to ${views(peak[1])} in ${monthLabel(peak[0])}.`);
-      picks.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
-    };
-    replays.forEach((r, i) => picks.append(h("button", { type: "button", class: "chip", onclick: () => show(i) }, r.song)));
-    chartBox.append(stage, caption, picks);
-    show(0);
-  });
 
   load(stormBox, "this week's storms", isCurrent, () => stormsP.catch(() => getStorms()), ({ week, storms }) => {
     if (!storms.length) { add(stormBox, h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
@@ -287,7 +263,8 @@ function planBlock(r) {
     h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it does not link to these viewers here, ${nq} it does not know.`),
     groups.length ? h("ul", { class: "plan-list" }, groups.map(([d, list]) => h("li", null,
       h("span", { class: "plan-dom" }, KIT_LABELS[d]), " ",
-      list.flatMap((c, i) => [i ? ", " : null, c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null);
+      list.flatMap((c, i) => [i ? ", " : null, c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null,
+    rejectedList(plan.rejected));
 }
 
 /** "Copy launch brief": clipboard write inside the click; if it is refused, show the text selected in a box. */
@@ -388,6 +365,7 @@ function forecastTable(fc) {
 export { renderTry, renderScout } from "./audience.js";
 
 /* -------------------------------------------------------------- scorecard */
+const GITHUB_README_3 = "https://github.com/zaidwhy/aftershock#3-what-we-measured-including-what-did-not-work";
 const GITHUB_EXPERIMENT = "https://github.com/zaidwhy/aftershock/blob/main/docs/EXPERIMENT_KITS.md";
 
 const share = (n) => (n == null ? "n/a" : `${Math.round(n * 100)}%`);
@@ -476,7 +454,17 @@ function llmSection(sc) {
       h("p", null, h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "How it was registered and scored")))
     : h("p", { class: "muted" }, "Registered on 27 Oct before any data was collected; results will appear here. ",
       h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "Read the registration"));
-  return h("section", { "aria-labelledby": "llm-h" }, h("h2", { id: "llm-h" }, "Qloo versus an LLM (pre-registered)"), slot);
+  const gp = sc.grounded_plan;
+  if (gp?.unbacked_share == null) return h("section", { "aria-labelledby": "llm-h" }, h("h2", { id: "llm-h" }, "Qloo versus an LLM (pre-registered)"), slot);
+  // Lead with the result that shapes the product; the registered test stays below it in full.
+  return h("section", { "aria-labelledby": "llm-h" },
+    h("h2", { id: "llm-h" }, `An LLM alone: Qloo could not back ${share(gp.unbacked_share)} of what it named`),
+    h("p", null, `Across ${gp.pairs} title-country pairs an LLM named ${whole(gp.picks_checked)} artists, brands, films and shows for the audience. Qloo placed ${share(1 - gp.unbacked_share)} of them with that audience; the rest it either does not know or does not link to these viewers. Only the confirmed names go into a launch brief.`),
+    gp.specificity_plan != null ? h("p", null, `The combined plan (the LLM's names, kept only when Qloo confirms them) is `, h("strong", null, `${gp.specificity_plan.toFixed(2)} title-specific`),
+      `, against ${gp.specificity_llm.toFixed(2)} for the LLM's raw picks, on ${gp.specificity_pairs} pairs.`) : null,
+    h("p", { class: "muted" }, "Exploratory: designed after the registered result below, on the same pairs and cached LLM answers. It is not pre-registered."),
+    h("h3", { id: "llm-reg-h" }, "The registered test: which list is more title-specific"),
+    slot);
 }
 
 export function renderScorecard(root, isCurrent) {
@@ -488,20 +476,6 @@ export function renderScorecard(root, isCurrent) {
     const bs = bt.spillover || {}, br = bt.ripple || {};
     const pl = br.placebo || {};
     const row = (label, value) => h("tr", null, h("th", { scope: "row" }, label), h("td", { class: "mono" }, value));
-    const gapCell = br.gap_2024_plus == null ? "n/a" : `${plain2(br.gap_2024_plus)}${br.gap_2024_plus_p == null ? "" : ` (permutation p = ${br.gap_2024_plus_p.toFixed(2)})`}`;
-    const placeboRow = (label, a, b) => h("tr", null, h("th", { scope: "row" }, label),
-      [pl["2024_plus"]?.[a], pl["2024_plus"]?.[b], pl.all?.[a], pl.all?.[b]].map((v) => h("td", { class: "num mono" }, plain2(v))));
-    const recent = pl["2024_plus"] || {};
-    const rows = [
-      ["Qloo age gap", recent["real: gap"], recent["placebo: gap"]],
-      ["Obscurity", recent["real: obscurity"], recent["placebo: obscurity (its own pre-window)"]],
-    ].filter((r) => r && r[1] != null && r[2] != null).map(([label, real, placebo]) => ({ label, real, placebo }));
-    const evidence = rows.length ? h("div", { class: "evidence" },
-      h("h3", null, "Real spike versus placebo spike"),
-      h("div", { class: "db-box" },
-        h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Real spike", h("span", { class: "dot dot-placebo" }), "Placebo spike, measured before release"),
-        dumbbell(rows, `Within-show Spearman with the artist's Wikipedia spike on 2024+ releases, real spike versus placebo spike. ${rows.map((r) => `${r.label}: real ${plain2(r.real)}, placebo ${plain2(r.placebo)}`).join("; ")}.`)),
-      h("p", { class: "muted" }, "Mean within-show Spearman with the artist's Wikipedia spike, real versus a placebo measured before release, on licensed MusicBrainz soundtrack data. No Qloo signal is significant here; see the README for the full test and why an earlier result was discarded.")) : null;
     const so = sp.so_far;
     const closes = (() => {
       if (!sp.earliest_origin_week) return null;
@@ -522,18 +496,17 @@ export function renderScorecard(root, isCurrent) {
         rp.locked ? "" : " Song forecasts are locked only before a release's outcome window opens, with at least 4 Qloo-scorable songs; none has qualified yet."),
       rp.graded_releases ? dl([["Graded releases", rp.graded_releases], ["Pending releases", rp.pending_releases], ["Mean Spearman", plain2(rp.mean_spearman)]]) : null);
     const scored = bs.history_auc;
-    const ratio = scored == null ? null : Math.round(scored * 10);
     const tableOf = (label, rows) => h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": `${label}, scrolls sideways on narrow screens` }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, label),
       h("thead", null, h("tr", null, ["Measure", "Value"].map((t) => h("th", { scope: "col" }, t)))),
       h("tbody", null, rows)));
     add(box,
+      llmSection(sc),
       kitCheckSection(sc),
       warningSection(sc),
-      llmSection(sc),
       h("section", { "aria-labelledby": "bt-h" },
         h("h2", { id: "bt-h" }, "Where a breakout goes next: the country backtest"),
-        ratio == null ? h("p", { class: "muted" }, "The backtest has not been generated yet.")
-          : h("p", null, h("strong", null, `Right ${ratio} times in 10`), ` at ranking where a breakout goes next, on ${whole(bs.test_breakouts)} past breakouts (ROC AUC ${plain2(scored)}).`),
+        scored == null ? h("p", { class: "muted" }, "The backtest has not been generated yet.")
+          : h("p", null, h("strong", null, `Ranks a country that went on to chart above one that did not ${Math.round(scored * 100)}% of the time`), ` (ROC AUC ${plain2(scored)}), on ${whole(bs.test_breakouts)} past breakouts.`),
         h("p", { class: "muted" }, "Netflix history only: how often each country followed past breakouts from the same origins. Mar-Oct 2026 breakouts the model had not seen. The country forecast uses no Qloo data."),
         tableOf("Country backtest", row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)))),
       h("section", { "aria-labelledby": "ledger-h" },
@@ -554,20 +527,8 @@ export function renderScorecard(root, isCurrent) {
           row(`Same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
           row(`Same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc))]),
         h("h3", null, "The song tests"),
-        h("p", { class: "muted" }, `We collected 490 songs from 34 soundtracks. ${br.n_artists ?? "n/a"} artists in ${br.n_shows ?? "n/a"} of those shows had enough Qloo audience profiles to be scored (${br.n_shows_2024_plus ?? "n/a"} released 2024 or later). Outcome is the artist's Wikipedia page spike, days +7 to +35 over days -60 to -8.`),
-        tableOf("Song test results", [
-          row("Ripple: Qloo age gap, 2024+ releases (Spearman)", gapCell),
-          row("Ripple: Qloo taste fit, 2024+", plain2(br.fit_2024_plus)),
-          row("Ripple: obscurity, 2024+ (see placebo)", plain2(br.obscurity_2024_plus))]),
-        evidence,
-        h("h3", null, "Placebo check"),
-        h("p", { class: "muted" }, "Mean within-show Spearman against the real spike and against a placebo spike measured entirely before release. A score that predicts the placebo is picking up regression to the mean, not the show."),
-        h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Placebo check, scrolls sideways on narrow screens" }, h("table", { class: "plain" }, h("caption", { class: "sr-only" }, "Real versus placebo Spearman"),
-          h("thead", null, h("tr", null, ["Score", `Real, 2024+ (${pl["2024_plus"]?.n_shows ?? "n/a"} shows)`, "Placebo, 2024+", `Real, all (${pl.all?.n_shows ?? "n/a"} shows)`, "Placebo, all"].map((t, i) => h("th", { scope: "col", class: i ? "num" : null }, t)))),
-          h("tbody", null,
-            placeboRow("Obscurity", "real: obscurity", "placebo: obscurity (its own pre-window)"),
-            placeboRow("Qloo age gap", "real: gap", "placebo: gap")))),
-        h("p", { class: "muted" }, `Real minus placebo for the Qloo age gap: permutation p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])} on 2024+ releases, ${plain2(pl.all?.["p: gap real minus gap placebo"])} on all.`)),
+        h("p", null, `No Qloo signal predicted which soundtrack songs spike on Wikipedia: ${br.n_artists ?? "n/a"} artists in ${br.n_shows ?? "n/a"} shows were scored, and on 2024+ releases the Qloo age gap beat a placebo spike measured before release at p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])}.`),
+        h("p", { class: "muted" }, "The song tables and the placebo check are in ", h("a", { href: GITHUB_README_3, rel: "noopener" }, "README section 3"), ".")),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
         h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test collected 490 songs from 34 soundtracks; 229 artists in 24 of those shows (4 released 2024 or later) had enough Qloo audience profiles to be scored, where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));

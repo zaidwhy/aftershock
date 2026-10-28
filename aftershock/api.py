@@ -84,6 +84,78 @@ def _hero(items):
             "specificity": row.get("specificity")}
 
 
+FEATURED_MIN_CONFIRMED = 3
+FEATURED_RECENT_YEARS = 5
+FEATURED_FALLBACK_SEARCH = 8
+
+
+def _rank_key(item):
+    return -((item["summary"].get("top_forecast") or {}).get("probability") or -1)
+
+
+def _country_name(item, code):
+    fc = next((f for f in item["detail"].get("spillover", {}).get("forecasts", []) if f["code"] == code), {})
+    return fc.get("name"), fc.get("probability")
+
+
+def featured_plan(items, week):
+    """The plan the site opens on: {id, code, title, country}, or None when no storm has a launch-kit row.
+    Among title-specific kit rows with at least FEATURED_MIN_CONFIRMED Qloo-confirmed AI picks and at least one
+    event idea, prefer titles released within FEATURED_RECENT_YEARS of the data week (meta.year), then most
+    confirmed picks, then the country's chance. Otherwise the older rule: among the week's FEATURED_FALLBACK_SEARCH
+    likeliest storms, the first title-specific row with enough confirmed picks, else the top storm's first kit row."""
+    try:
+        data_year = int(str(week)[:4])
+    except (TypeError, ValueError):
+        data_year = None
+    ranked = sorted(items, key=_rank_key)
+
+    def usable(item):
+        return [r for r in item["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())
+                and _country_name(item, r["code"])[0]]
+
+    def pick(item, row):
+        return {"id": item["summary"]["id"], "code": row["code"], "title": item["summary"]["title"],
+                "country": _country_name(item, row["code"])[0]}
+
+    def confirmed(row):
+        return len((row.get("plan") or {}).get("confirmed") or [])
+
+    candidates = []
+    for item in ranked:
+        year = (item["summary"].get("meta") or {}).get("year")
+        recent = bool(data_year and isinstance(year, int) and data_year - year <= FEATURED_RECENT_YEARS)
+        for row in usable(item):
+            has_events = any(e.get("artist") and e.get("cities") for e in row.get("events") or [])
+            if not row.get("generic") and confirmed(row) >= FEATURED_MIN_CONFIRMED and has_events:
+                candidates.append(((recent, confirmed(row), _country_name(item, row["code"])[1] or 0), item, row))
+    if candidates:
+        _, item, row = max(candidates, key=lambda c: c[0])
+        return pick(item, row)
+    fallback = None
+    for item in ranked[:FEATURED_FALLBACK_SEARCH]:
+        rows = usable(item)
+        grounded = next((r for r in rows if not r.get("generic") and confirmed(r) >= FEATURED_MIN_CONFIRMED), None)
+        if grounded:
+            return pick(item, grounded)
+        if fallback is None and rows:
+            fallback = pick(item, rows[0])
+    return fallback
+
+
+def summary_label(summary, all_summaries):
+    """A name that tells storms apart: the title plus its season, plus category and year when two storms would
+    still read the same (a film and a series called "Money Trap")."""
+    def base(s):
+        return s["title"] + (f" {s['season']}" if s.get("season") else "")
+
+    label = base(summary)
+    if sum(1 for s in all_summaries if base(s) == label) > 1:
+        year = (summary.get("meta") or {}).get("year")
+        label += f" ({summary.get('category', '').lower()}{', ' + str(year) if year else ''})"
+    return label
+
+
 MAP_TOP_TITLES = 3
 
 
@@ -112,8 +184,11 @@ def storms():
     def kit_rows(s):
         return [r for r in s["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())]
 
-    return {"week": data["week"], "hero": _hero(data["storms"]), "map": _week_map(data["storms"]), "storms": [
-        s["summary"] | {"has_kit": bool(kit_rows(s)), "kit_specific": any(not r.get("generic") for r in kit_rows(s))}
+    summaries = [s["summary"] for s in data["storms"]]
+    return {"week": data["week"], "hero": _hero(data["storms"]), "map": _week_map(data["storms"]),
+            "featured_plan": featured_plan(data["storms"], data["week"]), "storms": [
+        s["summary"] | {"has_kit": bool(kit_rows(s)), "kit_specific": any(not r.get("generic") for r in kit_rows(s)),
+                        "label": summary_label(s["summary"], summaries)}
         for s in data["storms"]]}
 
 
@@ -188,6 +263,9 @@ def scorecard():
     experiment = ROOT / "data" / "results" / "kit_experiment.json"
     if experiment.exists():
         body = {**body, "kit_experiment": _kit_experiment(json.loads(experiment.read_text(encoding="utf-8")))}
+    grounded = ROOT / "data" / "results" / "grounded_plan.json"
+    if grounded.exists():
+        body = {**body, "grounded_plan": _grounded_plan(json.loads(grounded.read_text(encoding="utf-8")))}
     lead = ROOT / "data" / "results" / "lead_time.json"
     if lead.exists():
         body = {**body, "lead_time": _lead_time(json.loads(lead.read_text(encoding="utf-8")))}
@@ -203,6 +281,17 @@ def _lead_time(raw):
             "baseline": {k: (raw.get("baseline") or {}).get(k) for k in keep},
             "baseline_most_common_picks": raw.get("baseline_most_common_picks"),
             "case_study_rule": raw.get("case_study_rule"), "case_studies": raw.get("case_studies") or []}
+
+
+def _grounded_plan(raw):
+    """The exploratory grounded-plan result, reduced to what the scorecard shows. `unbacked_share` is the share of the
+    LLM's named picks that Qloo did not confirm (not placed with the audience, or not in Qloo at all)."""
+    counts, spec = raw.get("verdict_counts") or {}, raw.get("title_specificity_same_pairs") or {}
+    total = sum(counts.values())
+    return {"status": raw.get("status"), "pairs": raw.get("pairs"), "picks_checked": raw.get("picks_checked") or total,
+            "unbacked_share": (1 - counts.get("confirmed", 0) / total) if total else None,
+            "specificity_plan": spec.get("grounded_plan_confirmed_only"), "specificity_llm": spec.get("llm_all_picks"),
+            "specificity_pairs": spec.get("pairs")}
 
 
 def _kit_experiment(raw):

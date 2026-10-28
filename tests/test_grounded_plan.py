@@ -33,7 +33,9 @@ class FakeQloo:
         if self.insights_error:
             raise QlooError("insights down")
         wanted = params["filter.results.entities"].split(",")
-        return {"results": {"entities": [{"entity_id": i, "name": i, "query": {"affinity": a}}
+        names = {v: k for k, v in self.known.items()}
+        names.update(getattr(self, "canonical", {}))  # insights spells names the way Qloo does
+        return {"results": {"entities": [{"entity_id": i, "name": names.get(i, i), "query": {"affinity": a}}
                                          for i, a in self.placed.items() if i in wanted]}}
 
 
@@ -48,6 +50,8 @@ def test_verdicts_confirmed_not_placed_not_in_qloo():
     assert plan["confirmed"] == [{"domain": "artist", "name": "Delta", "both": False},
                                  {"domain": "artist", "name": "Alpha", "both": True}]  # affinity order, not proposal order
     assert plan["dropped"] == {"not_placed": 1, "not_in_qloo": 1}
+    assert plan["rejected"] == [{"domain": "artist", "name": "Gamma", "verdict": "not_in_qloo"},
+                                {"domain": "artist", "name": "Beta", "verdict": "not_placed"}]
     assert "affinity" not in str(plan)
     sent = client.insight_params[0]
     assert sent["filter.results.entities"] == "a,b,d" and sent["signal.location.query"] == "Japan"
@@ -121,3 +125,24 @@ def test_storm_detail_endpoint_carries_the_plan(monkeypatch, tmp_path):
     body = TestClient(api.app).get("/api/storms/show").json()
     assert body["launch_kit"][0]["plan"]["confirmed"][0]["name"] == "Alpha"
     assert body["launch_kit"][0]["plan"]["dropped"] == {"not_placed": 2, "not_in_qloo": 1}
+
+
+def test_confirmed_names_use_qloos_canonical_spelling():
+    client = FakeQloo({"JBL": "j"}, {"j": 0.9})
+    client.canonical = {"j": "JBL"}
+    client.known = {"jbl": "j"}  # /search answers with its own "Jbl"-style entity; insights carries "JBL"
+    plan = grounded_plan.ground(client, "title", "Japan", {"brand": ["jbl"]})
+    assert [c["name"] for c in plan["confirmed"]] == ["JBL"]
+
+
+def test_rejected_names_ride_on_the_plan_and_the_brief(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test")
+    monkeypatch.setattr(llm_kits, "title_kits", lambda pairs: {p["id"]: {"artist": ["Alpha", "Beta", "Gamma"]} for p in pairs})
+    rows, row = storms()
+    assert grounded_plan.add_plans(FakeQloo(KNOWN, PLACED), rows) == 1
+    assert row["plan"]["rejected"] == [{"domain": "artist", "name": "Gamma", "verdict": "not_in_qloo"},
+                                       {"domain": "artist", "name": "Beta", "verdict": "not_placed"}]
+    from aftershock import launch_brief
+    detail = rows[0]["detail"] | {"id": "show", "spillover": {"forecasts": [{"code": "JP", "name": "Japan", "probability": 0.3}]}}
+    check = next(s for s in launch_brief.brief(detail, "JP")["steps"] if s["key"] == "qloo_check")
+    assert check["rejected"] == row["plan"]["rejected"]

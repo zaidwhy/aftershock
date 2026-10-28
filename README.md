@@ -6,7 +6,7 @@
 
 An LLM alone, asked what a title's audience in a country loves, answers fluently and specifically. On 81 title-country pairs, Qloo could not back 71% of what it named: 34% were names Qloo does not know, 37% things Qloo does not link to that audience in that country (section 3). So in AFTERSHOCK the LLM proposes and Qloo decides: every name is checked for that title's audience in that country, and only confirmed names reach the plan.
 
-Every week the agent reads Netflix's public per-country Top 10, finds titles that just broke out in one to three countries, and forecasts where each charts next from Netflix history. For the top countries it asks Qloo what that title's audience over-indexes on (the launch kit, checked against the country's general taste), asks Gemini for more ideas and checks each one against Qloo, finds the cities where the audience concentrates (Hotspots), and writes a **Launch Brief** per country: where, which cities, which partners, and what the evidence does not support. **Plan a launch** on the site shows those steps one by one and ends in the brief; **Follow one title** recolours the world map by one title's chances. Every forecast is locked in a hash-chained ledger before its outcome exists and graded against Netflix's later charts.
+Every week the agent reads Netflix's public per-country Top 10, finds titles that just broke out in one to three countries, and forecasts where each charts next from Netflix history. For the top countries it asks Qloo what that title's audience over-indexes on (the launch kit, checked against the country's general taste), asks Gemini for more ideas and checks each one against Qloo, finds the cities where the audience concentrates (Hotspots), and writes a **Launch Brief** per country: where, which cities, which partners, and what the evidence does not support. **Plan a launch** on the site replays those steps one by one (they are precomputed by the weekly run, not run live), lists the AI names Qloo rejected struck through with the reason, and ends in the brief; **Follow one title** recolours the world map by one title's chances. Every forecast is locked in a hash-chained ledger before its outcome exists and graded against Netflix's later charts.
 
 Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/), October 2026. MIT licensed. The live site is refreshed after each weekly run; its Agent page shows when the last run happened.
 
@@ -14,11 +14,13 @@ Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/), October 2026.
 
 ## 1. The problem
 
-Distributors, dubbing studios, music publishers and catalog owners react to breakouts after the fact. Netflix sees its own viewing data; they do not. AFTERSHOCK gives them a forecast with its evidence attached, local partners from Qloo, and a public record of how good those forecasts have been.
+Labels, music publishers, promoters and brands, then local distributors and dubbing studios, react to breakouts after the fact. Netflix sees its own viewing data; they do not. AFTERSHOCK gives them a forecast with its evidence attached, local partners from Qloo, and a public record of how good those forecasts have been.
 
 ## 2. The models and the Qloo calls
 
 **Why the agent follows a fixed plan instead of letting the LLM choose its own steps.** A brief someone acts on has to say why each name is in it. An LLM that picks its own tools can skip the Qloo check, call it on the wrong audience, or explain a step it never ran, and nobody can tell afterwards. So the order is fixed (forecast, Qloo kit, AI proposals, Qloo check, cities, artist-city match, brief), the LLM does what it is good at inside that order (proposing names, drafting the summary), and every decision is a rule printed next to the step it changed, such as "Qloo confirmed fewer than 3 AI picks, so the brief uses Qloo's own kit". The same steps run the same way for every title, which is what lets us measure them.
+
+**Which plan the site opens on.** The home button and `#/plan` open the featured plan, computed in `aftershock/api.py` (`featured_plan`) and carried in the storms list: among title-specific kit rows with at least 3 Qloo-confirmed AI picks and at least 1 event idea, prefer titles released within 5 years of the data week, then the most confirmed picks, then the country's chance (without such a row, the first title-specific row with 3 confirmed picks among the likeliest storms, else the top storm's first kit row).
 
 **SPILLOVER (countries).** For a title that broke out in countries A, the probability that country B charts it within four weeks is how often B followed past breakouts that started in A, smoothed toward B's rate for the same category, which is smoothed toward B's overall rate (`aftershock/netflix.py`). Qloo's job here is the partners list: `GET /v2/insights?filter.type=urn:entity:artist&signal.interests.entities=<title>&signal.location.query=<country>`, the artists the title's audience over-indexes on in each forecast country.
 
@@ -56,6 +58,8 @@ Every backtest and test number here comes from a script in this repo and a file 
 | Netflix history | 0.817 | 0.041 |
 | Each country's general rate | 0.558 | 0.015 |
 | Uniform | 0.500 | 0.012 |
+
+ROC AUC 0.817 means the model ranks a country that went on to chart above one that did not 82% of the time.
 
 **How much warning the spillover forecast gives** (`scripts/measure_lead_time.py` -> `lead_time.json`; a backtest on history-only forecasts, same 829 held-out breakouts, split, model and 4-week horizon as above; the forecast week is the breakout week and the model is fit on earlier breakouts only). Top-3 hit rate is the share of breakouts where at least one of the three forecast countries charted the title within 4 weeks; the baseline is the three countries with the highest overall join rate (the "general rate" row above: Maldives, Singapore, Malaysia for nearly every title).
 

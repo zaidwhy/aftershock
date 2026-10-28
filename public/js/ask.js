@@ -162,7 +162,7 @@ export function askBox(isCurrent, stormsP) {
   }
   return h("section", { class: "ask", "aria-labelledby": "ask-h" },
     h("h2", { id: "ask-h" }, "Ask the agent"),
-    h("p", { class: "muted" }, "Ask in plain words. The agent picks the right tool and shows every step. It follows fixed rules, not a language model, so it only reports what its tools return."),
+    h("p", { class: "muted" }, "Ask in plain words. The agent picks the right tool and shows every step. It answers from this week's run and shows every tool it used."),
     h("form", { class: "lookup-form ask-form", novalidate: true, onsubmit: (e) => { e.preventDefault(); run(); } },
       h("label", { for: "ask-q", class: "sr-only" }, "Ask the agent a question"), input, btn),
     chips,

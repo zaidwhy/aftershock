@@ -104,9 +104,9 @@ export function weekMapSection(map, week, isCurrent, storms = [], followId = nul
   // The control: a select plus quick chips for the top titles.
   const select = h("select", { id: "wm-follow", class: "wm-select", onchange: () => follow(select.value) },
     h("option", { value: ALL }, "All of this week's breakouts"),
-    ranked.map((s) => h("option", { value: s.id }, s.title)));
+    ranked.map((s) => h("option", { value: s.id }, s.label ?? s.title)));
   const chips = ranked.slice(0, QUICK).map((s) => {
-    const b = h("button", { type: "button", class: "chip", "aria-pressed": "false", onclick: () => follow(followed?.id === s.id ? ALL : s.id) }, s.title);
+    const b = h("button", { type: "button", class: "chip", "aria-pressed": "false", onclick: () => follow(followed?.id === s.id ? ALL : s.id) }, s.label ?? s.title);
     b.dataset.id = s.id;
     return b;
   });
@@ -145,7 +145,7 @@ export function weekMapSection(map, week, isCurrent, storms = [], followId = nul
       if (mine !== req || !isCurrent()) return;
       const fcs = detail.spillover?.forecasts || [];
       apply({
-        id, title: detail.title, detail,
+        id, title: ranked.find((x) => x.id === id)?.label ?? detail.title, detail,
         names: new Map(fcs.map((x) => [x.code, x.name])),
         forecasts: new Map(fcs.map((x) => [x.code, x.probability])),
         origins: new Set((detail.origin_countries || []).map((o) => o.code)),

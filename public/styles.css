@@ -500,3 +500,9 @@ dd { margin: 0; font-size: 1.1rem; }
 .lw-svg { display: block; width: 100%; max-width: 420px; height: auto; }
 .lw-model { fill: var(--accent); stroke: var(--ink); stroke-width: 1; }
 .lw-base { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+.rejected { margin: 8px 0 4px; }
+.rejected .plan-note { margin: 0 0 2px; }
+.rejected-list { list-style: none; margin: 0; padding: 0; font-size: 0.92rem; }
+.rejected-list li { padding: 2px 0; }
+.rejected-list s { text-decoration-thickness: 1.5px; }
+.rejected-why { font-size: 0.85rem; color: var(--ink-soft); }
