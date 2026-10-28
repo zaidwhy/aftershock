@@ -25,6 +25,7 @@ from aftershock import ledger, storm_archive, titles as title_index, wiki  # noq
 from aftershock.netflix import (  # noqa: E402
     HistoryBaseline, breakout_events, first_entries, load_rows, roc_auc, title_categories,
 )
+from aftershock.grounded_plan import add_plans  # noqa: E402
 from aftershock.hotspots import hotspots  # noqa: E402
 from aftershock.launch_kit import (  # noqa: E402
     DOMAINS, GENERIC_AT_OR_BELOW, country_picks, launch_kit, specificity)
@@ -409,7 +410,7 @@ def main():
     model = HistoryBaseline(horizon=HORIZON).fit(observed, countries)
     log.info("last week %s: %d breakouts this week, model fit on %d events", last_week, len(storms_now), len(observed))
 
-    client = None if args.no_qloo else Qloo(call_budget=4000)
+    client = None if args.no_qloo else Qloo(call_budget=6000)
     titles = live_placements()
     storms, to_lock = [], []
     controls = {}  # country code -> {domain: names}, Qloo country-only kit, one fetch per country per run
@@ -451,6 +452,9 @@ def main():
         to_lock += [{"kind": "spillover", "title": list(event["title"]), "origin_week": str(event["origin_week"]),
                      "target": c, "probability": round(probabilities[c], 4)} for c in sorted(candidates)]
 
+    # An LLM proposes names for each kit row and Qloo checks them; skipped without GEMINI_API_KEY.
+    if client:
+        add_plans(client, storms)
     watched = ripple_watch(client, titles, date.today()) if client else []
     for item in watched:
         scored = [song for song in item["songs"] if song.get("score") is not None]
