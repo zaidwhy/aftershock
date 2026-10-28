@@ -168,7 +168,7 @@ def brief(detail, code):
     out["summary_source"] = summary.get("source") if summary.get("text") else SUMMARY_TEMPLATE
     steps.append({"key": "brief", "title": "Assemble the brief",
                   "found": f"Brief ready: {len(partners)} partner groups, {len(cities)} cities, "
-                           f"{len(avoid)} things to avoid claiming."})
+                           f"{len(avoid)} {'caveat' if len(avoid) == 1 else 'caveats'} on what not to claim."})
     return {"steps": steps, "brief": out}
 
 

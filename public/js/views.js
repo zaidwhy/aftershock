@@ -9,6 +9,7 @@ import { weekMapSection } from "./weekmap.js";
 import { launchBrief } from "./brief.js";
 import { askBox } from "./ask.js";
 import { agentLine } from "./agent.js";
+import { defaultPlan } from "./plan.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -53,6 +54,12 @@ export function renderHome(root, isCurrent, followId = null) {
   const proof = h("aside", { class: "proof", "aria-label": "Evidence at a glance" });
   const mapBox = h("div", null);
   const agentBox = h("p", { class: "agent-line", hidden: true });
+  const planCta = h("a", { class: "btn btn-primary", href: "#/plan" }, "Plan a launch");
+  defaultPlan().then((d) => {
+    if (!isCurrent() || !d) return;
+    planCta.href = `#/plan/${encodeURIComponent(d.id)}/${encodeURIComponent(d.code)}`;
+    planCta.textContent = `Plan a launch: ${d.title} in ${d.country}`;
+  }).catch(() => {});
   const stormsP = getStorms();
   add(root,
     h("section", { class: "hero" },
@@ -60,6 +67,7 @@ export function renderHome(root, isCurrent, followId = null) {
         h("div", { class: "hero-copy" },
           h("p", { class: "eyebrow" }, "A Qloo taste agent for breakout shows"),
           h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next, and what travels with it?")),
+          h("p", { class: "plan-cta" }, planCta),
           h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to pair it with there: the artists and brands that title's audience loves in each country, and the cities where that audience lives. Every forecast is locked publicly before the outcome exists."),
           h("ul", { class: "hero-links" },
             h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")),
@@ -307,7 +315,9 @@ function kitSection(st) {
     briefControl(st, rows),
     anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "Greyed out"), ": popular across the whole country anyway, not specific to this title") : null,
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
-      h("h3", null, countryName(r.code)), specific(r),
+      h("h3", null, countryName(r.code)),
+      r.brief ? h("p", { class: "plan-link" }, h("a", { href: `#/plan/${encodeURIComponent(st.id)}/${encodeURIComponent(r.code)}` }, "Plan a launch here")) : null,
+      specific(r),
       h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", { class: d === "brand" ? "kit-minor" : null },
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
       planBlock(r), hotspotBlock(r)))),

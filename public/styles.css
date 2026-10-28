@@ -438,3 +438,41 @@ dd { margin: 0; font-size: 1.1rem; }
 .follow-link { margin: 0 0 10px; }
 .country, .fc-dot { transition: fill 600ms ease; }
 @media (prefers-reduced-motion: reduce) { .country, .fc-dot { transition: none; } }
+
+/* Plan a launch: the agent's steps as cards, then the brief as the deliverable. */
+.plan-cta { margin: 0 0 18px; }
+.plan-cta .btn { max-width: 100%; text-align: left; }
+@media (max-width: 899px) { .hero-top .plan-cta { order: 2; } }
+.plan-link { margin: 0 0 8px; font-size: 0.95rem; }
+.plan-pick { display: flex; flex-wrap: wrap; gap: 14px 24px; margin: 18px 0 8px; }
+.plan-pick .field { min-width: 0; max-width: 100%; }
+.plan-pick select { width: 100%; min-width: 220px; }
+.plan-run-h { font-size: clamp(1.3rem, 3vw, 1.7rem); }
+.plan-steps { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 12px; max-width: 760px; }
+.plan-step { border: 1.5px solid var(--rule); background: var(--paper-2); padding: 12px 16px; animation: plan-in 0.3s ease-out; }
+.plan-step h3 { font: 600 1.05rem var(--sans); margin: 0 0 4px; }
+.plan-step-n { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 2px; }
+.plan-found { margin: 0 0 6px; }
+.plan-decision { margin: 8px 0 0; padding: 6px 0 0 12px; border-left: 3px solid var(--accent); font-size: 0.95rem; }
+.plan-rule { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
+.plan-brief { border: 2px solid var(--ink); background: var(--paper); padding: 20px 20px 8px; max-width: 760px; animation: plan-in 0.3s ease-out; }
+.plan-brief h2 { margin-top: 0; }
+.plan-brief h3 { font: 500 0.75rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 18px 0 6px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.plan-headline { font-size: 1.1rem; font-weight: 500; }
+.plan-brief ul { margin: 0 0 1em; padding-left: 1.2em; }
+.plan-note { font-size: 0.85rem; color: var(--ink-soft); }
+.plan-note.mono { font-family: var(--mono); font-size: 0.8rem; }
+.plan-partners > div { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 4px 12px; padding: 4px 0; }
+.plan-partners dt { font: 400 0.75rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding-top: 3px; }
+.plan-partners dd { margin: 0; }
+.plan-both { font: 400 0.72rem var(--mono); color: var(--ink-soft); }
+.plan-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 0; }
+@media (max-width: 480px) { .plan-partners > div { grid-template-columns: 1fr; } .plan-brief { padding: 16px 14px 4px; } }
+@keyframes plan-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .plan-step, .plan-brief { animation: none; } }
+@media print {
+  .site-head, .site-foot, .skip, .no-print, .plan-steps-region { display: none !important; }
+  body { background: #fff; color: #000; display: block; }
+  main { padding: 0; max-width: none; }
+  .plan-brief { border: 0; padding: 0; max-width: none; animation: none; }
+}
