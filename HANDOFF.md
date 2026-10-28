@@ -2,6 +2,12 @@
 
 Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (Discord says keys live to 16 Nov); top 3 present on air 5 Nov.
 
+## Start here (written 28 Oct, about 23:30 IST): the overhaul
+
+Team meeting on 28 Oct lifted the feature freeze. Built, committed and pushed (318 tests): 3D globe home (vendored globe.gl 2.46.2, public/js/globe.js, centroids.js for small-country markers), dark theme and new type (public/v2.css), guided tour (tour.js, first visit + Tour button), Ask AFTERSHOCK chat on every page (chat.js over the extended aftershock/ask.py router: feature help, why missing, why breaking, release, about), About page (Team Solstine, sidzaid72@gmail.com), Plan a release (aftershock/release_plan.py, GET /api/release, MCP release_plan, public/js/release.js; five examples from scripts/build_release_showcases.py into gitignored public/data/release/). Devpost draft updated. Video brief for teammates: projects/aftershock-team/VIDEO_BRIEF.md.
+
+Deploy was blocked by the auto-mode classifier: Zaid runs `vercel deploy --prod --yes --scope syzayds-projects` from this folder (public/data/release must exist; rebuild with `.venv/Scripts/python scripts/build_release_showcases.py`, cached). After deploy, check: home globe, #/release live run on Vercel (cold 14-32 s, maxDuration 60), chat, tour.
+
 ## Start here (written 28 Oct, 02:25 IST)
 
 **Final fixes applied 28 Oct night (237 tests), scope cut to fixes and wording only.** DONE: brief order (Qloo's kit leads when title-specific, data lead line, AI names follow, platform brands dropped, home example follows); Ask fallback with did-you-mean and "what's heading to X" (24 phrasings tested, none dead-end); first Ask chip is the week's top breakout, song chips removed from the row; three-number comparison and 71% on home and Scorecard, backtest wording reordered; window line above the chance; admin suffixes stripped from place names at read time; Devpost and README text (Qloo calls section moved, demo video placeholder line for Zaid). NOT DONE by decision: live Qloo kit lookup in the Ask box, Qloo call panels on the plan page, artist page map, show-all storm list, video re-cut (needs Zaid's voice).
