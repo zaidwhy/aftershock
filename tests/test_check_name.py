@@ -94,4 +94,4 @@ def test_missing_key_is_a_sentence(served, monkeypatch):
     monkeypatch.setattr(api, "Qloo", RealQloo)
     monkeypatch.setenv("QLOO_API_KEY", "")
     resp = get(served)
-    assert resp.status_code == 502 and "did not answer" in resp.json()["detail"]
+    assert resp.status_code == 503 and "switched off" in resp.json()["detail"]

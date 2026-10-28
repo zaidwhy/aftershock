@@ -422,8 +422,9 @@ def _take_live_slot(request):
 def qloo_failure(err):
     """Status code and visitor-facing message for a failed live Qloo lookup. A refused key will not
     recover by retrying, so it says so and points at the parts of the site that need no live call."""
-    if err.status in (401, 403):
-        return 503, ("Live Qloo lookups are switched off right now (Qloo refused the API key). The weekly "
+    if err.status in (401, 403) or "QLOO_API_KEY is not set" in str(err):
+        reason = "Qloo refused the API key" if err.status else "no Qloo API key is set"
+        return 503, (f"Live Qloo lookups are switched off right now ({reason}). The weekly "
                      "forecasts, launch kits, hotspots and map on this site still work.")
     if err.status == 429:
         return 503, "Qloo is rate-limiting live lookups; try again in a few minutes."
