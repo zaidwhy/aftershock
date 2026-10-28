@@ -52,9 +52,35 @@ def health():
             "cache_entries": len(list(CACHE_DIR.glob("*.json"))) if CACHE_DIR.exists() else 0}
 
 
-def _hero(items):
-    """Clearest worked example: highest top-forecast probability among storms whose top forecast country has a
-    title-specific launch-kit row with at least one hotspot place. None when no storm qualifies."""
+def _featured_hero(items, featured):
+    """(summary, row, forecast, places) for the featured plan's title and country, so the home example and the
+    "Plan a launch" button show the same case; None when that row is missing or has no places."""
+    item = next((i for i in items if i["summary"]["id"] == featured.get("id")), None)
+    if not item:
+        return None
+    row = next((r for r in item["detail"].get("launch_kit", []) if r.get("code") == featured.get("code")), None)
+    top = next((f for f in item["detail"].get("spillover", {}).get("forecasts", []) if f["code"] == featured.get("code")), None)
+    places = ((row or {}).get("hotspots") or {}).get("places") or []
+    return (item["summary"], row, top, places) if row and top and places else None
+
+
+def _hero(items, featured=None):
+    """Clearest worked example: the featured plan when there is one (its Qloo-confirmed names, as in its brief);
+    otherwise the highest top-forecast probability among storms whose top forecast country has a title-specific
+    launch-kit row with at least one hotspot place. None when no storm qualifies."""
+    picked = _featured_hero(items, featured) if featured else None
+    if picked:
+        summ, row, top, places = picked
+        confirmed = (row.get("plan") or {}).get("confirmed") or []
+        meta = summ.get("meta") or {}
+        origin_year = int(summ["origin_week"][:4]) if summ.get("origin_week") else None
+        return {"id": summ["id"], "title": summ["title"], "origin_countries": summ["origin_countries"],
+                "year": meta.get("year"), "genres": meta.get("genres") or [],
+                "just_added": bool(meta.get("year") and origin_year and origin_year - meta["year"] > 1),
+                "country": top["name"], "code": top["code"], "probability": top["probability"], "why": top.get("why"),
+                "artists": [c["name"] for c in confirmed if c["domain"] == "artist"][:3],
+                "brands": [c["name"] for c in confirmed if c["domain"] == "brand"][:2],
+                "places": places[:3], "specificity": row.get("specificity")}
     best = None
     for item in items:
         summ, detail = item["summary"], item["detail"]
@@ -186,8 +212,9 @@ def storms():
         return [r for r in s["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())]
 
     summaries = [s["summary"] for s in data["storms"]]
-    return {"week": data["week"], "hero": _hero(data["storms"]), "map": _week_map(data["storms"]),
-            "featured_plan": featured_plan(data["storms"], data["week"]), "storms": [
+    featured = featured_plan(data["storms"], data["week"])
+    return {"week": data["week"], "hero": _hero(data["storms"], featured), "map": _week_map(data["storms"]),
+            "featured_plan": featured, "storms": [
         s["summary"] | {"has_kit": bool(kit_rows(s)), "kit_specific": any(not r.get("generic") for r in kit_rows(s)),
                         "label": summary_label(s["summary"], summaries)}
         for s in data["storms"]]}

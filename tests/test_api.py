@@ -357,3 +357,17 @@ def test_unknown_storm_404_sentence(tmp_path, monkeypatch):
     resp = client.get("/api/storms/not-real")
     assert resp.status_code == 404
     assert resp.json()["detail"] == "No breakout called not-real in any week we have forecast."
+
+
+def test_hero_follows_the_featured_plan_with_its_confirmed_names():
+    detail = {"launch_kit": [{"code": "SE", "kit": {"artist": [{"name": "Kit Artist"}]}, "hotspots": {"places": ["Gothenburg"]},
+                              "plan": {"confirmed": [{"domain": "artist", "name": "Veronica Maggio", "both": False},
+                                                     {"domain": "brand", "name": "Volvo", "both": False}]}}],
+              "spillover": {"forecasts": [{"code": "NO", "name": "Norway", "probability": 0.17, "why": "w"},
+                                          {"code": "SE", "name": "Sweden", "probability": 0.14, "why": "v"}]}}
+    summary = {"id": "nw", "title": "Nightwatch", "origin_countries": ["DK"], "origin_week": "2026-10-18",
+               "top_forecast": {"code": "NO", "name": "Norway", "probability": 0.17, "why": "w"}}
+    hero = api._hero([{"summary": summary, "detail": detail}], {"id": "nw", "code": "SE"})
+    assert (hero["country"], hero["probability"], hero["artists"], hero["brands"]) == ("Sweden", 0.14, ["Veronica Maggio"], ["Volvo"])
+    # An unknown featured plan falls back to the top-forecast rule; Norway has no kit row here, so nothing qualifies.
+    assert api._hero([{"summary": summary, "detail": detail}], {"id": "missing", "code": "SE"}) is None
