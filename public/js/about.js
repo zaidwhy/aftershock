@@ -47,5 +47,5 @@ export function renderAbout(root) {
         h("h3", null, `Team ${TEAM.name}`),
         h("p", { class: "team-line" }, TEAM.members.join("  ·  ")),
         h("p", null, "Contact: ", h("span", { class: "mono", style: "user-select:all" }, TEAM.email)),
-        h("p", null, h("a", { href: TEAM.repo }, "Code, method and every test on GitHub"))))));
+        h("p", null, h("a", { href: TEAM.repo }, "Code, method and every test on GitHub")))));
 }
