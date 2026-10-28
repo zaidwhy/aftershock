@@ -22,8 +22,8 @@ from aftershock.qloo import QlooError, resolve
 log = logging.getLogger(__name__)
 
 MAX_ARTISTS = 3
-OVERLAP_KM = 60  # a show place and an artist cell this close count as the same city
-ARTIST_TOP_CELLS = 30  # an artist's strongest cells that count as "where their audience concentrates"
+OVERLAP_KM = 30  # a show place and an artist cell this close count as the same city
+ARTIST_TOP_CELLS = 5  # an artist's strongest cells that count as "where their audience concentrates"; at 30 cells and 60 km, 114 of 176 ideas named every show city
 
 
 def overlap_cities(places, place_cells, artist_cells, km=OVERLAP_KM, top=ARTIST_TOP_CELLS):

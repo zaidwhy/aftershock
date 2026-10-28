@@ -42,10 +42,10 @@ def row():
                          "cells": []}}
 
 
-def test_overlap_within_and_outside_60_km():
-    near = (DELHI[0] + 0.3, DELHI[1])  # about 33 km
-    far = (DELHI[0] + 0.7, DELHI[1])  # about 78 km
-    assert distance_km(DELHI, near) < 60 < distance_km(DELHI, far)
+def test_overlap_within_and_outside_overlap_km():
+    near = (DELHI[0] + 0.2, DELHI[1])  # about 22 km
+    far = (DELHI[0] + 0.4, DELHI[1])  # about 44 km
+    assert distance_km(DELHI, near) < le.OVERLAP_KM < distance_km(DELHI, far)
     assert le.overlap_cities(["Delhi"], [DELHI], [[near[0], near[1], 1.0]]) == ["Delhi"]
     assert le.overlap_cities(["Delhi"], [DELHI], [[far[0], far[1], 1.0]]) == []
 
