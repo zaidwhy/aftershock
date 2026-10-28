@@ -59,7 +59,7 @@ Local media and creators can act fastest, on the same cities. We have no custome
 - Titles that launch worldwide on day one are not breakouts, so it would not have flagged Stranger Things 4 or Wednesday.
 - The warning is about a week. That suits short activations, playlist pushes and local ads, not tours, which are booked months ahead.
 - The country forecast uses Netflix history only. Qloo added no lift to it in our test.
-- It watches Netflix only, because Netflix is the one major streamer we found that publishes a weekly Top 10 for each of 94 countries, back to 2021; we found no comparable per-country charts from other streamers, and third-party chart scrapers carry terms risk. The Qloo half (kits, city maps, artist overlap, the live check) works for any title Qloo knows, from any platform.
+- It watches Netflix only, because Netflix is the one major streamer we found that publishes a weekly Top 10 for each of 94 countries, back to 2021; we found no comparable per-country charts from other streamers, and third-party chart scrapers carry terms risk. That history is also what makes the forecast testable: it is how we backtested on 829 held-out breakouts and how every new forecast gets graded in public. The Qloo half (kits, city maps, artist overlap, the live check) works for any title Qloo knows, from any platform.
 - Launch kits and activation ideas are not yet validated against outcomes, and forecasts are graded only from 15 Nov 2026.
 
 ## What we measured, including what did not work
