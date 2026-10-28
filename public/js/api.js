@@ -32,6 +32,8 @@ export const getArtist = (slug) => stat(`artists/${encodeURIComponent(slug)}`);
 export const getScorecard = () => stat("scorecard");
 export const getReplays = () => stat("replays");
 export const getLedger = () => stat("ledger");
+export const getReleaseExamples = () => stat("release/index");
+export const getReleaseExample = (slug) => stat(`release/${encodeURIComponent(slug)}`);
 export const getAgentRun = () => (cfg.mock ? Promise.reject(new Error("The agent log is not part of the mock data.")) : stat("agent_run"));
 
 /** A plain question for the keyword agent (aftershock/ask.py). Song and artist questions use a live Qloo slot. */
@@ -77,4 +79,10 @@ export async function lookupTitle(name) {
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`The title lookup returned HTTP ${res.status}.`);
   return res.json();
+}
+
+/** A release planned live by Qloo (GET /api/release): about 40 Qloo calls, so it takes a while. */
+export async function planRelease(name, kind, like) {
+  if (cfg.mock) throw new Error("Planning a release needs the live API; mock mode has none.");
+  return getJson(`${cfg.apiBase}/release?name=${encodeURIComponent(name.slice(0, 120))}&kind=${encodeURIComponent(kind)}&like=${encodeURIComponent((like || "").slice(0, 600))}`);
 }

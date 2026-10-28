@@ -64,8 +64,10 @@ export function briefMarkdown(b, url) {
 }
 
 function stepCard(s, n) {
-  return h("li", { class: "plan-step" },
-    h("p", { class: "plan-step-n mono" }, `Step ${n}`),
+  // Steps that call Qloo are lit, so a reader sees at a glance which decisions are Qloo's.
+  const qloo = /qloo/i.test(`${s.title} ${s.found}`);
+  return h("li", { class: qloo ? "plan-step plan-step-qloo" : "plan-step" },
+    h("p", { class: "plan-step-n mono" }, `Step ${n}`, qloo ? h("span", { class: "qloo-mark plan-step-tag" }, "Qloo") : null),
     h("h3", null, s.title),
     h("p", { class: "plan-found" }, s.found),
     s.note ? h("p", { class: "plan-note" }, s.note) : null,

@@ -133,7 +133,7 @@ def test_unparseable_question_fails_gracefully(ctx):
     r = ask.answer("who will win the world cup", ctx)
     assert r["intent"] == "none" and r["answer"]["kind"] == "help"
     assert "Where will Squid Game go next?" in r["answer"]["message"]
-    assert r["links"] == [] and r["steps"][0]["ok"] is False
+    assert r["links"][0] == {"label": "Plan a launch", "href": "#/plan"} and r["steps"][0]["ok"] is False
     assert ask.answer("   ", ctx)["answer"]["kind"] == "help"
 
 
@@ -258,4 +258,4 @@ def test_whats_heading_to_a_country_routes_to_the_country_answer(ctx):
 def test_questions_that_are_not_about_a_title_still_get_help(ctx):
     for q in ("who will win the world cup", "zzz yyy xxx www vvv uuu ttt sss", "   "):
         assert ask.answer(q, ctx)["answer"]["kind"] == "help"
-        assert "could not tell" in ask.answer(q, ctx)["answer"]["message"] or q.strip() == ""
+        assert "I can answer questions like" in ask.answer(q, ctx)["answer"]["message"] or q.strip() == ""

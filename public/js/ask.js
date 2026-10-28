@@ -104,7 +104,7 @@ function scoutCard(a, run) {
     h("ol", { class: "songs scout-list" }, r.artists.map((x) => scoutRow(x, r.show_leans, r.candidates, r.show))));
 }
 
-function answerCard(res, run) {
+export function answerCard(res, run) {
   const a = res.answer;
   switch (a.kind) {
     case "storm": return stormCard(a);
@@ -119,7 +119,7 @@ function answerCard(res, run) {
   }
 }
 
-function stepsList(steps) {
+export function stepsList(steps) {
   return h("section", { class: "ask-steps", "aria-label": "How the agent answered" },
     h("h3", null, "How the agent answered"),
     h("ol", { class: "steps" }, steps.map((s) => h("li", { class: s.ok ? null : "step-no" },

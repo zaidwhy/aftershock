@@ -1,35 +1,25 @@
+/* A control room at night: deep ink, one seismic orange for the shock, one mint for what Qloo verified. */
 :root {
-  --paper: #F3EFE6;
-  --paper-2: #E9E4D7;
-  --ink: #1C1B19;
-  --ink-soft: #55524B;
-  --rule: #CFC9BA;
-  --accent: #D9482B;
-  --accent-ink: #B33619;
-  --on-accent: #FFFFFF;
-  --map-base: #E3DDCD;
-  --map-sea: #EBE6D9;
-  --grid: rgba(28, 27, 25, 0.06);
-  --focus: #1C1B19;
-  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
-  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #141412;
-    --paper-2: #1E1D1A;
-    --ink: #EDE8DB;
-    --ink-soft: #A8A397;
-    --rule: #3A3832;
-    --accent: #F0644A;
-    --accent-ink: #F58A75;
-    --on-accent: #141412;
-    --map-base: #26241F;
-    --map-sea: #191815;
-    --grid: rgba(237, 232, 219, 0.05);
-    --focus: #EDE8DB;
-  }
+  color-scheme: dark;
+  --paper: #07090D;
+  --paper-2: #10141B;
+  --panel: rgba(16, 20, 27, 0.72);
+  --ink: #E9EDF3;
+  --ink-soft: #97A0AE;
+  --rule: #232A35;
+  --accent: #FF5A36;
+  --accent-ink: #FF7A5C;
+  --on-accent: #0A0B0E;
+  --qloo: #3EE6B0;
+  --qloo-soft: rgba(62, 230, 176, 0.12);
+  --amber: #FFC478;
+  --map-base: #1A202A;
+  --map-sea: #0C1016;
+  --grid: rgba(233, 237, 243, 0.035);
+  --focus: #FFC478;
+  --serif: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -38,9 +28,12 @@ body {
   margin: 0;
   background-color: var(--paper);
   background-image:
+    radial-gradient(1200px 600px at 80% -10%, rgba(255, 90, 54, 0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 30%, rgba(62, 230, 176, 0.05), transparent 60%),
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-size: auto, auto, 56px 56px, 56px 56px;
+  background-attachment: fixed;
   color: var(--ink);
   font: 400 1rem/1.6 var(--sans);
   overflow-wrap: break-word;

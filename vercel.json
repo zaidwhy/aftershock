@@ -1,7 +1,8 @@
 {
   "functions": {
     "api/index.py": {
-      "includeFiles": "{aftershock/**,data/private/**,data/public/**}"
+      "includeFiles": "{aftershock/**,data/private/**,data/public/**}",
+      "maxDuration": 60
     }
   },
   "rewrites": [

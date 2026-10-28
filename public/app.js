@@ -12,6 +12,10 @@ import { renderHome, renderStorm, renderRipple, renderTry, renderScout, renderSc
 import { renderAgent } from "./js/agent.js";
 import { renderPlan } from "./js/plan.js";
 import { renderArtists, renderArtist } from "./js/artists.js";
+import { renderRelease } from "./js/release.js";
+import { renderAbout } from "./js/about.js";
+import { mountChat } from "./js/chat.js";
+import { startTour, maybeAutoTour } from "./js/tour.js";
 
 setConfig(CONFIG);
 
@@ -30,6 +34,8 @@ const routes = [
   [/^#\/agent$/, () => renderAgent],
   [/^#\/artists$/, () => renderArtists],
   [/^#\/artist\/([^/]+)$/, (m) => (el, t) => renderArtist(el, decodeURIComponent(m[1]), t)],
+  [/^#\/release(?:\?(.*))?$/, (m) => (el, t) => { const q = new URLSearchParams(m[1] || ""); renderRelease(el, t, { name: q.get("name") || "", kind: q.get("kind") || "" }); }],
+  [/^#\/about$/, () => renderAbout],
   [/^#\/plan(?:\/([^/]+)\/([^/]+))?$/, (m) => (el, t) => renderPlan(el, t, m[1] && decodeURIComponent(m[1]), m[2] && decodeURIComponent(m[2]))],
 ];
 
@@ -44,7 +50,7 @@ function route() {
   }
   document.querySelectorAll("nav [data-nav]").forEach((a) => {
     const key = a.dataset.nav;
-    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "plan" && hash.startsWith("#/plan/")) || (key === "artists" && hash.startsWith("#/artist/"));
+    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "plan" && hash.startsWith("#/plan/")) || (key === "artists" && hash.startsWith("#/artist/")) || (key === "release" && hash.startsWith("#/release"));
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   // The secondary pages live under "More": close it after a pick and mark it when one of them is open.
@@ -58,4 +64,8 @@ function route() {
 }
 
 window.addEventListener("hashchange", route);
+window.addEventListener("aftershock:tour", startTour);
+document.querySelector('[data-tour="replay"]')?.addEventListener("click", startTour);
 route();
+mountChat();
+maybeAutoTour();
