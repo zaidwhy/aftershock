@@ -18,13 +18,14 @@ The hackathon asks for an agent that does better than an LLM alone. We tested th
 
 ## What it does
 
-**Plan a launch (the agent, start here).** Pick a breakout and a country. The agent works through six steps on screen, each with what it found and the rule it applied:
+**Plan a launch (the agent, start here).** Pick a breakout and a country. The agent works through seven steps on screen, each with what it found and the rule it applied:
 1. **Forecast:** this country's chance of charting the title within four weeks, and its rank.
 2. **Ask Qloo** what this title's audience over-indexes on here (artists, shows, films, brands), and whether that is about the title or just the country's general taste.
 3. **Ask an AI** for more ideas for this audience.
 4. **Check every AI idea against Qloo:** confirmed, not linked to these viewers, or unknown.
 5. **Find the cities** where this audience concentrates (Qloo heatmap).
-6. **Write the Launch Brief:** where and when, the cities to start in, the partners and cross-promotions to approach (Qloo-checked), what the evidence does not support, and a two-sentence summary whose names and numbers are checked against the facts before it is shown. Download it, print it, or share the link.
+6. **Match artists to cities:** Qloo's heatmap for up to three partner artists against the title's cities, giving event ideas where both audiences concentrate.
+7. **Write the Launch Brief:** where and when, the cities to start in, the partners and cross-promotions to approach (Qloo-checked), what the evidence does not support, and a two-sentence summary whose names and numbers are checked against the facts before it is shown. Download it, print it, or share the link.
 
 **Follow one title on the world map.** One click and the map recolours by that title's chance in every country; click a country for the cities and the Qloo-checked picks.
 
@@ -89,7 +90,7 @@ AFTERSHOCK is not affiliated with Netflix or Qloo.
 
 No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app:
 
-1. **Plan a launch** (second item in the menu): it opens on this week's clearest breakout. Watch the six steps, then read, download or print the Launch Brief. Pick another title or country from the two menus.
+1. **Plan a launch** (second item in the menu): it opens on this week's clearest breakout. Watch the seven steps, then read, download or print the Launch Brief. Pick another title or country from the two menus.
 2. **Home, the map:** click one of the "Follow one title" buttons; the map recolours by that title's chance in each country. Click a country for its cities and Qloo-checked picks.
 3. **Any storm page:** the launch kit per country, its "title-specific" or "countrywide" label, and under it "AI plan, checked by Qloo" with how many AI suggestions Qloo confirmed, did not link to these viewers, or did not know.
 4. **Scorecard:** what we measured, including what went against us, and the pre-registered tests. **Ledger:** every locked forecast.

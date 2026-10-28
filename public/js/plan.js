@@ -36,6 +36,7 @@ export function briefMarkdown(b, url) {
   return [`# Launch brief: ${b.title} in ${b.country}`, "", b.headline, "",
     `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
+    ...((b.event_ideas || []).length ? ["## Event ideas", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
     "## Partners to approach", ...partners,
     "## What not to claim", ...list(b.avoid), "",
     "## Evidence", ...list(b.evidence), "", url ? `Source: ${url}` : ""].join("\n");
@@ -61,6 +62,10 @@ function briefCard(st, made) {
     h("section", { "aria-labelledby": "bs-cities" },
       h("h3", { id: "bs-cities" }, "Where to start"),
       b.cities.length ? h("ul", null, b.cities.map((c) => h("li", null, c))) : h("p", null, "Qloo returned no named places for this country.")),
+    (b.event_ideas || []).length ? h("section", { "aria-labelledby": "bs-events" },
+      h("h3", { id: "bs-events" }, "Event ideas"),
+      h("p", { class: "plan-note mono" }, "Cities where Qloo's map of the title's audience and of the artist's audience overlap."),
+      h("ul", null, b.event_ideas.map((e) => h("li", null, e.text)))) : null,
     h("section", { "aria-labelledby": "bs-partners" },
       h("h3", { id: "bs-partners" }, "Partners to approach"),
       h("p", { class: "plan-note mono" }, b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),

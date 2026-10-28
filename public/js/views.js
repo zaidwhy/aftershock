@@ -249,6 +249,15 @@ function hotspotBlock(r) {
   return box;
 }
 
+/** "Event ideas": artists whose audience concentrates in the same cities as the title's. Nothing without any. */
+function eventsBlock(r) {
+  const ideas = (r.events || []).filter((e) => e.artist && e.cities?.length);
+  if (!ideas.length) return null;
+  return h("p", { class: "hs-places" }, "Event ideas: ",
+    h("strong", null, ideas.map((e) => `${e.artist} in ${e.cities.join(" and ")}`).join("; ")),
+    ". Both audiences concentrate there.");
+}
+
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 
 /** "AI plan, checked by Qloo": names an AI proposed that Qloo places with this audience, in Qloo's order, plus a
@@ -320,7 +329,7 @@ function kitSection(st) {
       specific(r),
       h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", { class: d === "brand" ? "kit-minor" : null },
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
-      planBlock(r), hotspotBlock(r)))),
+      planBlock(r), hotspotBlock(r), eventsBlock(r)))),
     rows.some((r) => r.hotspots?.cells?.length || r.hotspots?.places?.length)
       ? h("p", { class: "hs-credit" }, "Hotspots: Qloo heatmap; place names © OpenStreetMap contributors.") : null);
 }

@@ -103,12 +103,11 @@ def nominatim_name(lat, lon, cache_dir=None):
     return place_from_address(body.get("address") or {})
 
 
-def name_places(cells, geocode=nominatim_name, count=MAX_PLACES):
-    """Names of up to `count` distinct places, strongest cells first, each at least
-    MIN_SEPARATION_KM from the ones already chosen. A geocode failure stops naming, never raises."""
-    chosen, names, tries = [], [], 0
+def _name_places_located(cells, geocode, count):
+    """[(name, lat, lon), ...]: the places name_places names, each with the cell its name came from."""
+    chosen, found, tries = [], [], 0
     for lat, lon, _ in cells:
-        if len(names) >= count or tries >= MAX_GEOCODE_TRIES:
+        if len(found) >= count or tries >= MAX_GEOCODE_TRIES:
             break
         if any(distance_km((lat, lon), c) < MIN_SEPARATION_KM for c in chosen):
             continue
@@ -119,20 +118,35 @@ def name_places(cells, geocode=nominatim_name, count=MAX_PLACES):
             log.warning("geocode failed at %.3f,%.3f: %s", lat, lon, err)
             break
         chosen.append((lat, lon))
-        if name and name not in names:
-            names.append(name)
-    return names
+        if name and all(name != n for n, _, _ in found):
+            found.append((name, lat, lon))
+    return found
 
 
-def hotspots(client, entity_id, country_name, geocode=nominatim_name):
-    """{"cells": [[lat, lon, weight], ...], "places": [name, ...]}; empty when nothing could be fetched."""
+def name_places(cells, geocode=nominatim_name, count=MAX_PLACES):
+    """Names of up to `count` distinct places, strongest cells first, each at least
+    MIN_SEPARATION_KM from the ones already chosen. A geocode failure stops naming, never raises."""
+    return [name for name, _, _ in _name_places_located(cells, geocode, count)]
+
+
+def heat_cells(client, entity_id, country_name):
+    """Top cells [[lat, lon, weight], ...] of an entity's audience in a country, with no geocoding; [] on failure."""
     if not entity_id:
-        return {"cells": [], "places": []}
+        return []
     try:
         body = client.get("/v2/insights", {"filter.type": "urn:heatmap", "signal.interests.entities": entity_id,
                                            "filter.location.query": country_name})
     except (QlooError, httpx.HTTPError) as err:
         log.warning("heatmap failed for %s: %s", country_name, err)
+        return []
+    return top_cells(body)
+
+
+def hotspots(client, entity_id, country_name, geocode=nominatim_name):
+    """{"cells": [[lat, lon, weight], ...], "places": [name, ...], "place_cells": [[lat, lon], ...]} where
+    place_cells[i] is the cell places[i] was named from; {"cells": [], "places": []} when nothing could be fetched."""
+    cells = heat_cells(client, entity_id, country_name)
+    if not cells:
         return {"cells": [], "places": []}
-    cells = top_cells(body)
-    return {"cells": cells, "places": name_places(cells, geocode) if cells else []}
+    located = _name_places_located(cells, geocode, MAX_PLACES)
+    return {"cells": cells, "places": [n for n, _, _ in located], "place_cells": [[la, lo] for _, la, lo in located]}

@@ -51,6 +51,18 @@ def _join(items):
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
 
 
+def uses_plan(row):
+    """True when the brief's partners lead with Qloo-confirmed AI picks (at least MIN_CONFIRMED were confirmed)."""
+    return len(((row.get("plan") or {}).get("confirmed")) or []) >= MIN_CONFIRMED
+
+
+def partner_artists(row):
+    """The brief's artist partners for a kit row, in brief order: [{name, source, also_in_qloo_kit}], at most
+    PICKS_PER_DOMAIN. Live events reuses this so the artists checked are the artists the brief names."""
+    group = next((g for g in _partners(row, uses_plan(row)) if g["domain"] == "artist"), None)
+    return group["picks"] if group else []
+
+
 def _partners(row, use_plan):
     """By domain, up to PICKS_PER_DOMAIN picks. With a usable plan, Qloo-confirmed AI picks come first (marked when
     Qloo's own kit also named them); a domain with none falls back to Qloo's kit."""
@@ -112,7 +124,7 @@ def brief(detail, code):
     confirmed = (plan or {}).get("confirmed") or []
     dropped = (plan or {}).get("dropped") or {}
     n_conf, not_placed, unknown = len(confirmed), dropped.get("not_placed", 0), dropped.get("not_in_qloo", 0)
-    use_plan = n_conf >= MIN_CONFIRMED
+    use_plan = uses_plan(row)
     if plan:
         steps.append({"key": "ai_proposals", "title": "Let an AI propose more names",
                       "found": f"{plan.get('model') or 'The model'} proposed {n_conf + not_placed + unknown} names for "
@@ -143,6 +155,20 @@ def brief(detail, code):
         city_step["decision"] = "With no named places, the brief does not suggest cities."
     steps.append(city_step)
 
+    events = [e for e in row.get("events") or [] if e.get("artist") and e.get("cities")]
+    checked = row.get("events_checked") or 0
+    event_cities = list(dict.fromkeys(c for e in events for c in e["cities"]))
+    event_step = {"key": "events", "title": "Match artists to cities"}
+    if events:
+        event_step["found"] = (f"Qloo's audience maps for {checked} {'artist' if checked == 1 else 'artists'} overlap this "
+                               f"title's audience in {len(event_cities)} {'city' if len(event_cities) == 1 else 'cities'}.")
+    else:
+        event_step["found"] = (f"Qloo's audience maps for {checked} {'artist' if checked == 1 else 'artists'} were "
+                               "compared with this title's audience." if checked else
+                               "No artist audience maps were compared with this title's audience.")
+        event_step["decision"] = "No artist's audience overlaps the title's cities, so the brief lists no event idea."
+    steps.append(event_step)
+
     avoid = []
     if generic:
         avoid.append(f"Do not say this audience is distinctive in {country}: the kit mostly matches the country's "
@@ -150,6 +176,8 @@ def brief(detail, code):
     avoid.append(f"Do not present the {_pct(fc['probability'])} as a promise: it is a history-only estimate.")
     if not use_plan:
         avoid.append("Do not call the partners AI-checked: this brief uses Qloo's own kit.")
+    if events:
+        avoid.append("Event ideas are where audiences overlap, not ticket-demand forecasts.")
     evidence = [f"The forecast uses Netflix history only; its backtest ROC AUC is {BACKTEST_AUC}.",
                 "The kits have not been validated against outcomes: nothing shows these partners change viewing."]
     if use_plan:
@@ -162,7 +190,11 @@ def brief(detail, code):
                        f"weeks (rank {rank} of {len(forecasts)}).",
            "kit_scope": "countrywide" if generic else "title-specific",
            "partner_basis": "ai_confirmed" if use_plan else "qloo_kit",
-           "cities": cities, "partners": partners, "avoid": avoid, "evidence": evidence}
+           "cities": cities, "partners": partners,
+           "event_ideas": [{"artist": e["artist"], "cities": list(e["cities"]),
+                            "text": f"{e['artist']} in {_join(e['cities'])}: both audiences concentrate there."}
+                           for e in events],
+           "avoid": avoid, "evidence": evidence}
     summary = row.get("brief_summary") or {}
     out["summary"] = summary.get("text") or template_summary(out)
     out["summary_source"] = summary.get("source") if summary.get("text") else SUMMARY_TEMPLATE
@@ -189,6 +221,7 @@ def _facts_text(b):
     parts = [b["title"], b["country"], b["headline"], " ".join(b["cities"]), b["kit_scope"]]
     for group in b["partners"]:
         parts.append(group["label"] + " " + " ".join(p["name"] for p in group["picks"]))
+    parts += [e["text"] for e in b.get("event_ideas") or []]
     parts += b["avoid"] + b["evidence"]
     parts.append(f"{b['rank']} of {b['of_countries']} {b['chance_label']} {b['horizon_weeks']} weeks")
     return " ".join(parts)

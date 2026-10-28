@@ -27,6 +27,7 @@ from aftershock.netflix import (  # noqa: E402
 )
 from aftershock.grounded_plan import add_plans  # noqa: E402
 from aftershock.launch_brief import add_summaries  # noqa: E402
+from aftershock.live_events import add_events  # noqa: E402
 from aftershock.hotspots import hotspots  # noqa: E402
 from aftershock.launch_kit import (  # noqa: E402
     DOMAINS, GENERIC_AT_OR_BELOW, country_picks, launch_kit, specificity)
@@ -456,6 +457,7 @@ def main():
     # An LLM proposes names for each kit row and Qloo checks them; skipped without GEMINI_API_KEY.
     if client:
         add_plans(client, storms)
+        add_events(client, storms)  # artist heatmaps vs the title's hotspots: about 3 calls per kit row
     add_summaries(storms)  # one batched Gemini call per 15 briefs, each checked against the brief's facts
     watched = ripple_watch(client, titles, date.today()) if client else []
     for item in watched:

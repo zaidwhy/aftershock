@@ -41,7 +41,7 @@ def keys(made):
 
 def test_title_specific_kit_with_confirmed_picks_leads_with_ai():
     made = launch_brief.brief(detail([specific_row()]), "kr")
-    assert keys(made) == ["forecast", "qloo_kit", "ai_proposals", "qloo_check", "cities", "brief"]
+    assert keys(made) == ["forecast", "qloo_kit", "ai_proposals", "qloo_check", "cities", "events", "brief"]
     by = {s["key"]: s for s in made["steps"]}
     assert "21% chance" in by["forecast"]["found"] and "rank 1 of 3" in by["forecast"]["found"]
     assert "title-specific" in by["qloo_kit"]["found"] and "decision" not in by["qloo_kit"]
@@ -102,7 +102,7 @@ def test_api_brief_and_404s(monkeypatch, tmp_path):
     monkeypatch.setattr(api, "PRIVATE", tmp_path)
     c = TestClient(api.app)
     ok = c.get("/api/brief", params={"storm": "show", "country": "KR"}).json()
-    assert ok["brief"]["headline"].startswith("Show has a 21% chance") and len(ok["steps"]) == 6
+    assert ok["brief"]["headline"].startswith("Show has a 21% chance") and len(ok["steps"]) == 7
     assert c.get("/api/storms/show").json()["launch_kit"][0]["brief"] == ok
     nope = c.get("/api/brief", params={"storm": "nope", "country": "KR"})
     assert nope.status_code == 404 and nope.json()["detail"].startswith("No breakout called nope")
@@ -154,3 +154,28 @@ def test_calls_are_capped(monkeypatch):
     monkeypatch.setattr(llm_kits, "ask", lambda p: calls.append(p) or {"summaries": []})
     launch_brief.add_summaries(storms)
     assert len(calls) == launch_brief.MAX_CALLS
+
+
+def test_event_ideas_step_section_caveat_and_validator():
+    row = specific_row() | {"events": [{"artist": "Pick0", "cities": ["Seoul", "Busan"]},
+                                       {"artist": "Pick4", "cities": ["Seoul"]}], "events_checked": 3}
+    made = launch_brief.brief(detail([row]), "KR")
+    by = {s["key"]: s for s in made["steps"]}
+    assert by["events"]["title"] == "Match artists to cities"
+    assert by["events"]["found"] == "Qloo's audience maps for 3 artists overlap this title's audience in 2 cities."
+    assert "decision" not in by["events"]
+    b = made["brief"]
+    assert b["event_ideas"][0]["text"] == "Pick0 in Seoul and Busan: both audiences concentrate there."
+    assert "Event ideas are where audiences overlap, not ticket-demand forecasts." in b["avoid"]
+    assert launch_brief.validate_summary("Start in Busan with Pick0, who is strong in Seoul.", b)
+    assert not launch_brief.validate_summary("Start in Osaka with Pick0.", b)
+
+
+def test_no_overlap_states_the_decision_and_adds_no_caveat():
+    row = specific_row() | {"events": [], "events_checked": 3}
+    made = launch_brief.brief(detail([row]), "KR")
+    by = {s["key"]: s for s in made["steps"]}
+    assert by["events"]["decision"] == ("No artist's audience overlaps the title's cities, so the brief lists no "
+                                        "event idea.")
+    assert made["brief"]["event_ideas"] == []
+    assert not any("Event ideas" in a for a in made["brief"]["avoid"])
