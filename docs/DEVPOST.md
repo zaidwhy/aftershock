@@ -2,35 +2,47 @@
 
 **Project name:** AFTERSHOCK
 
-**Tagline:** When a show breaks out in one country, AFTERSHOCK forecasts where it charts next and uses Qloo to say what that audience loves there and which cities to start in. Every forecast is locked in public before the result exists.
+**Tagline:** A launch agent for breakout shows. It forecasts which country a show reaches next, plans the launch there with Qloo, and throws out every AI suggestion Qloo cannot back.
 
 ## Inspiration
 
-In 2022 Stranger Things 4 put Kate Bush's 1985 "Running Up That Hill" in front of a new, younger audience; its English Wikipedia page went from about 10,000 views a month to 909,926 in June. Wednesday did something similar for The Cramps' "Goo Goo Muck" (from about 11 views a month to 14,858). Shows now break out country by country, and the people outside the streamer who could act on it (a local distributor, a music publisher, a promoter) find out after the fact. We wanted an agent that tells them where a breakout goes next and what to pair it with there, commits to that forecast before the outcome exists, and gets graded.
+Shows now break out one country at a time. In the week of 18 Oct 2026, Fukrey Returns entered Netflix's Top 10 in Pakistan; history says Bangladesh is likely next (Bangladesh joined 19 of 47 past breakouts that started in Pakistan). The people who could act on that, a local distributor, a dubbing studio, a music label with songs in the show, a brand looking for a tie-in, usually find out after the peak, and then plan the launch from gut feel or a chatbot. We asked a chatbot. It answered fluently, and most of what it named was either unknown to Qloo or not something this audience in this country actually over-indexes on. That gap is the product.
+
+## Why this only works with Qloo (measured, not claimed)
+
+The hackathon asks for an agent that does better than an LLM alone. We tested that before building the answer, on the same 81 title-country pairs:
+
+- **An LLM alone is specific but unreliable.** Gemini's picks depend more on the title than Qloo's do (0.81 against 0.62; pre-registered in `docs/EXPERIMENT_KITS.md` before any data, reported as registered). But 71% of what it names, Qloo cannot back: 34% are names Qloo does not know at all, and 37% are things Qloo knows but does not link to this audience in this country.
+- **Qloo alone is reliable but sometimes generic.** For 33 of 81 kits, Qloo's answer mostly repeats what the whole country likes, whatever the title. We show that with a country-only control instead of hiding it.
+- **So the agent uses both and checks every name.** The LLM proposes; Qloo confirms or rejects each proposal for that audience in that country; only confirmed names reach the plan, next to Qloo's own picks. On the same pairs, the confirmed plan is the most title-specific of the three (0.86, exploratory: designed after the registered result), and it adds about 5 names per country that Qloo vouches for but its own top 5 did not contain.
 
 ## What it does
 
-Every week the agent reads Netflix's public per-country Top 10, finds titles that just broke out in one to three countries (35 in the week of 18 Oct 2026), and for each one:
+**Plan a launch (the agent, start here).** Pick a breakout and a country. The agent works through six steps on screen, each with what it found and the rule it applied:
+1. **Forecast:** this country's chance of charting the title within four weeks, and its rank.
+2. **Ask Qloo** what this title's audience over-indexes on here (artists, shows, films, brands), and whether that is about the title or just the country's general taste.
+3. **Ask an AI** for more ideas for this audience.
+4. **Check every AI idea against Qloo:** confirmed, not linked to these viewers, or unknown.
+5. **Find the cities** where this audience concentrates (Qloo heatmap).
+6. **Write the Launch Brief:** where and when, the cities to start in, the partners and cross-promotions to approach (Qloo-checked), what the evidence does not support, and a two-sentence summary whose names and numbers are checked against the facts before it is shown. Download it, print it, or share the link.
 
-- **Where next:** the probability that each other country charts it within four weeks, with the evidence ("Bangladesh joined 19 of 47 past breakouts that started in Pakistan", so Fukrey Returns got 38% there in the week of 18 Oct 2026).
-- **What this audience loves there (Qloo launch kit):** in each of the top three forecast countries, the artists, shows, films and brands that title's audience over-indexes on, as candidate partners and cross-promotions.
-- **Whether that is really about the title:** each kit is compared with what Qloo returns for the whole country with no title. Names the whole country likes anyway are greyed out, and each kit is labelled "title-specific" or "mostly countrywide taste" (this week 48 of 81 kits are title-specific).
-- **Where in each country (Qloo Hotspots):** the cities where that title's audience concentrates, from Qloo's heatmap, on a small map per country.
-- **This week's map and a lookup for any title:** a world map shaded by how many of this week's breakouts are likely to reach each country, and a search over the 8,721 titles that charted since 2024 (when and where each first charted, and where a title that is still spreading may go next).
-- **Sync Scout:** for a music supervisor. Type a show; Qloo returns artists its audience loves whose own audience sits outside the show's age groups. A shortlist, not a forecast.
-- **A public record:** every country's probability is locked in a hash-chained file in the repo before the outcome exists. A weekly GitHub Action runs the loop (detect breakouts, resolve titles in Qloo, forecast, build kits and hotspots, lock) and commits the ledger; grading starts when the first four-week horizons close on 15 Nov 2026.
+**Follow one title on the world map.** One click and the map recolours by that title's chance in every country; click a country for the cities and the Qloo-checked picks.
 
-Any MCP agent (Claude Desktop, Claude Code) can call it: `list_storms`, `spillover_forecast`, `launch_kit`, `ripple_score`, `sync_scout`, `netflix_history`, `ask`.
+**Every forecast is locked in public first.** Each week the agent reads Netflix's public per-country Top 10, finds the titles that just broke out in one to three countries (35 in the week of 18 Oct 2026), forecasts every other country, builds kits, plans and hotspots, and locks every probability in a hash-chained ledger before the outcome exists. A GitHub Action runs it every Tuesday; grading starts when the first four-week horizons close on 15 Nov 2026.
+
+**For agents too.** An MCP server exposes the same tools (`list_storms`, `spillover_forecast`, `launch_kit`, `launch_brief`, `ripple_score`, `sync_scout`, `netflix_history`, `ask`), so Claude Desktop or any MCP agent can plan a launch.
+
+**Also:** a lookup over the 8,721 titles that charted since 2024, and Sync Scout, which finds on-taste artists whose audience sits outside a show's age groups (a shortlist for a music supervisor, not a forecast).
 
 ## How we built it
 
-Python (FastAPI, httpx), a vanilla JS front end with d3 maps, an MCP server on the official Python SDK, Vercel, GitHub Actions. Data: Netflix Top 10 public TSV (94 countries, weekly since July 2021), the Wikimedia Pageviews API, 490 songs from the official soundtracks of 34 titles in MusicBrainz (CC0), OpenStreetMap Nominatim for place names, and Qloo: `/search` with a strict name check; `/v2/insights` for `urn:demographics` (shows and artists), cross-domain recommendations (`urn:entity:artist`, `tv_show`, `movie`, `brand`) with and without a title signal, conditioned on a country with `signal.location.query`, and `urn:heatmap` with `filter.location.query` for hotspots. Raw Qloo responses are cached privately and never committed.
+The agent is a fixed plan of tool calls with explicit decision rules, so every step can be shown and checked: Netflix history forecasts, Qloo builds the kit and the country-only control, Gemini (`gemini-3.5-flash`, batched, about ten calls a week) proposes names and drafts the brief summary, Qloo confirms each name with a filtered `/v2/insights` call for that title's audience in that country, and a validator rejects any summary that mentions a name or number not in the brief. Python (FastAPI, httpx), a vanilla JS front end with d3 maps, an MCP server on the official Python SDK, Vercel, GitHub Actions. Data: Netflix Top 10 public TSV (94 countries, weekly since July 2021), the Wikimedia Pageviews API, 490 songs from the official soundtracks of 34 titles in MusicBrainz (CC0), OpenStreetMap Nominatim for place names, and Qloo: `/search` with a strict name check; `/v2/insights` for `urn:demographics` (shows and artists), cross-domain recommendations (`urn:entity:artist`, `tv_show`, `movie`, `brand`) with and without a title signal, conditioned on a country with `signal.location.query`, and `urn:heatmap` with `filter.location.query` for hotspots. Raw Qloo responses are cached privately and never committed.
 
 ## What we measured, including what did not work
 
 - **Where next:** Netflix history alone reaches ROC AUC 0.817 on 829 held-out breakouts (top-5 precision 0.041, against 0.012 for a uniform guess). Adding Qloo's in-country affinity to the probability gave no lift (0.8182 vs 0.8188 on a 200-breakout subset), so the probability is history-only. Qloo's job is the part history cannot answer: what this audience loves in each country, and where they are.
 - **Is the kit about the title?** Measured against Qloo's country-only answer: 48 of 81 kits this week are title-specific; the other 33 mostly repeat the country's general taste, and the site labels them so.
-- **Qloo against an LLM:** pre-registered before any data was collected (`docs/EXPERIMENT_KITS.md`): the same 81 title-country pairs, four arms (Qloo with and without the title, an LLM with and without the title), scored by overlap, not by an LLM judge. Result: by the registered rule the LLM's kits were more title-specific (0.812 against Qloo's 0.617, permutation p below 0.001), and it still led when only picks Qloo could resolve were counted. We report it as registered. Only 66% of the LLM's picks resolve to a Qloo entity, and Qloo's lists differed more between titles; neither reverses the verdict. The product consequence is the countrywide label on kits that mostly match Qloo's country-only answer.
+- **Qloo against an LLM:** pre-registered before any data was collected (`docs/EXPERIMENT_KITS.md`): the same 81 title-country pairs, four arms (Qloo with and without the title, an LLM with and without the title), scored by overlap, not by an LLM judge. Result: by the registered rule the LLM's kits were more title-specific (0.812 against Qloo's 0.617, permutation p below 0.001), and it still led when only picks Qloo could resolve were counted. We report it as registered. Only 66% of the LLM's picks resolve to a Qloo entity, and Qloo's lists differed more between titles; neither reverses the verdict. The product consequence: the countrywide label on kits that mostly match Qloo's country-only answer, and the agent design above, where the LLM proposes and Qloo decides.
 - **Which songs spike:** we tested whether Qloo signals predict which soundtrack songs get a burst of Wikipedia attention, with a placebo window measured before release. On 229 artists from 24 soundtracks none did (age gap p 0.14 against the placebo; taste fit about 0). So Sync Scout is a discovery tool, and we do not present it as a forecast.
 - **Graded in public, with the rules fixed first:** how many of last week's top picks have already charted is reported every week against a calibrated expectation and a naive baseline, defined in `docs/EARLY_GRADE.md` before the data existed.
 - **We threw away our best result.** An earlier version of that song test, built on placement lists collected from Tunefind, showed a significant Qloo effect. When we read Tunefind's terms and saw they do not allow automated collection, we deleted that data and everything computed from it, rebuilt the ground truth from MusicBrainz, and reran the identical test. The effect did not replicate, and the site says so.
@@ -45,7 +57,16 @@ Python (FastAPI, httpx), a vanilla JS front end with d3 maps, an MCP server on t
 
 ## Who would pay, and why now
 
-The users are the people outside a streamer who act on a breakout: a local distributor or dubbing studio deciding which markets to back, a music publisher or label whose catalogue is in the show, a promoter or brand looking for a tie-in. Today they learn about a breakout after it peaks. The product they would pay for is the weekly brief this site already produces (where next, with the reason; what the audience there loves, with the generic picks flagged; which cities), delivered per territory or per catalogue, with the public ledger as the reason to trust it. The agent costs a few hundred Qloo calls a week to run, and every forecast it has ever made stays checkable.
+The buyer is whoever spends money on a title in a market it has not reached yet: a local distributor or dubbing studio choosing which markets to back this month, a label or publisher whose songs are in the show, a brand or promoter looking for a tie-in. Their decision is which countries, which cities and which partners, and it has to be made in the weeks between a breakout and its peak.
+
+| | Today | With AFTERSHOCK |
+|---|---|---|
+| When they know | after the title charts there | the week it breaks out anywhere |
+| Where | gut feel, or the biggest markets | a probability per country with its reason, graded in public |
+| With whom | a chatbot list nobody checked | partners Qloo confirms for this audience in this country |
+| Trust | none to inspect | every forecast locked before the outcome; every claim with its test |
+
+The weekly run costs a few hundred Qloo calls and about ten LLM calls; the Launch Brief is the product, per territory or per catalogue.
 
 ## What's next
 
@@ -53,7 +74,7 @@ Grade the ledger weekly as horizons close and publish the hit rate; lock a Qloo-
 
 ## Built with
 
-python, fastapi, httpx, d3, mcp, qloo, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel
+python, fastapi, httpx, d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel
 
 ## Links
 
@@ -66,10 +87,9 @@ AFTERSHOCK is not affiliated with Netflix or Qloo.
 
 No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app:
 
-1. **Home:** the worked example on the right shows this week's clearest case: where a title broke out, where it is likely to chart next and why, what its audience there loves (Qloo), and which cities to start in.
-2. **Ask the agent:** click the example "What should ... pair with in ...?" (it uses this week's clearest breakout) or type your own question. The agent picks its tools and lists every step it took ("How the agent answered").
-3. **The map:** hover a country under "Where this week's breakouts are heading", or use "Look up any title" for any show or film.
-4. **Song check:** click "Stranger Things + 3 songs" to see which songs reach a new crowd (a first run takes about 10 seconds).
-5. **Agent, Scorecard and Ledger:** what the agent did on its weekly run; what we measured, including what did not work and the pre-registered tests; and every locked forecast.
+1. **Plan a launch** (second item in the menu): it opens on this week's clearest breakout. Watch the six steps, then read, download or print the Launch Brief. Pick another title or country from the two menus.
+2. **Home, the map:** click one of the "Follow one title" buttons; the map recolours by that title's chance in each country. Click a country for its cities and Qloo-checked picks.
+3. **Any storm page:** the launch kit per country, its "title-specific" or "countrywide" label, and under it "AI plan, checked by Qloo" with how many AI suggestions Qloo confirmed, did not link to these viewers, or did not know.
+4. **Scorecard:** what we measured, including what went against us, and the pre-registered tests. **Ledger:** every locked forecast.
 
-To use it from an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5) exposes the same seven tools. Live lookups are capped per visitor so the shared Qloo key lasts through judging.
+To use it from an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5) exposes the same eight tools. Live lookups are capped per visitor so the shared Qloo key lasts through judging.
