@@ -11,7 +11,7 @@ from mcp import ClientSession, StdioServerParameters  # noqa: E402
 from mcp.client.stdio import stdio_client  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-TOOLS = {"ask", "launch_kit", "list_storms", "netflix_history", "ripple_score", "spillover_forecast", "sync_scout"}
+TOOLS = {"ask", "launch_brief", "launch_kit", "list_storms", "netflix_history", "ripple_score", "spillover_forecast", "sync_scout"}
 
 
 async def _session_calls():

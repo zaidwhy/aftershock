@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 
 from aftershock import ask as ask_agent
+from aftershock import launch_brief
 from aftershock import storm_archive
 from aftershock import titles as title_index
 from aftershock.qloo import CACHE_DIR, Qloo, QlooError
@@ -122,11 +123,24 @@ def storm(storm_id: str):
     # A missing current week (fresh clone, or between runs) still lets archived storm links resolve.
     for item in _load(current)["storms"] if current.exists() else []:
         if item["summary"]["id"] == storm_id:
-            return item["detail"]
+            return launch_brief.attach(item["detail"])
     found = storm_archive.find(ARCHIVE, storm_id)
     if found:
-        return found[1] | {"archived_week": found[0]}
+        return launch_brief.attach(found[1] | {"archived_week": found[0]})
     raise HTTPException(404, f"No breakout called {storm_id} in any week we have forecast.")
+
+
+@app.get("/api/brief")
+def brief(storm_id: str = Query(..., alias="storm", min_length=1, max_length=MAX_FIELD),
+          country: str = Query(..., min_length=2, max_length=MAX_FIELD)):
+    """The launch brief for one breakout in one of its launch-kit countries (country is a code such as TW):
+    the agent's steps and the finished brief. Reads files only; no Qloo or model call."""
+    detail = storm(storm_id)
+    made = launch_brief.brief(detail, country.strip())
+    if made is None:
+        raise HTTPException(404, f"No launch kit for {country} on {detail['title']}; kits cover the top three "
+                                 "forecast countries with Qloo data.")
+    return made
 
 
 MAX_TITLE_QUERY = 80

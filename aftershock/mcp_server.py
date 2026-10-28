@@ -12,6 +12,7 @@ from pathlib import Path
 from mcp.server.mcpserver import MCPServer
 
 from aftershock import ask as ask_agent
+from aftershock import launch_brief as brief_builder
 from aftershock import titles as title_index
 from aftershock.qloo import Qloo
 from aftershock.ripple import MAX_SONGS, score_placements
@@ -94,6 +95,21 @@ def launch_kit(storm_id: str, country: str) -> dict:
                         "launch_kit": row["kit"], "specificity": row.get("specificity"),
                         "generic": row.get("generic"), "hotspot_places": (row.get("hotspots") or {}).get("places", [])}
         return {"error": f"no launch kit for {country!r}; kits cover the top three forecast countries with Qloo data"}
+    return {"error": f"no storm with id {storm_id!r}; call list_storms first"}
+
+
+@server.tool(description="Launch brief for one breakout in one of its launch-kit countries, by storm id from list_storms and "
+                         "a country code (such as TW) from its launch kits: the agent's steps (forecast, Qloo kit, AI "
+                         "proposals, Qloo check, cities) with what each found and the rule it applied, then the brief: "
+                         "headline, chance and rank, cities to start in, partners by domain (Qloo-confirmed AI picks "
+                         "first, else Qloo's kit), what not to claim, evidence notes and a two-sentence summary with "
+                         "its source. Reads files only; no Qloo or model call.")
+def launch_brief(storm_id: str, country_code: str) -> dict:
+    for storm in _storms():
+        if storm["summary"]["id"] == storm_id:
+            made = brief_builder.brief(storm["detail"], country_code.strip())
+            return made or {"error": f"no launch kit for {country_code!r}; kits cover the top three forecast "
+                                     "countries with Qloo data"}
     return {"error": f"no storm with id {storm_id!r}; call list_storms first"}
 
 
