@@ -4,6 +4,8 @@ Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (
 
 ## Start here (written 28 Oct, 02:25 IST)
 
+**Added 28 Oct afternoon (live, 142 tests):** (1) "AI plan, checked by Qloo" under every launch kit: Gemini proposes, Qloo confirms (29%), does not place (37%) or does not know (34%) each name; exploratory measurement in data/results/grounded_plan.json and README section 3. (2) "Follow one title" on the home map: pick a title, the map recolours by its per-country chance; panel shows cities and Qloo-checked picks; deep link `#/?follow=<id>`. The walkthrough video predates both; re-record before submitting. Idea search verdict: no pivot (past winners and criteria unverifiable, Devpost blocks fetches).
+
 **Experiment done 28 Oct 07:01 UTC:** by the registered rule the LLM was more title-specific (Qloo 0.617, LLM 0.812, p below 0.001; still leads on the 51 grounded pairs, 0.831 vs 0.575). Written into README section 3, docs/DEVPOST.md, the live Scorecard and the LinkedIn draft. Team brief and its PDF still show the result as pending.
 
 **History rewritten 28 Oct, about 12:00 IST:** every Tunefind file (pre-MusicBrainz placements and ripple_truth CSVs, the scrapers, the daily scrape workflow, the two results built on them) is gone from every commit; the final tree is unchanged and IDs all changed. Pushed before the 25 Oct Netflix week and before the experiment ran, so every "locked before the outcome" claim still holds. Old commits stay reachable by old ID on GitHub until Zaid asks GitHub Support to purge cached views. Teammates must re-clone.
