@@ -22,7 +22,7 @@ An AI asked what a title's audience in a country loves answers fluently, and mos
 
 ## Inspiration: two kinds of aftershock
 
-A breakout travels country by country: that is what we forecast from Netflix history. The culture around it travels too: that is what Qloo maps. When Stranger Things 4 Volume 1 came out on 27 May 2022, English Wikipedia's article on Kate Bush's "Running Up That Hill" went from 349 views on 26 May to 43,521 on 31 May (Wikimedia Pageviews REST API, en.wikipedia, user agents, daily). The people who could act on that, a label, an artist, a brand, usually find out after the peak.
+A breakout travels country by country: that is what we forecast from Netflix history. The culture around it travels too: that is what Qloo maps. When Stranger Things 4 Volume 1 came out on 27 May 2022, English Wikipedia's article on Kate Bush's "Running Up That Hill" went from 349 views on 26 May to 43,521 on 31 May (Wikimedia Pageviews REST API, en.wikipedia, user agents, daily). The people who could act on that, a label, an artist, a brand, usually find out after the peak. Netflix itself now reports that its placements send songs back up the charts ([Music on Netflix: New and Nostalgic Songs Storm the Charts](https://about.netflix.com/news/music-on-netflix-new-and-nostalgic-songs-storm-the-charts)).
 
 ## What it does
 
@@ -59,6 +59,7 @@ Local media and creators can act fastest, on the same cities. We have no custome
 - Titles that launch worldwide on day one are not breakouts, so it would not have flagged Stranger Things 4 or Wednesday.
 - The warning is about a week. That suits short activations, playlist pushes and local ads, not tours, which are booked months ahead.
 - The country forecast uses Netflix history only. Qloo added no lift to it in our test.
+- It watches Netflix only, because Netflix is the one major streamer we found that publishes a weekly Top 10 for each of 94 countries, back to 2021; we found no comparable per-country charts from other streamers, and third-party chart scrapers carry terms risk. The Qloo half (kits, city maps, artist overlap, the live check) works for any title Qloo knows, from any platform.
 - Launch kits and activation ideas are not yet validated against outcomes, and forecasts are graded only from 15 Nov 2026.
 
 ## What we measured, including what did not work
