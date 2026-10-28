@@ -14,6 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 
+from aftershock import artist_view
 from aftershock import ask as ask_agent
 from aftershock import launch_brief
 from aftershock import storm_archive
@@ -216,6 +217,28 @@ def brief(storm_id: str = Query(..., alias="storm", min_length=1, max_length=MAX
         raise HTTPException(404, f"No launch kit for {country} on {detail['title']}; kits cover the top three "
                                  "forecast countries with Qloo data.")
     return made
+
+
+def _artist_index():
+    data = _load(PRIVATE / "storms.json")
+    return artist_view.build(data["storms"]), data["week"]
+
+
+@app.get("/api/artists")
+def artists():
+    """Artists that appear this week as Qloo-confirmed picks or in event ideas: name, slug, breakouts, countries."""
+    index, week = _artist_index()
+    return artist_view.listing(index, week)
+
+
+@app.get("/api/artists/{slug}")
+def artist(slug: str):
+    """One artist's breakouts this week: where each title is going, the chance, cities and Qloo's evidence."""
+    index, week = _artist_index()
+    found = artist_view.detail(index, week, slug)
+    if found is None:
+        raise HTTPException(404, artist_view.NOT_FOUND.format(slug=slug[:MAX_FIELD]))
+    return found
 
 
 MAX_TITLE_QUERY = 80

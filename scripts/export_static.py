@@ -81,6 +81,10 @@ def export(out=OUT):
         if sid not in current:
             current.add(sid)
             _write(out / "storms" / f"{sid}.json", detail | {"archived_week": week})
+    artists = api.artists()
+    _write(out / "artists.json", artists)
+    for a in artists["artists"]:
+        _write(out / "artists" / f"{a['slug']}.json", api.artist(a["slug"]))
     _write(out / "scorecard.json", api.scorecard())
     _write(out / "replays.json", api.replays())
     _write(out / "ledger.json", _ledger_body(listing))

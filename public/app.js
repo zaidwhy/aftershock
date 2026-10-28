@@ -11,6 +11,7 @@ import { setConfig } from "./js/api.js";
 import { renderHome, renderStorm, renderRipple, renderTry, renderScout, renderScorecard, renderLedger, renderMethod, renderNotFound } from "./js/views.js";
 import { renderAgent } from "./js/agent.js";
 import { renderPlan } from "./js/plan.js";
+import { renderArtists, renderArtist } from "./js/artists.js";
 
 setConfig(CONFIG);
 
@@ -27,6 +28,8 @@ const routes = [
   [/^#\/ledger$/, () => renderLedger],
   [/^#\/method$/, () => renderMethod],
   [/^#\/agent$/, () => renderAgent],
+  [/^#\/artists$/, () => renderArtists],
+  [/^#\/artist\/([^/]+)$/, (m) => (el, t) => renderArtist(el, decodeURIComponent(m[1]), t)],
   [/^#\/plan(?:\/([^/]+)\/([^/]+))?$/, (m) => (el, t) => renderPlan(el, t, m[1] && decodeURIComponent(m[1]), m[2] && decodeURIComponent(m[2]))],
 ];
 
@@ -41,7 +44,7 @@ function route() {
   }
   document.querySelectorAll("nav [data-nav]").forEach((a) => {
     const key = a.dataset.nav;
-    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "plan" && hash.startsWith("#/plan/"));
+    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "plan" && hash.startsWith("#/plan/")) || (key === "artists" && hash.startsWith("#/artist/"));
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   // The secondary pages live under "More": close it after a pick and mark it when one of them is open.

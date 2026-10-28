@@ -4,6 +4,7 @@ import { h, loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm } from "./api.js";
 import { hotspotMap } from "./charts.js";
 import { rejectedList } from "./rejected.js";
+import { artistName } from "./artists.js";
 
 const STEP_MS = 450;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -32,6 +33,8 @@ export async function defaultPlan() {
   return fallback;
 }
 
+const joinList = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+
 /** Plain-text-to-Markdown for the downloaded file, built from the brief alone. */
 export function briefMarkdown(b, url) {
   const list = (items) => items.map((x) => `- ${x}`);
@@ -39,6 +42,7 @@ export function briefMarkdown(b, url) {
     p.name + (p.source === "ai_confirmed" ? (p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's kit)" : " (AI pick confirmed by Qloo)") : " (Qloo's kit)"))), ""]);
   return [`# Launch brief: ${b.title} in ${b.country}`, "", b.headline, "",
     `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
+    ...((b.moves || []).length ? ["## This week's moves", ...(b.moves || []).map((m) => `- **${m.buyer}:** ${m.text}`), ""] : []),
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
     ...((b.event_ideas || []).length ? ["## Event ideas", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
     "## Partners to approach", ...partners,
@@ -103,6 +107,10 @@ function briefCard(st, made, row) {
     h("p", { class: "plan-headline" }, b.headline),
     h("section", { "aria-labelledby": "bs-sum" },
       h("h3", { id: "bs-sum" }, "Summary"), h("p", null, b.summary), h("p", { class: "plan-note mono" }, note)),
+    (b.moves || []).length ? h("section", { "aria-labelledby": "bs-moves" },
+      h("h3", { id: "bs-moves" }, "This week's moves"),
+      h("p", { class: "plan-note mono" }, "One step per buyer, each doable within about a week, from this brief's own facts. Steps, not promised results."),
+      h("dl", { class: "plan-partners" }, b.moves.map((m) => h("div", null, h("dt", null, m.buyer), h("dd", null, m.text))))) : null,
     h("section", { "aria-labelledby": "bs-cities" },
       h("h3", { id: "bs-cities" }, "Where to start"),
       b.cities.length ? h("ul", null, b.cities.map((c) => h("li", null, c))) : h("p", null, "Qloo returned no named places for this country."),
@@ -110,13 +118,13 @@ function briefCard(st, made, row) {
     (b.event_ideas || []).length ? h("section", { "aria-labelledby": "bs-events" },
       h("h3", { id: "bs-events" }, "Event ideas"),
       h("p", { class: "plan-note mono" }, "Cities where Qloo's map of the title's audience and of the artist's audience overlap."),
-      h("ul", null, b.event_ideas.map((e) => h("li", null, e.text)))) : null,
+      h("ul", null, b.event_ideas.map((e) => h("li", null, artistName(e.artist), ` in ${joinList(e.cities)}: both audiences concentrate there.`)))) : null,
     h("section", { "aria-labelledby": "bs-partners" },
       h("h3", { id: "bs-partners" }, "Partners to approach"),
       h("p", { class: "plan-note mono" }, b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),
       h("dl", { class: "plan-partners" }, b.partners.map((g) => h("div", null,
         h("dt", null, g.label),
-        h("dd", null, g.picks.flatMap((p, i) => [i ? ", " : null, p.name,
+        h("dd", null, g.picks.flatMap((p, i) => [i ? ", " : null, g.domain === "artist" ? artistName(p.name) : p.name,
           p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))))),
     h("section", { "aria-labelledby": "bs-avoid" },
       h("h3", { id: "bs-avoid" }, "What not to claim"), h("ul", null, b.avoid.map((a) => h("li", null, a)))),

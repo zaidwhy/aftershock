@@ -11,6 +11,7 @@ from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
+from aftershock import artist_view
 from aftershock import ask as ask_agent
 from aftershock import launch_brief as brief_builder
 from aftershock import titles as title_index
@@ -111,6 +112,27 @@ def launch_brief(storm_id: str, country_code: str) -> dict:
             return made or {"error": f"no launch kit for {country_code!r}; kits cover the top three forecast "
                                      "countries with Qloo data"}
     return {"error": f"no storm with id {storm_id!r}; call list_storms first"}
+
+
+@server.tool(description="Artist opportunities this week: for an artist's name (as in a launch brief's partners or event "
+                         "ideas), every breakout where Qloo links that artist to the title's audience in a forecast country: "
+                         "title, origin, country, the chance the title charts there within 4 weeks, the cities where both "
+                         "audiences concentrate (when an event idea exists), whether Qloo's own kit also named the artist and "
+                         "whether Qloo confirmed the AI's suggestion. Audience overlap, not a forecast of streams or ticket "
+                         "sales. Reads files only; no Qloo or model call.")
+def artist_opportunities(artist_name: str) -> dict:
+    name = artist_name.strip()
+    if not name or len(name) > 120:
+        return {"error": "artist_name must be 1 to 120 characters"}
+    if not STORMS.exists():
+        return {"error": "storms.json has not been generated yet; run scripts/run_forecasts.py"}
+    data = json.loads(STORMS.read_text(encoding="utf-8"))
+    index = artist_view.build(data["storms"])
+    want = artist_view.slugify(name) or name.casefold()
+    found = next((a for a in index["artists"] if a["slug"] == want or a["name"].casefold() == name.casefold()), None)
+    if found is None:
+        return {"error": artist_view.NOT_FOUND.format(slug=name)}
+    return {"week": data["week"], **found}
 
 
 @server.tool(description=f"RIPPLE: score up to {MAX_SONGS} songs placed in a show or film. The score is the Qloo "

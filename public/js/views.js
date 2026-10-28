@@ -11,6 +11,7 @@ import { askBox } from "./ask.js";
 import { agentLine } from "./agent.js";
 import { defaultPlan } from "./plan.js";
 import { rejectedList } from "./rejected.js";
+import { artistName } from "./artists.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -242,7 +243,7 @@ function eventsBlock(r) {
   const ideas = (r.events || []).filter((e) => e.artist && e.cities?.length);
   if (!ideas.length) return null;
   return h("p", { class: "hs-places" }, "Event ideas: ",
-    h("strong", null, ideas.map((e) => `${e.artist} in ${e.cities.join(" and ")}`).join("; ")),
+    h("strong", null, ideas.flatMap((e, i) => [i ? "; " : null, artistName(e.artist), ` in ${e.cities.join(" and ")}`])),
     ". Both audiences concentrate there.");
 }
 
@@ -263,7 +264,7 @@ function planBlock(r) {
     h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it does not link to these viewers here, ${nq} it does not know.`),
     groups.length ? h("ul", { class: "plan-list" }, groups.map(([d, list]) => h("li", null,
       h("span", { class: "plan-dom" }, KIT_LABELS[d]), " ",
-      list.flatMap((c, i) => [i ? ", " : null, c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null,
+      list.flatMap((c, i) => [i ? ", " : null, d === "artist" ? artistName(c.name) : c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null,
     rejectedList(plan.rejected));
 }
 

@@ -35,11 +35,15 @@ The hackathon asks for an agent that does better than an LLM alone. We tested th
 6. **Match artists to cities:** Qloo's heatmap for up to three partner artists against the title's cities, giving event ideas where both audiences concentrate.
 7. **Write the Launch Brief:** where and when, the cities to start in, the partners and cross-promotions to approach (Qloo-checked), what the evidence does not support, and a two-sentence summary whose names and numbers are checked against the facts before it is shown. Download it, print it, or share the link.
 
+**For artists.** Every artist that Qloo links to a breakout's audience, or that appears in an event idea, has a page (`#/artists`, searchable) that speaks to the artist: which titles' viewers over-index on their music, where each is breaking out, the chance it charts there within four weeks, the cities where both audiences concentrate, and a post or show-announcement move for the week. It states that this is audience overlap, not a forecast of streams or ticket sales. Example: [Veronica Maggio](https://aftershock-qloo.vercel.app/#/artist/veronica-maggio).
+
+**This week's moves.** Each Launch Brief ends with one move per buyer (label, artist, brand marketer, distributor or dubbing studio), written from the brief's own facts and left out when the facts are missing: no brand move without a Qloo-confirmed brand, no artist move without an event idea.
+
 **Follow one title on the world map.** One click and the map recolours by that title's chance in every country; click a country for the cities and the Qloo-checked picks.
 
 **Every forecast is locked in public first.** Each week the agent reads Netflix's public per-country Top 10, finds the titles that just broke out in one to three countries (35 in the week of 18 Oct 2026), forecasts every other country, builds kits, plans and hotspots, and locks every probability in a hash-chained ledger before the outcome exists. A GitHub Action runs it every Tuesday.
 
-**For agents too.** An MCP server exposes the same tools (`list_storms`, `spillover_forecast`, `launch_kit`, `launch_brief`, `ripple_score`, `sync_scout`, `netflix_history`, `ask`), so Claude Desktop or any MCP agent can plan a launch.
+**For agents too.** An MCP server exposes the same tools (`list_storms`, `spillover_forecast`, `launch_kit`, `launch_brief`, `ripple_score`, `sync_scout`, `netflix_history`, `artist_opportunities`, `ask`), so Claude Desktop or any MCP agent can plan a launch.
 
 **Also:** a lookup over the 8,721 titles that charted since 2024, and Sync Scout, which finds on-taste artists whose audience sits outside a show's age groups (a shortlist for a music supervisor, not a forecast).
 
@@ -68,7 +72,16 @@ The agent is a fixed plan of tool calls with explicit decision rules, so every s
 
 ## Who would pay, and why now
 
-The first buyers are labels and publishers whose songs sit in a show, promoters deciding where an artist should play, and brands looking for a tie-in: they decide which artist, which city and which partner, and have to decide in the weeks between a breakout and its peak. Local distributors come second. For a Netflix original Netflix holds the rights, so the local buyers are dubbing studios, marketing partners and promoters rather than licensing buyers. These are the people we think would use it; we have no customers or pilots.
+The buyers we think would use it, each with the one move they can make inside the week between a breakout and its peak (every brief ends with a "This week's moves" section built from its own facts):
+
+- **Labels:** push an artist's catalogue and a playlist and social push to listeners in the cities where Qloo links that artist to the title's viewers.
+- **Artists:** a post or a local show announcement aimed at those cities while the title is charting. Artists get their own pages ("For artists"), where they are the beneficiary rather than a name on a brand's list.
+- **Brand marketers:** local ads in the title's hotspot cities, only for brands Qloo confirms for that audience.
+- **Distributors and dubbing studios, second:** prepare promotion and subtitles or a dub for the countries with the highest chance. For a Netflix original Netflix holds the rights, so the local buyers are dubbing studios, marketing partners and promoters rather than licensing buyers.
+
+A week is short for a dub or a tour, so the moves are the ones that fit in it; the longer ones start from the same warning. We have no customers or pilots.
+
+**Pricing hypothesis (untested).** A weekly per-territory brief subscription for labels and agencies, with artist pages free. We have not tested this with anyone.
 
 | | Today | With AFTERSHOCK |
 |---|---|---|
@@ -106,6 +119,7 @@ No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app
 1. **Plan a launch:** open the featured plan directly, Nightwatch: Demons Are Forever in Sweden, at https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (the Plan a launch menu item opens the same one). Watch the steps replay, then read, download or print the Launch Brief. Pick another title or country from the two menus.
 2. **Home, the map:** click one of the "Follow one title" buttons; the map recolours by that title's chance in each country. Click a country for its cities and Qloo-checked picks.
 3. **Any storm page:** the launch kit per country, its "title-specific" or "countrywide" label, and under it "AI plan, checked by Qloo" with how many AI suggestions Qloo confirmed, did not link to these viewers, or did not know.
-4. **Scorecard:** what we measured, including what went against us, and the pre-registered tests. **Ledger:** every locked forecast.
+4. **For artists:** open https://aftershock-qloo.vercel.app/#/artist/veronica-maggio (the artist the featured plan links to), or search by name at #/artists. Each card links back to the plan page for that title and country.
+5. **Scorecard:** what we measured, including what went against us, and the pre-registered tests. **Ledger** (under More): every locked forecast.
 
-To use it from an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5) exposes the same eight tools. Live lookups are capped per visitor so the shared Qloo key lasts through judging.
+To use it from an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5) exposes the same nine tools. Live lookups are capped per visitor so the shared Qloo key lasts through judging.

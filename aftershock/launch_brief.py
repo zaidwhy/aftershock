@@ -20,6 +20,8 @@ PICKS_PER_DOMAIN = 3
 BRIEFS_PER_CALL = 15
 MAX_CALLS = 6
 BACKTEST_AUC = 0.817
+# data/results/lead_time.json: of the 131 top-3 picks that charted in the backtest, 117 did so one week after the breakout week.
+LEAD_CHARTED, LEAD_ONE_WEEK = 131, 117
 DOMAIN_LABELS = {"artist": "Artists", "tv_show": "TV shows", "movie": "Films", "brand": "Brands"}
 SUMMARY_AI = "ai, checked"
 SUMMARY_TEMPLATE = "template"
@@ -85,6 +87,38 @@ def template_summary(b):
     pair = f" Approach {_join(partners[:3])}." if partners else ""
     return (f"{b['title']} has a {b['chance_label']} chance of charting in {b['country']} within "
             f"{b['horizon_weeks']} weeks, rank {b['rank']} of {b['of_countries']}.{where}{pair}")
+
+
+def _moves(title, country, chance_label, horizon, cities, partners, event_ideas):
+    """One move per buyer, each doable within about a week, built only from the brief's own facts: [{buyer, text}].
+    A move is left out when its facts do not exist (no brand move without a Qloo-confirmed brand, no artist move
+    without an event idea, no cities means no label, artist or brand move). Wording states steps, never outcomes."""
+    moves = []
+    artists = next((g["picks"] for g in partners if g["domain"] == "artist"), [])
+    if event_ideas:
+        idea = event_ideas[0]
+        label_artist, label_cities = idea["artist"], idea["cities"]
+    elif artists and cities:
+        label_artist, label_cities = artists[0]["name"], cities
+    else:
+        label_artist = label_cities = None
+    if label_artist:
+        moves.append({"buyer": "Label", "text": f"Push {label_artist}'s catalogue to listeners in {_join(label_cities)} "
+                      f"this week; Qloo links them to {title}'s viewers in {country}."})
+    if event_ideas:
+        idea = event_ideas[0]
+        moves.append({"buyer": "Artist", "text": f"{idea['artist']}: a post or a show announcement aimed at "
+                      f"{_join(idea['cities'])} this week, while {title} is charting; Qloo's maps show your audience "
+                      "and this title's overlap there."})
+    brands = next((g["picks"] for g in partners if g["domain"] == "brand"), [])
+    brand = next((p["name"] for p in brands if p["source"] == "ai_confirmed"), None)
+    if brand and cities:
+        moves.append({"buyer": "Brand marketer", "text": f"Run local ads in {_join(cities)} next to {title} while it "
+                      f"charts; Qloo confirms {brand} for this audience."})
+    moves.append({"buyer": "Distributor or dubbing studio", "text": f"Prepare {country} promotion and subtitles or a dub "
+                  f"now: {chance_label} chance it charts there within {horizon} weeks; in our backtest, {LEAD_ONE_WEEK} of "
+                  f"the {LEAD_CHARTED} forecast picks that charted did so one week after the breakout week."})
+    return moves
 
 
 def brief(detail, code):
@@ -179,6 +213,7 @@ def brief(detail, code):
         avoid.append(f"Do not say this audience is distinctive in {country}: the kit mostly matches the country's "
                      "general taste.")
     avoid.append(f"Do not present the {_pct(fc['probability'])} as a promise: it is a history-only estimate.")
+    avoid.append("This week's moves are steps that fit in a week, not predictions that they will work.")
     if not use_plan:
         avoid.append("Do not call the partners AI-checked: this brief uses Qloo's own kit.")
     if events:
@@ -200,6 +235,7 @@ def brief(detail, code):
                             "text": f"{e['artist']} in {_join(e['cities'])}: both audiences concentrate there."}
                            for e in events],
            "avoid": avoid, "evidence": evidence}
+    out["moves"] = _moves(title, country, out["chance_label"], horizon, cities, partners, out["event_ideas"])
     summary = row.get("brief_summary") or {}
     out["summary"] = summary.get("text") or template_summary(out)
     out["summary_source"] = summary.get("source") if summary.get("text") else SUMMARY_TEMPLATE

@@ -27,6 +27,8 @@ async function getJson(url) {
 const stat = (name, mockName) => getJson(cfg.mock ? `${cfg.mockBase}/${mockName ?? name}.json` : `${cfg.dataBase}/${name}.json`);
 export const getStorms = () => stat("storms");
 export const getStorm = (id) => stat(`storms/${encodeURIComponent(id)}`, `storm-${encodeURIComponent(id)}`);
+export const getArtists = () => stat("artists");
+export const getArtist = (slug) => stat(`artists/${encodeURIComponent(slug)}`);
 export const getScorecard = () => stat("scorecard");
 export const getReplays = () => stat("replays");
 export const getLedger = () => stat("ledger");
