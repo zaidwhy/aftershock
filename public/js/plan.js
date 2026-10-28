@@ -5,6 +5,7 @@ import { getStorms, getStorm } from "./api.js";
 import { hotspotMap } from "./charts.js";
 import { rejectedList } from "./rejected.js";
 import { artistName } from "./artists.js";
+import { checkBox } from "./check.js";
 
 const STEP_MS = 450;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -33,19 +34,28 @@ export async function defaultPlan() {
   return fallback;
 }
 
-const joinList = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+/** Artists and brands are who to approach; TV shows and films say what the audience watches. Groups without a
+ *  `group` field (older data) count as partners for artists and brands only. */
+export function splitPartners(groups) {
+  const isPartner = (g) => (g.group ? g.group === "partner" : ["artist", "brand"].includes(g.domain));
+  return { partners: groups.filter(isPartner), watches: groups.filter((g) => !isPartner(g)) };
+}
+
+const joinList =(items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
 
 /** Plain-text-to-Markdown for the downloaded file, built from the brief alone. */
 export function briefMarkdown(b, url) {
   const list = (items) => items.map((x) => `- ${x}`);
-  const partners = b.partners.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) =>
+  const group = (gs) => gs.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) =>
     p.name + (p.source === "ai_confirmed" ? (p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's kit)" : " (AI pick confirmed by Qloo)") : " (Qloo's kit)"))), ""]);
+  const { partners, watches } = splitPartners(b.partners);
   return [`# Launch brief: ${b.title} in ${b.country}`, "", b.headline, "",
     `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
     ...((b.moves || []).length ? ["## This week's moves", ...(b.moves || []).map((m) => `- **${m.buyer}:** ${m.text}`), ""] : []),
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
-    ...((b.event_ideas || []).length ? ["## Event ideas", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
-    "## Partners to approach", ...partners,
+    ...((b.event_ideas || []).length ? ["## Quick-turn activation ideas", "Tours are booked months ahead; these are short activations where both audiences already live.", "", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
+    "## Partners to approach", ...group(partners),
+    ...(watches.length ? ["## This audience also watches (for creative and ad targeting)", ...group(watches)] : []),
     "## What not to claim", ...list(b.avoid), "",
     "## Evidence", ...list(b.evidence), "", url ? `Source: ${url}` : ""].join("\n");
 }
@@ -72,13 +82,13 @@ function statTiles(b, row) {
     [b.chance_label, `chance to chart in ${b.horizon_weeks} weeks`],
     [`${b.rank} of ${b.of_countries}`, "countries, ranked by chance"],
     checked,
-    [String(ideas), ideas === 1 ? "event idea" : "event ideas"],
+    [String(ideas), ideas === 1 ? "quick activation idea" : "quick activation ideas"],
   ];
   return h("div", { class: "proof plan-tiles", role: "group", "aria-label": "Brief at a glance" },
     tiles.map(([v, n]) => h("div", { class: "proof-item" }, h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, n))));
 }
 
-/** Hotspot cities as labelled dots on the country map (the storm page's renderer); event-idea cities get a ring.
+/** Hotspot cities as labelled dots on the country map (the storm page's renderer); activation-idea cities get a ring.
  *  The same facts follow as text, so the map is never the only carrier. Nothing without named cities with coordinates. */
 function cityMap(b, row) {
   const hs = row.hotspots || {};
@@ -89,12 +99,32 @@ function cityMap(b, row) {
   (b.event_ideas || []).forEach((e) => e.cities.forEach((c) => ideaCities.set(c, [...(ideaCities.get(c) || []), e.artist])));
   const places = names.map((name, i) => ({ name, cell: hs.place_cells[i], event: ideaCities.has(name) }));
   const ringed = places.filter((p) => p.event).map((p) => `${p.name} (${ideaCities.get(p.name).join(", ")})`);
-  const summary = `Map of ${b.country} with ${names.length} numbered hotspot ${names.length === 1 ? "city" : "cities"}: ${names.map((n, i) => `${i + 1} ${n}`).join(", ")}.${ringed.length ? ` Ringed, with an event idea: ${ringed.join("; ")}.` : " No city has an event idea."}`;
+  const summary = `Map of ${b.country} with ${names.length} numbered hotspot ${names.length === 1 ? "city" : "cities"}: ${names.map((n, i) => `${i + 1} ${n}`).join(", ")}.${ringed.length ? ` Ringed, with an activation idea: ${ringed.join("; ")}.` : " No city has an activation idea."}`;
   const box = h("div", { class: "plan-map" });
   hotspotMap(b.code, cells, { places, width: 440, height: 360, label: summary }).then((svg) => { if (svg) { svg.classList.add("hs-map-brief"); box.prepend(svg); } }).catch(() => {});
   box.append(h("p", { class: "plan-note mono" }, "Numbered dots: ", h("strong", null, names.map((n, i) => `${i + 1} ${n}`).join(", ")), ". ",
-    ringed.length ? ["Ring means an event idea: ", h("strong", null, ringed.join("; ")), "."] : "No event idea in these cities."));
+    ringed.length ? ["Ring means a quick activation idea: ", h("strong", null, ringed.join("; ")), "."] : "No activation idea in these cities."));
   return box;
+}
+
+function partnerList(groups) {
+  return h("dl", { class: "plan-partners" }, groups.map((g) => h("div", null,
+    h("dt", null, g.label),
+    h("dd", null, g.picks.flatMap((p, i) => [i ? ", " : null, g.domain === "artist" ? artistName(p.name) : p.name,
+      p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))));
+}
+
+/** "Partners to approach" (artists and brands) and, apart, what the audience also watches (shows and films). */
+function partnerSection(b) {
+  const { partners, watches } = splitPartners(b.partners);
+  return h("div", null,
+    h("section", { "aria-labelledby": "bs-partners" },
+      h("h3", { id: "bs-partners" }, "Partners to approach"),
+      h("p", { class: "plan-note mono" }, b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),
+      partnerList(partners)),
+    watches.length ? h("section", { "aria-labelledby": "bs-watches" },
+      h("h3", { id: "bs-watches" }, "This audience also watches (for creative and ad targeting)"),
+      partnerList(watches)) : null);
 }
 
 function briefCard(st, made, row) {
@@ -116,16 +146,10 @@ function briefCard(st, made, row) {
       b.cities.length ? h("ul", null, b.cities.map((c) => h("li", null, c))) : h("p", null, "Qloo returned no named places for this country."),
       cityMap(b, row)),
     (b.event_ideas || []).length ? h("section", { "aria-labelledby": "bs-events" },
-      h("h3", { id: "bs-events" }, "Event ideas"),
-      h("p", { class: "plan-note mono" }, "Cities where Qloo's map of the title's audience and of the artist's audience overlap."),
+      h("h3", { id: "bs-events" }, "Quick-turn activation ideas"),
+      h("p", { class: "plan-note mono" }, "Things doable within about a week, such as a club night, a screening party, a DJ set, a sponsor activation or a playlist push, in cities where Qloo's map of the title's audience and of the artist's audience overlap. Tours are booked months ahead; these are short activations where both audiences already live."),
       h("ul", null, b.event_ideas.map((e) => h("li", null, artistName(e.artist), ` in ${joinList(e.cities)}: both audiences concentrate there.`)))) : null,
-    h("section", { "aria-labelledby": "bs-partners" },
-      h("h3", { id: "bs-partners" }, "Partners to approach"),
-      h("p", { class: "plan-note mono" }, b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),
-      h("dl", { class: "plan-partners" }, b.partners.map((g) => h("div", null,
-        h("dt", null, g.label),
-        h("dd", null, g.picks.flatMap((p, i) => [i ? ", " : null, g.domain === "artist" ? artistName(p.name) : p.name,
-          p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))))),
+    partnerSection(b),
     h("section", { "aria-labelledby": "bs-avoid" },
       h("h3", { id: "bs-avoid" }, "What not to claim"), h("ul", null, b.avoid.map((a) => h("li", null, a)))),
     h("section", { "aria-labelledby": "bs-evidence" },
@@ -211,7 +235,7 @@ export function renderPlan(root, isCurrent, id, code) {
     const list = h("ol", { class: "plan-steps no-print" });
     region.append(list);
     add(body, h("h2", { class: "plan-run-h no-print" }, `The agent's steps: ${st.title} in ${row.brief.brief.country}`),
-      h("p", { class: "plan-note mono no-print" }, `Replay of the weekly run for the week of ${st.archived_week ?? week}. The steps were computed then and are shown one by one; nothing runs live.`),
+      h("p", { class: "plan-note mono no-print" }, `These steps ran in this week's automatic run (week of ${st.archived_week ?? week}) and are replayed one by one here; the check box below asks Qloo live.`),
       region);
     const finish = () => {
       if (!isCurrent()) return;
@@ -220,12 +244,17 @@ export function renderPlan(root, isCurrent, id, code) {
     let shown = 0;
     const next = () => {
       if (!isCurrent()) return;
-      list.append(stepCard(made.steps[shown], shown + 1));
+      const step = made.steps[shown];
+      list.append(stepCard(step, shown + 1));
+      if (step.key === "qloo_check") list.append(checkBox(st.id, row.code, st.title, made.brief.country));
       shown += 1;
       if (shown < made.steps.length) setTimeout(next, STEP_MS); else finish();
     };
     if (reduced()) {
-      made.steps.forEach((s, i) => list.append(stepCard(s, i + 1)));
+      made.steps.forEach((step, i) => {
+        list.append(stepCard(step, i + 1));
+        if (step.key === "qloo_check") list.append(checkBox(st.id, row.code, st.title, made.brief.country));
+      });
       finish();
     } else next();
   }).catch((err) => {

@@ -1,6 +1,6 @@
 """HTTP API for AFTERSHOCK. Serves precomputed storms, the scorecard, replays and live RIPPLE scoring.
 
-Live Qloo calls happen only in /api/ripple and /api/scout, capped per visitor; everything else is read from files
+Live Qloo calls happen only in /api/ripple, /api/scout and /api/check, capped per visitor; everything else is read from files
 the forecast job writes. The Qloo key stays in the server environment.
 """
 import json
@@ -9,12 +9,14 @@ import os
 import time
 from collections import defaultdict, deque
 from datetime import date
+from typing import Literal
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.staticfiles import StaticFiles
 
 from aftershock import artist_view
+from aftershock import grounded_plan
 from aftershock import ask as ask_agent
 from aftershock import launch_brief
 from aftershock import storm_archive
@@ -37,6 +39,15 @@ WIKI_FIRST_DAY = date(2015, 8, 1)  # Wikimedia per-article pageviews start in Ju
 app = FastAPI(title="AFTERSHOCK", docs_url=None, redoc_url=None)
 _ripple_hits = defaultdict(deque)
 _daily = {"day": None, "count": 0}
+
+
+def _load_storms():
+    """storms.json with names that are the title itself or its franchise removed from every AI plan (read time; the
+    weekly run's file is untouched)."""
+    data = _load(PRIVATE / "storms.json")
+    for item in data.get("storms", []):
+        grounded_plan.clean_rows(item.get("detail") or {})
+    return data
 
 
 def _load(path):
@@ -207,7 +218,7 @@ def _week_map(items):
 
 @app.get("/api/storms")
 def storms():
-    data = _load(PRIVATE / "storms.json")
+    data = _load_storms()
     def kit_rows(s):
         return [r for r in s["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values())]
 
@@ -224,7 +235,7 @@ def storms():
 def storm(storm_id: str):
     current = PRIVATE / "storms.json"
     # A missing current week (fresh clone, or between runs) still lets archived storm links resolve.
-    for item in _load(current)["storms"] if current.exists() else []:
+    for item in _load_storms()["storms"] if current.exists() else []:
         if item["summary"]["id"] == storm_id:
             return launch_brief.attach(item["detail"])
     found = storm_archive.find(ARCHIVE, storm_id)
@@ -247,7 +258,7 @@ def brief(storm_id: str = Query(..., alias="storm", min_length=1, max_length=MAX
 
 
 def _artist_index():
-    data = _load(PRIVATE / "storms.json")
+    data = _load_storms()
     return artist_view.build(data["storms"]), data["week"]
 
 
@@ -282,7 +293,7 @@ def title_history(name):
     loaded = title_index.load(TITLES)
     if loaded is None:
         raise HTTPException(503, f"{TITLES.name} has not been generated yet")
-    storms = _load(PRIVATE / "storms.json")["storms"] if (PRIVATE / "storms.json").exists() else []
+    storms = _load_storms()["storms"] if (PRIVATE / "storms.json").exists() else []
     found = title_index.history(loaded, name, storms)
     if found is None:
         raise HTTPException(404, f"No close match in Netflix's Top 10 since {loaded[0]['since'][:4]}")
@@ -292,7 +303,7 @@ def title_history(name):
 @app.get("/api/ripples")
 def ripples():
     """New releases whose soundtracks were scored as of release day, with the early Wikipedia read."""
-    data = _load(PRIVATE / "storms.json")
+    data = _load_storms()
     return {"ripples": [{k: r[k] for k in ("id", "show", "show_type", "platform", "release_date")} |
                         {"songs": len(r["songs"]), "top_song": r["songs"][0] if r["songs"] else None,
                          "locked_at": r.get("locked_at"), "lockable": r.get("lockable"),
@@ -340,6 +351,7 @@ def _grounded_plan(raw):
     total = sum(counts.values())
     return {"status": raw.get("status"), "pairs": raw.get("pairs"), "picks_checked": raw.get("picks_checked") or total,
             "unbacked_share": (1 - counts.get("confirmed", 0) / total) if total else None,
+            "counts": {k: counts.get(k, 0) for k in ("confirmed", "not_placed", "not_in_qloo")} if total else None,
             "specificity_plan": spec.get("grounded_plan_confirmed_only"), "specificity_llm": spec.get("llm_all_picks"),
             "specificity_pairs": spec.get("pairs")}
 
@@ -447,6 +459,35 @@ def sync_scout(request: Request, show: str = Query(..., min_length=1, max_length
         raise HTTPException(*qloo_failure(err)) from err
 
 
+MAX_NAME = 80
+
+
+@app.get("/api/check")
+def check(request: Request, storm_id: str = Query(..., alias="storm", min_length=1, max_length=MAX_FIELD),
+          country: str = Query(..., min_length=2, max_length=MAX_FIELD),
+          domain: Literal["artist", "brand", "tv_show", "movie"] = Query(...),
+          name: str = Query(..., min_length=1, max_length=MAX_NAME)):
+    """Check one typed name for a title's audience in one of its launch-kit countries, the way the weekly plan checks
+    each AI name: {verdict: confirmed | not_placed | not_in_qloo, name as Qloo spells it}. Live; same limiter as
+    /api/ripple."""
+    typed = " ".join(name.split())
+    if not typed:
+        raise HTTPException(422, "name must not be blank")
+    detail = storm(storm_id)
+    code = country.strip().upper()
+    row = next((r for r in detail.get("launch_kit") or [] if r.get("code", "").upper() == code and r.get("kit")), None)
+    countries = {f["code"].upper(): f["name"] for f in detail.get("spillover", {}).get("forecasts", [])}
+    if not row or not detail.get("qloo_entity") or code not in countries:
+        raise HTTPException(404, f"No launch kit for {country} on {detail['title']}; kits cover the top three "
+                                 "forecast countries with Qloo data.")
+    _take_live_slot(request)
+    try:
+        return grounded_plan.check_name(Qloo(call_budget=8), detail["qloo_entity"], countries[code], domain, typed)
+    except QlooError as err:
+        log.warning("name check failed: %s", err)
+        raise HTTPException(*qloo_failure(err)) from err
+
+
 class _Live:
     """Live Qloo tools for the ask router: the shared limiter and the same calls as /api/ripple and /api/scout."""
 
@@ -477,6 +518,8 @@ class _Live:
 def ask_context(live=None):
     path = PRIVATE / "storms.json"
     data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"week": None, "storms": []}
+    for item in data["storms"]:
+        grounded_plan.clean_rows(item.get("detail") or {})
     return {"storms": data["storms"], "week": data["week"], "titles": title_index.load(TITLES), "live": live,
             "week_map": lambda: _week_map(data["storms"])}
 

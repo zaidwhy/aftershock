@@ -11,6 +11,7 @@ import os
 import re
 
 from aftershock import llm_kits
+from aftershock.grounded_plan import clean_rows
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,8 @@ BACKTEST_AUC = 0.817
 # data/results/lead_time.json: of the 131 top-3 picks that charted in the backtest, 117 did so one week after the breakout week.
 LEAD_CHARTED, LEAD_ONE_WEEK = 131, 117
 DOMAIN_LABELS = {"artist": "Artists", "tv_show": "TV shows", "movie": "Films", "brand": "Brands"}
+# Artists and brands are who you approach; shows and films say what the audience watches (creative and ad targeting).
+PARTNER_DOMAINS = ("artist", "brand")
 SUMMARY_AI = "ai, checked"
 SUMMARY_TEMPLATE = "template"
 
@@ -77,12 +80,13 @@ def _partners(row, use_plan):
             picks = [{"name": e["name"], "source": "qloo_kit", "also_in_qloo_kit": True}
                      for e in (row["kit"].get(domain) or [])[:PICKS_PER_DOMAIN]]
         if picks:
-            out.append({"domain": domain, "label": label, "picks": picks})
+            out.append({"domain": domain, "label": label, "picks": picks,
+                        "group": "partner" if domain in PARTNER_DOMAINS else "watches"})
     return out
 
 
 def template_summary(b):
-    partners = [g["picks"][0]["name"] for g in b["partners"] if g["picks"]]
+    partners = [g["picks"][0]["name"] for g in b["partners"] if g["picks"] and g.get("group") == "partner"]
     where = f" Start in {_join(b['cities'])}." if b["cities"] else ""
     pair = f" Approach {_join(partners[:3])}." if partners else ""
     return (f"{b['title']} has a {b['chance_label']} chance of charting in {b['country']} within "
@@ -92,7 +96,7 @@ def template_summary(b):
 def _moves(title, country, chance_label, horizon, cities, partners, event_ideas):
     """One move per buyer, each doable within about a week, built only from the brief's own facts: [{buyer, text}].
     A move is left out when its facts do not exist (no brand move without a Qloo-confirmed brand, no artist move
-    without an event idea, no cities means no label, artist or brand move). Wording states steps, never outcomes."""
+    without an activation idea, no cities means no label, artist or brand move). Wording states steps, never outcomes."""
     moves = []
     artists = next((g["picks"] for g in partners if g["domain"] == "artist"), [])
     if event_ideas:
@@ -107,7 +111,7 @@ def _moves(title, country, chance_label, horizon, cities, partners, event_ideas)
                       f"this week; Qloo links them to {title}'s viewers in {country}."})
     if event_ideas:
         idea = event_ideas[0]
-        moves.append({"buyer": "Artist", "text": f"{idea['artist']}: a post or a show announcement aimed at "
+        moves.append({"buyer": "Artist", "text": f"{idea['artist']}: a post, a DJ set or a playlist push aimed at "
                       f"{_join(idea['cities'])} this week, while {title} is charting; Qloo's maps show your audience "
                       "and this title's overlap there."})
     brands = next((g["picks"] for g in partners if g["domain"] == "brand"), [])
@@ -115,7 +119,7 @@ def _moves(title, country, chance_label, horizon, cities, partners, event_ideas)
     if brand and cities:
         moves.append({"buyer": "Brand marketer", "text": f"Run local ads in {_join(cities)} next to {title} while it "
                       f"charts; Qloo confirms {brand} for this audience."})
-    moves.append({"buyer": "Distributor or dubbing studio", "text": f"Prepare {country} promotion and subtitles or a dub "
+    moves.append({"buyer": "Distributor", "text": f"Prepare {country} promotion "
                   f"now: {chance_label} chance it charts there within {horizon} weeks; in our backtest, {LEAD_ONE_WEEK} of "
                   f"the {LEAD_CHARTED} forecast picks that charted did so one week after the breakout week."})
     return moves
@@ -125,6 +129,7 @@ def brief(detail, code):
     """{"steps": [...], "brief": {...}} for one title in one forecast country, or None when the storm has no
     launch-kit row for that country. Each step is {key, title, found, decision?}."""
     code = (code or "").upper()
+    clean_rows(detail)
     row = _row(detail, code)
     forecasts = detail.get("spillover", {}).get("forecasts") or []
     fc = next((f for f in forecasts if f["code"] == code), None)
@@ -167,8 +172,8 @@ def brief(detail, code):
                       "found": f"{plan.get('model') or 'The model'} proposed {n_conf + not_placed + unknown} names for "
                                f"this audience in {country}."})
         check = {"key": "qloo_check", "title": "Check each AI name against Qloo",
-                 "found": f"{n_conf} confirmed by Qloo for this audience, {not_placed} known to Qloo but not linked "
-                          f"to this audience, {unknown} not found in Qloo."}
+                 "found": f"{n_conf} confirmed by Qloo for this audience, {not_placed} known to Qloo but not among "
+                          f"its picks for these viewers here, {unknown} with no Qloo data yet."}
     else:
         steps.append({"key": "ai_proposals", "title": "Let an AI propose more names",
                       "found": f"No AI picks were made for {country} this week."})
@@ -197,7 +202,7 @@ def brief(detail, code):
     events = [e for e in row.get("events") or [] if e.get("artist") and e.get("cities")]
     checked = row.get("events_checked") or 0
     event_cities = list(dict.fromkeys(c for e in events for c in e["cities"]))
-    event_step = {"key": "events", "title": "Match artists to cities"}
+    event_step = {"key": "events", "title": "Match artists to cities for quick activations"}
     if events:
         event_step["found"] = (f"Qloo's audience maps for {checked} {'artist' if checked == 1 else 'artists'} overlap this "
                                f"title's audience in {len(event_cities)} {'city' if len(event_cities) == 1 else 'cities'}.")
@@ -205,7 +210,7 @@ def brief(detail, code):
         event_step["found"] = (f"Qloo's audience maps for {checked} {'artist' if checked == 1 else 'artists'} were "
                                "compared with this title's audience." if checked else
                                "No artist audience maps were compared with this title's audience.")
-        event_step["decision"] = "No artist's audience overlaps the title's cities, so the brief lists no event idea."
+        event_step["decision"] = "No artist's audience overlaps the title's cities, so the brief lists no quick-turn activation idea."
     steps.append(event_step)
 
     avoid = []
@@ -217,7 +222,7 @@ def brief(detail, code):
     if not use_plan:
         avoid.append("Do not call the partners AI-checked: this brief uses Qloo's own kit.")
     if events:
-        avoid.append("Event ideas are where audiences overlap, not ticket-demand forecasts.")
+        avoid.append("Activation ideas are where audiences overlap, not ticket-demand forecasts.")
     evidence = [f"The forecast uses Netflix history only; its backtest ROC AUC is {BACKTEST_AUC}.",
                 "The kits have not been validated against outcomes: nothing shows these partners change viewing."]
     if use_plan:
@@ -290,7 +295,8 @@ Briefs:
 
 
 def _prompt_line(i, b):
-    partners = "; ".join(f"{g['label']}: " + ", ".join(p["name"] for p in g["picks"]) for g in b["partners"])
+    partners = "; ".join(f"{g['label']}: " + ", ".join(p["name"] for p in g["picks"]) for g in b["partners"]
+                         if g.get("group") == "partner")
     return json.dumps({"id": i, "title": b["title"], "country": b["country"], "chance": b["chance_label"],
                        "rank": f"{b['rank']} of {b['of_countries']}", "weeks": b["horizon_weeks"],
                        "cities": b["cities"], "partners": partners, "kit": b["kit_scope"]}, ensure_ascii=False)

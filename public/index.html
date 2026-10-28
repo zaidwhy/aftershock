@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AFTERSHOCK - a Qloo taste agent for breakout shows</title>
-<meta name="description" content="Finds Netflix titles breaking out in one to three countries, forecasts where they chart next, and uses Qloo's taste graph to say what travels with them there: local artists, shows, brands and the cities where the audience lives. Every forecast is locked in a public ledger first.">
-<meta property="og:title" content="AFTERSHOCK - a Qloo taste agent for breakout shows">
-<meta property="og:description" content="Finds Netflix titles breaking out in one to three countries, forecasts where they chart next, and uses Qloo's taste graph to say what travels with them there: local artists, shows, brands and the cities where the audience lives. Every forecast is locked in a public ledger first.">
+<title>AFTERSHOCK - An AI's launch plan sounds right. Qloo checks it.</title>
+<meta name="description" content="An AI&#39;s launch plan sounds right. Qloo checks it. Qloo could back only 29% of what an AI alone named for an audience in a country; AFTERSHOCK keeps only what Qloo confirms, forecasts which country a Netflix breakout reaches next, and maps the cities where that audience lives.">
+<meta property="og:title" content="AFTERSHOCK - An AI's launch plan sounds right. Qloo checks it.">
+<meta property="og:description" content="An AI&#39;s launch plan sounds right. Qloo checks it. Qloo could back only 29% of what an AI alone named for an audience in a country; AFTERSHOCK keeps only what Qloo confirms, forecasts which country a Netflix breakout reaches next, and maps the cities where that audience lives.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://aftershock-qloo.vercel.app/">
 <meta property="og:image" content="https://aftershock-qloo.vercel.app/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="AFTERSHOCK - a Qloo taste agent for breakout shows">
-<meta name="twitter:description" content="Finds Netflix titles breaking out in one to three countries, forecasts where they chart next, and uses Qloo's taste graph to say what travels with them there: local artists, shows, brands and the cities where the audience lives. Every forecast is locked in a public ledger first.">
+<meta name="twitter:title" content="AFTERSHOCK - An AI's launch plan sounds right. Qloo checks it.">
+<meta name="twitter:description" content="An AI&#39;s launch plan sounds right. Qloo checks it. Qloo could back only 29% of what an AI alone named for an audience in a country; AFTERSHOCK keeps only what Qloo confirms, forecasts which country a Netflix breakout reaches next, and maps the cities where that audience lives.">
 <meta name="twitter:image" content="https://aftershock-qloo.vercel.app/og.png">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -37,6 +37,7 @@
 <link rel="modulepreload" href="js/plan.js">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<noscript><style>main > .status { display: none; }</style></noscript>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" defer></script>
 <script type="module" src="app.js"></script>
@@ -46,7 +47,7 @@
 <header class="site-head">
   <a class="brand" href="#/" aria-label="AFTERSHOCK home"><span class="brand-mark" aria-hidden="true"></span>AFTERSHOCK</a>
   <nav aria-label="Primary">
-    <a href="#/" data-nav="home">Storms</a>
+    <a href="#/" data-nav="home">Breakouts</a>
     <a href="#/plan" data-nav="plan">Plan a launch</a>
     <a href="#/artists" data-nav="artists">For artists</a>
     <a href="#/scorecard" data-nav="scorecard">Scorecard</a>
@@ -62,10 +63,18 @@
     </details>
   </nav>
 </header>
-<main id="app" tabindex="-1"><p class="status" role="status">Loading...</p></main>
+<main id="app" tabindex="-1"><p class="status" role="status">Loading...</p>
+<noscript>
+<article class="static-summary">
+  <h1>An AI's launch plan sounds right. Qloo checks it.</h1>
+  <p>AFTERSHOCK is a launch agent for Netflix breakouts. It forecasts which country a title that just broke out reaches next, asks an AI for launch ideas for that audience, and keeps only the names that Qloo's taste graph confirms for that audience in that country.</p>
+  <p><strong>Measured: Qloo could back only 29% of what an AI alone named for an audience in a country.</strong> Of 1,615 names an AI proposed across 81 title-country pairs, 66% are names Qloo knows and 29% are ones Qloo links to that audience in that country. The other 71% are not backed: 34% are names Qloo has no data on (a gap in Qloo's coverage) and 37% are names Qloo knows but does not place with that audience.</p>
+  <p>Qloo API calls used: <code>/search</code> (strict name check), <code>/v2/insights</code> for artists, TV shows, films and brands (<code>signal.interests.entities</code> with <code>signal.location.query</code>, with and without the title, and filtered by <code>filter.results.entities</code> to confirm or reject each AI name), <code>urn:heatmap</code> with <code>filter.location.query</code> for cities, and <code>urn:demographics</code>.</p>
+  <p>The charts and the live name check need JavaScript. <a href="#/plan">Plan a launch</a> (opens this week's featured plan) | <a href="https://github.com/zaidwhy/aftershock">Code and method on GitHub</a> | <a href="#/scorecard">Scorecard</a></p>
+</article>
+</noscript></main>
 <footer class="site-foot">
   <p>Forecasts are probabilities, not promises. Built on Netflix's public Top 10, Qloo audience data and Wikimedia pageviews. AFTERSHOCK is not affiliated with Netflix or Qloo.</p>
 </footer>
-<noscript><p class="status">AFTERSHOCK needs JavaScript to draw its charts.</p></noscript>
 </body>
 </html>

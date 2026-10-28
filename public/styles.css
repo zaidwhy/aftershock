@@ -512,3 +512,24 @@ dd { margin: 0; font-size: 1.1rem; }
 .artist-list li { padding: 5px 0; break-inside: avoid; overflow-wrap: anywhere; }
 .artist-list a { display: inline-block; padding: 4px 0; }
 #artist-q { max-width: 420px; }
+
+/* First impression: the Qloo claim, the live name check, catalog and country-wide tags. */
+.hero-fact { font-size: 1.02rem; max-width: 62ch; margin: 0 0 14px; }
+.hero-fact strong { display: block; font-size: 1.12rem; margin-bottom: 4px; }
+.num-explained ul { margin: 6px 0 10px; padding-left: 1.2em; }
+.num-explained li { margin: 3px 0; }
+.tag-quiet { color: var(--ink-soft); font-size: 0.65rem; padding: 1px 6px; }
+.unknown-line { margin: 6px 0 2px; }
+.plan-check { border-style: dashed; }
+.check-form { align-items: flex-end; }
+.check-form .field { margin: 0; }
+.check-form input { min-width: 0; }
+.check-out { margin: 6px 0 0; padding: 8px 12px; border-left: 3px solid var(--ink-soft); }
+.check-yes { border-left-color: var(--accent); }
+.check-yes .check-name { font-weight: 600; }
+.check-no s { text-decoration-thickness: 1.5px; }
+.static-summary { max-width: 70ch; }
+@media (max-width: 899px) {
+  .hero-top .hero-fact { order: 2; }
+  .hero-top .lead-line { order: 6; }
+}

@@ -26,11 +26,17 @@ def render(rejected):
     return json.loads(out.stdout)
 
 
-def test_names_are_struck_through_with_a_reason_in_words():
+def test_only_not_placed_names_are_struck_through_and_unknown_ones_are_listed_apart():
     out = render([{"domain": "artist", "name": "Alpha", "verdict": "not_placed"},
                   {"domain": "brand", "name": "Beta", "verdict": "not_in_qloo"}])
-    assert "<s>Alpha</s>" in out and "<s>Beta</s>" in out
-    assert "Qloo does not link it to these viewers here" in out and "Qloo does not know it" in out
+    assert "<s>Alpha</s>" in out and "<s>Beta</s>" not in out
+    assert "not in Qloo's picks for these viewers here" in out
+    assert "No Qloo data yet (check locally): </span>Beta." in out
+
+
+def test_unknown_names_alone_have_no_strikethrough_or_reason():
+    out = render([{"domain": "artist", "name": "Tahsan Khan", "verdict": "not_in_qloo"}])
+    assert "<s>" not in out and "Not used" not in out and "Tahsan Khan" in out
 
 
 def test_long_lists_stop_at_eight_with_a_count():
@@ -40,3 +46,24 @@ def test_long_lists_stop_at_eight_with_a_count():
 
 def test_nothing_when_there_are_no_rejected_names():
     assert render([]) is None and render(None) is None
+
+
+def run_js(body):
+    out = subprocess.run(["node", "--input-type=module", "-e", STUB + body], capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)
+
+
+def test_check_box_verdicts_render_in_words():
+    body = ("import { verdictNode } from " + json.dumps((ROOT / "public/js/check.js").as_uri()) + ";"
+            "const o = (v, n) => html(verdictNode({ verdict: v, name: n }, 'artist', 'Nightwatch', 'Sweden'));"
+            "console.log(JSON.stringify([o('confirmed','A'), o('not_placed','B'), o('not_in_qloo','C')]));")
+    yes, no, unknown = run_js(body)
+    assert "Confirmed by Qloo: </strong><span>A</span>" in yes and "<s>" not in yes
+    assert "<s>B</s>" in no and "not in Qloo's picks for these viewers here" in no
+    assert "<s>" not in unknown and "No Qloo data yet (check locally): </span><span>C</span>" in unknown
+
+
+def test_catalog_tag_rule():
+    body = ("import { isCatalogTitle } from " + json.dumps((ROOT / "public/js/catalog.js").as_uri()) + ";"
+            "console.log(JSON.stringify([isCatalogTitle(2020, 2026), isCatalogTitle(2021, 2026), isCatalogTitle(2012, 2026), isCatalogTitle(null, 2026)]));")
+    assert run_js(body) == [True, False, True, False]

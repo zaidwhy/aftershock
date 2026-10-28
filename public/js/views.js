@@ -12,13 +12,14 @@ import { agentLine } from "./agent.js";
 import { defaultPlan } from "./plan.js";
 import { rejectedList } from "./rejected.js";
 import { artistName } from "./artists.js";
+import { isCatalogTitle } from "./catalog.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
 
 const countryName = (code) => ISO[code]?.[1] ?? code;
 
-const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - a Qloo taste agent for breakout shows"; };
+const setTitle = (t) => { document.title = t ? `${t} - AFTERSHOCK` : "AFTERSHOCK - An AI's launch plan sounds right. Qloo checks it."; };
 const mockNote = () => (isMock() ? h("p", { class: "mock-flag" }, "Mock data (?mock=1). Numbers are placeholders, except the replay pageviews.") : null);
 const whole = (n) => (n == null ? null : n.toLocaleString("en-US"));
 const scrollTo = (id) => (e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
@@ -57,6 +58,7 @@ export function renderHome(root, isCurrent, followId = null) {
   const agentBox = h("p", { class: "agent-line", hidden: true });
   const planCta = h("a", { class: "btn btn-primary", href: "#/plan" }, "Plan a launch");
   const leadLine = h("p", { class: "lead-line", hidden: true });
+  const heroFact = h("p", { class: "hero-fact", hidden: true });
   defaultPlan().then((d) => {
     if (!isCurrent() || !d) return;
     planCta.href = `#/plan/${encodeURIComponent(d.id)}/${encodeURIComponent(d.code)}`;
@@ -68,9 +70,10 @@ export function renderHome(root, isCurrent, followId = null) {
       h("div", { class: "hero-top" },
         h("div", { class: "hero-copy" },
           h("p", { class: "eyebrow" }, "A Qloo taste agent for breakout shows"),
-          h("h1", null, "A show breaks out in one country. ", h("em", null, "Where does it land next, and what travels with it?")),
+          h("h1", null, "An AI's launch plan sounds right. ", h("em", null, "Qloo checks it.")),
+          heroFact,
           h("p", { class: "plan-cta" }, planCta),
-          h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries. Netflix history says where each is likely to chart next. Qloo's taste graph says what to pair it with there: the artists and brands that title's audience loves in each country, and the cities where that audience lives. Every forecast is locked publicly before the outcome exists."),
+          h("p", { class: "pitch" }, "Every week the agent finds titles that just broke out on Netflix in one to three countries, and Netflix history says where each is likely to chart next. For that audience Qloo's taste graph then checks what an AI suggests (artists, brands, shows, films) and maps the cities where the audience lives. Every forecast is locked publicly before the outcome exists."),
           leadLine,
           h("ul", { class: "hero-links" },
             h("li", null, h("a", { href: "#/", onclick: scrollTo("live-h") }, "This week's breakouts")))),
@@ -85,7 +88,7 @@ export function renderHome(root, isCurrent, followId = null) {
     mockNote(),
     h("section", { "aria-labelledby": "live-h" },
       h("h2", { id: "live-h" }, "Live storms this week"),
-      h("p", { class: "muted" }, "Storms: titles that just broke out in 1 to 3 countries."),
+      h("p", { class: "muted" }, "Storms: titles that just broke out in 1 to 3 countries. Netflix's Top 10 also includes older catalog titles that re-entered it; they are tagged and listed after this-or-recent releases."),
       stormBox));
 
   Promise.all([getScorecard(), stormsP]).then(([sc, st]) => {
@@ -97,11 +100,23 @@ export function renderHome(root, isCurrent, followId = null) {
     if (lt?.model?.lead_weeks?.median != null && lt.breakouts_that_spread_at_all) {
       // Most breakouts never travel, so lead with the buyer's question: when one does, did the top picks name where?
       const spread = lt.breakouts_that_spread_at_all;
-      leadLine.append(`Backtest on ${whole(lt.model.breakouts)} past breakouts it never saw: most never left their first countries. `,
-        `Of the ${whole(spread)} that did, one of its top ${lt.top_k} countries was among the next ones ${share1(lt.model.hit_breakouts / spread)} of the time, `,
-        `against ${share1(lt.baseline.hit_breakouts / spread)} for the ${lt.top_k} countries that chart the most titles. `,
+      const whole0 = (x) => `${Math.round(x * 100)}%`;
+      const times = lt.baseline.hit_rate ? (lt.model.hit_rate / lt.baseline.hit_rate).toFixed(1) : null;
+      leadLine.append(`Backtest on ${whole(lt.model.breakouts)} past breakouts it never saw. Of the ${whole(spread)} that spread, its top ${lt.top_k} named a next country `,
+        `${whole0(lt.model.hit_breakouts / spread)} of the time (${whole0(lt.baseline.hit_breakouts / spread)} for the busiest-countries baseline); `,
+        `counting all ${whole(lt.model.breakouts)}, ${share1(lt.model.hit_rate)} against ${share1(lt.baseline.hit_rate)}${times ? `, ${times} times the baseline` : ""}. `,
         h("a", { href: "#/scorecard", onclick: () => { wantWarning = true; } }, "The full test, misses included"));
       leadLine.hidden = false;
+    }
+    const gc = sc.grounded_plan?.counts;
+    if (gc) {
+      const { confirmed: c, not_placed: np, not_in_qloo: nq } = gc, n = c + np + nq;
+      const p = (x) => `${Math.round((x / n) * 100)}%`;
+      heroFact.append(h("strong", null, `Qloo could back only ${p(c)} of what an AI alone named for an audience in a country.`),
+        ` Of ${whole(n)} names an AI proposed, ${p(c + np)} are names Qloo knows and ${p(c)} are ones it links to that audience there, so ${p(np + nq)} are not backed: `,
+        `${p(nq)} Qloo has no data on, ${p(np)} it knows but does not place with that audience. `,
+        h("a", { href: "#/scorecard" }, "How we measured it"));
+      heroFact.hidden = false;
     }
     const items = [
       ["Forecasts locked", whole(locked), "forecasts locked publicly before the outcome"],
@@ -139,7 +154,10 @@ export function renderHome(root, isCurrent, followId = null) {
 
   load(stormBox, "this week's storms", isCurrent, () => stormsP.catch(() => getStorms()), ({ week, storms }) => {
     if (!storms.length) { add(stormBox, h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
-    const ranked = [...storms].sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
+    const dataYear = Number(String(week).slice(0, 4));
+    const catalog = (s) => isCatalogTitle(s.meta?.year, dataYear);
+    const byChance = [...storms].sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
+    const ranked = [...byChance.filter((s) => !catalog(s)), ...byChance.filter(catalog)];
     const maxP = Math.max(0.0001, ...ranked.map((s) => s.top_forecast?.probability ?? 0));
     add(stormBox,
       h("p", { class: "muted" }, `Week of ${week}. Titles that entered Netflix's Top 10 in 1 to 3 countries, most likely to spread first.`),
@@ -148,7 +166,7 @@ export function renderHome(root, isCurrent, followId = null) {
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
           h("span", { class: "storm-meta" }, s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-facts" }, yearGenres(s.meta.year, s.meta.genres)) : null,
-            `Origin: ${origins(s.origin_countries)}`, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null),
+            `Origin: ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "catalog title") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
@@ -238,13 +256,13 @@ function hotspotBlock(r) {
   return box;
 }
 
-/** "Event ideas": artists whose audience concentrates in the same cities as the title's. Nothing without any. */
+/** "Quick-turn activation ideas": artists whose audience concentrates in the same cities as the title's. Nothing without any. */
 function eventsBlock(r) {
   const ideas = (r.events || []).filter((e) => e.artist && e.cities?.length);
   if (!ideas.length) return null;
-  return h("p", { class: "hs-places" }, "Event ideas: ",
+  return h("p", { class: "hs-places" }, "Quick-turn activation ideas: ",
     h("strong", null, ideas.flatMap((e, i) => [i ? "; " : null, artistName(e.artist), ` in ${e.cities.join(" and ")}`])),
-    ". Both audiences concentrate there.");
+    ". Both audiences concentrate there. Tours are booked months ahead; these are short activations where both audiences already live.");
 }
 
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
@@ -261,7 +279,7 @@ function planBlock(r) {
   const groups = Object.keys(KIT_LABELS).map((d) => [d, yes.filter((c) => c.domain === d)]).filter(([, list]) => list.length);
   return h("div", { class: "plan" },
     h("h4", null, "AI plan, checked by Qloo"),
-    h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it does not link to these viewers here, ${nq} it does not know.`),
+    h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it knows but does not place with these viewers here, ${nq} it has no data on.`),
     groups.length ? h("ul", { class: "plan-list" }, groups.map(([d, list]) => h("li", null,
       h("span", { class: "plan-dom" }, KIT_LABELS[d]), " ",
       list.flatMap((c, i) => [i ? ", " : null, d === "artist" ? artistName(c.name) : c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null,
@@ -442,6 +460,20 @@ function warningSection(sc) {
     h("p", { class: "muted" }, "A backtest on history-only forecasts (no Qloo data), March to October 2026: each forecast made from the breakout week using only earlier breakouts. It is not the live ledger."));
 }
 
+/** One explanation of the LLM-names numbers, from the counts in grounded_plan.json: of N proposed names, the share Qloo
+ *  knows, the share it links to this audience in this country, and the 71% it does not back (unknown + known but not linked). */
+function numbersExplained(gp) {
+  const { confirmed: c, not_placed: np, not_in_qloo: nq } = gp.counts, n = c + np + nq;
+  const p = (x) => `${Math.round((x / n) * 100)}%`;
+  return h("div", { class: "num-explained" },
+    h("p", null, `Across ${gp.pairs} title-country pairs, an LLM proposed ${whole(n)} artists, brands, films and shows for the audience. Of those ${whole(n)} names:`),
+    h("ul", null,
+      h("li", null, h("strong", { class: "mono" }, p(np + c)), ` are names Qloo knows (${whole(np + c)}).`),
+      h("li", null, h("strong", { class: "mono" }, p(c)), ` are ones Qloo links to this audience in this country (${whole(c)}). Only these go into a launch brief.`),
+      h("li", null, h("strong", { class: "mono" }, p(np + nq)), ` are not backed by Qloo (${whole(np + nq)}): `,
+        `${p(nq)} (${whole(nq)}) Qloo does not know at all, plus ${p(np)} (${whole(np)}) it knows but does not link to this audience in this country.`)));
+}
+
 /** The pre-registered Qloo-versus-LLM result; an honest empty slot until the scored run exists. */
 function llmSection(sc) {
   const ex = sc.kit_experiment;
@@ -449,7 +481,7 @@ function llmSection(sc) {
     ? h("div", { class: "kit-exp" },
       h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} title-country pairs.` : "."),
       h("p", null, `How much each list changes once the title is named, against the same source's list for the country alone (higher means more about this title): Qloo ${share(ex.qloo)}, LLM ${share(ex.llm)}.`),
-      h("p", null, `Only ${share(ex.grounding_share)} of the LLM's picks are names Qloo recognises as the right kind of thing, so some are not audience taste at all.`,
+      h("p", null, `Only ${share(ex.grounding_share)} of the LLM's picks are names Qloo knows as the right kind of thing (the same figure as above, before checking audience), so some are not audience taste at all.`,
         ex.grounded_pairs ? ` Counting only those, the LLM still leads (${share(ex.grounded_llm)} against Qloo's ${share(ex.grounded_qloo)} on ${ex.grounded_pairs} pairs).` : ""),
       h("p", null, "What we do about it: every kit is checked against Qloo's country-only answer and labelled countrywide when it mostly matches it, so a kit never claims to be about a title when it is not."),
       h("p", null, h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "How it was registered and scored")))
@@ -460,7 +492,7 @@ function llmSection(sc) {
   // Lead with the result that shapes the product; the registered test stays below it in full.
   return h("section", { "aria-labelledby": "llm-h" },
     h("h2", { id: "llm-h" }, `An LLM alone: Qloo could not back ${share(gp.unbacked_share)} of what it named`),
-    h("p", null, `Across ${gp.pairs} title-country pairs an LLM named ${whole(gp.picks_checked)} artists, brands, films and shows for the audience. Qloo placed ${share(1 - gp.unbacked_share)} of them with that audience; the rest it either does not know or does not link to these viewers. Only the confirmed names go into a launch brief.`),
+    gp.counts ? numbersExplained(gp) : h("p", null, `Across ${gp.pairs} title-country pairs an LLM named ${whole(gp.picks_checked)} artists, brands, films and shows for the audience. Qloo placed ${share(1 - gp.unbacked_share)} of them with that audience; the rest it either does not know or does not link to these viewers. Only the confirmed names go into a launch brief.`),
     gp.specificity_plan != null ? h("p", null, `The combined plan (the LLM's names, kept only when Qloo confirms them) is `, h("strong", null, `${gp.specificity_plan.toFixed(2)} title-specific`),
       `, against ${gp.specificity_llm.toFixed(2)} for the LLM's raw picks, on ${gp.specificity_pairs} pairs.`) : null,
     h("p", { class: "muted" }, "Exploratory: designed after the registered result below, on the same pairs and cached LLM answers. It is not pre-registered."),

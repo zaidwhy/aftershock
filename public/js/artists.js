@@ -42,7 +42,8 @@ export function renderArtists(root, isCurrent) {
       const hits = data.artists.filter((a) => !q || key(a.name).includes(q));
       list.replaceChildren(...hits.map((a) => h("li", null,
         h("a", { href: artistHref(a.slug) }, a.name), " ",
-        h("span", { class: "muted" }, `${a.breakouts} ${a.breakouts === 1 ? "breakout" : "breakouts"}: ${a.countries.join(", ")}`))));
+        h("span", { class: "muted" }, `${a.breakouts} ${a.breakouts === 1 ? "breakout" : "breakouts"}: ${a.countries.join(", ")}`),
+        a.countrywide_only ? [" ", h("span", { class: "tag tag-quiet" }, "country-wide taste")] : null)));
       status.textContent = `${hits.length} of ${data.artists.length} artists`;
     };
     input.addEventListener("input", render);
@@ -58,10 +59,12 @@ function card(name, b) {
   const kit = [b.qloo_confirmed ? "Qloo confirmed the AI's suggestion for this audience." : "Not an AI suggestion: this artist came from Qloo's own list.",
     b.in_qloo_kit ? "Qloo's own list also named you." : null].filter(Boolean).join(" ");
   return h("li", { class: "plan-step" },
+    b.countrywide ? h("p", { class: "plan-note" }, h("span", { class: "tag tag-quiet" }, "country-wide taste"),
+      " This title's kit in this country mostly repeats what the whole country likes, so the link to this title is weak.") : null,
     h("p", null, `Viewers of ${b.title} (breaking out from ${b.origin} into ${b.country}, ${b.chance_label} chance to chart there within ${b.horizon_weeks} weeks) over-index on your music, according to Qloo.`),
     b.cities.length ? h("p", null, `Both audiences concentrate in ${join(b.cities)}.`) : null,
     b.cities.length ? h("p", { class: "plan-decision" }, h("span", { class: "plan-rule mono" }, "This week's move"), " ",
-      `A post or show announcement aimed at ${join(b.cities)}; the window is about a week, while the title is charting.`) : null,
+      `A post, a DJ set or a playlist push aimed at ${join(b.cities)}, doable within about a week while the title is charting. Tours are booked months ahead; this is a short activation where both audiences already live.`) : null,
     h("p", { class: "plan-note" }, kit),
     h("p", { class: "plan-link" }, h("a", { href: planHref(b.storm_id, b.code) }, `See the plan for ${b.title} in ${b.country}`)));
 }

@@ -64,7 +64,7 @@ def test_listing_and_detail_and_404(monkeypatch):
     client = TestClient(api.app)
     lst = client.get("/api/artists").json()
     assert lst["artists"][0] == {"name": "Veronica Maggio", "slug": "veronica-maggio", "breakouts": 3,
-                                 "countries": ["South Korea", "Taiwan"]}
+                                 "countries": ["South Korea", "Taiwan"], "countrywide_only": False}
     one = client.get("/api/artists/veronica-maggio").json()
     assert one["week"] == "2026-10-18" and len(one["breakouts"]) == 3
     miss = client.get("/api/artists/nobody")
@@ -92,15 +92,15 @@ def _detail(rows):
 def test_moves_only_from_facts():
     full = _row("KR", ["Veronica Maggio", "Nike", "Pick2"], events=[("Veronica Maggio", ["Seoul", "Busan"])], brands=["Nike"])
     moves = {m["buyer"]: m["text"] for m in launch_brief.brief(_detail([full]), "KR")["brief"]["moves"]}
-    assert set(moves) == {"Label", "Artist", "Brand marketer", "Distributor or dubbing studio"}
+    assert set(moves) == {"Label", "Artist", "Brand marketer", "Distributor"}
     assert moves["Label"] == ("Push Veronica Maggio's catalogue to listeners in Seoul and Busan this week; "
                               "Qloo links them to Alpha's viewers in South Korea.")
-    assert "Nike" in moves["Brand marketer"] and "21% chance" in moves["Distributor or dubbing studio"]
+    assert "Nike" in moves["Brand marketer"] and "21% chance" in moves["Distributor"]
     no_event = _row("KR", ["A1", "A2", "A3"])
     got = {m["buyer"] for m in launch_brief.brief(_detail([no_event]), "KR")["brief"]["moves"]}
-    assert got == {"Label", "Distributor or dubbing studio"}  # artist move needs an event idea, brand needs a confirmed brand
+    assert got == {"Label", "Distributor"}  # artist move needs an event idea, brand needs a confirmed brand
     bare = _row("KR", [])
     bare["hotspots"] = {"places": []}
     bare["kit"]["artist"] = [{"name": "Kit Artist", "entity_id": "k"}]
     got = {m["buyer"] for m in launch_brief.brief(_detail([bare]), "KR")["brief"]["moves"]}
-    assert got == {"Distributor or dubbing studio"}  # no cities: no local moves
+    assert got == {"Distributor"}  # no cities: no local moves

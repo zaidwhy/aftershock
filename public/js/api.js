@@ -40,6 +40,12 @@ export async function askAgent(question) {
   return getJson(`${cfg.apiBase}/ask?q=${encodeURIComponent(question.slice(0, 200))}`);
 }
 
+/** One typed name checked live by Qloo for a title's audience in a launch-kit country (GET /api/check). */
+export async function checkName(storm, country, domain, name) {
+  if (cfg.mock) throw new Error("The live check needs the live API; mock mode has none.");
+  return getJson(`${cfg.apiBase}/check?storm=${encodeURIComponent(storm)}&country=${encodeURIComponent(country)}&domain=${encodeURIComponent(domain)}&name=${encodeURIComponent(name.slice(0, 80))}`);
+}
+
 export async function scoutShow(show) {
   if (cfg.mock) throw new Error("Sync Scout needs the live API; mock mode has no scout data.");
   return getJson(`${cfg.apiBase}/scout?show=${encodeURIComponent(show)}`);

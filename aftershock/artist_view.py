@@ -63,24 +63,24 @@ def build(items):
                 entry = {"storm_id": detail.get("id") or item["summary"]["id"], "title": title, "code": row["code"],
                          "country": fc["name"], "origin": origins, "chance": fc["probability"],
                          "chance_label": _pct(fc["probability"]), "horizon_weeks": horizon,
-                         "cities": e["cities"],
+                         "cities": e["cities"], "countrywide": bool(row.get("generic")),
                          "in_qloo_kit": e["both"] or ident in kit_names,
                          "qloo_confirmed": e["confirmed"]}
                 slot = found.setdefault(ident, {"name": e["name"], "by": {}})
                 slot["by"][(entry["storm_id"], entry["code"])] = entry
     taken, artists = {}, []
     for ident, slot in sorted(found.items(), key=lambda kv: kv[1]["name"].casefold()):
-        breakouts = sorted(slot["by"].values(), key=lambda b: -b["chance"])
+        breakouts = sorted(slot["by"].values(), key=lambda b: (b["countrywide"], -b["chance"]))
         countries = list(dict.fromkeys(b["country"] for b in breakouts))
         artists.append({"name": slot["name"], "slug": _slug_for(slot["name"], taken), "breakouts": breakouts,
-                        "countries": countries})
-    artists.sort(key=lambda a: (-len(a["breakouts"]), -a["breakouts"][0]["chance"], a["name"].casefold()))
+                        "countries": countries, "countrywide_only": all(b["countrywide"] for b in breakouts)})
+    artists.sort(key=lambda a: (a["countrywide_only"], -len(a["breakouts"]), -a["breakouts"][0]["chance"], a["name"].casefold()))
     return {"artists": artists}
 
 
 def listing(index, week):
     return {"week": week, "artists": [{"name": a["name"], "slug": a["slug"], "breakouts": len(a["breakouts"]),
-                                       "countries": a["countries"]} for a in index["artists"]]}
+                                       "countries": a["countries"], "countrywide_only": a["countrywide_only"]} for a in index["artists"]]}
 
 
 def detail(index, week, slug):

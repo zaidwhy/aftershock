@@ -161,12 +161,12 @@ def test_event_ideas_step_section_caveat_and_validator():
                                        {"artist": "Pick4", "cities": ["Seoul"]}], "events_checked": 3}
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
-    assert by["events"]["title"] == "Match artists to cities"
+    assert by["events"]["title"] == "Match artists to cities for quick activations"
     assert by["events"]["found"] == "Qloo's audience maps for 3 artists overlap this title's audience in 2 cities."
     assert "decision" not in by["events"]
     b = made["brief"]
     assert b["event_ideas"][0]["text"] == "Pick0 in Seoul and Busan: both audiences concentrate there."
-    assert "Event ideas are where audiences overlap, not ticket-demand forecasts." in b["avoid"]
+    assert "Activation ideas are where audiences overlap, not ticket-demand forecasts." in b["avoid"]
     assert launch_brief.validate_summary("Start in Busan with Pick0, who is strong in Seoul.", b)
     assert not launch_brief.validate_summary("Start in Osaka with Pick0.", b)
 
@@ -176,6 +176,6 @@ def test_no_overlap_states_the_decision_and_adds_no_caveat():
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
     assert by["events"]["decision"] == ("No artist's audience overlaps the title's cities, so the brief lists no "
-                                        "event idea.")
+                                        "quick-turn activation idea.")
     assert made["brief"]["event_ideas"] == []
-    assert not any("Event ideas" in a for a in made["brief"]["avoid"])
+    assert not any("Activation ideas" in a for a in made["brief"]["avoid"])
