@@ -543,3 +543,4 @@ dd { margin: 0; font-size: 1.1rem; }
 .plan-ai-extra { display: block; margin-top: 2px; }
 .kit-cmp .hero-cmp-h { font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 6px; }
 .kit-cmp .hero-cmp-i strong { font: 600 1.5rem var(--mono); margin-right: 4px; }
+.plan-ai-extra .plan-both { white-space: normal; }
