@@ -1,6 +1,6 @@
 # Demo video
 
-The rules do not require a video, but judges may judge from the text, images and video alone, and every 2025 winner had one. Record about 90 seconds of the live site at 1280x800, with captions or a voice-over that says the lines below in your own words. Upload to YouTube as unlisted and paste the link into Devpost. The older 96-second tour (`projects/aftershock-team/video/AFTERSHOCK-walkthrough.mp4`) predates Plan a launch and Follow one title; replace it.
+The rules do not require a video, but judges may judge from the text, images and video alone, and every 2025 winner had one. Record about 90 seconds of the live site at 1280x800, with captions or a voice-over that says the lines below in your own words. Upload to YouTube as unlisted and paste the link into Devpost. Recorded on 28 Oct from the live site: `projects/aftershock-team/video/AFTERSHOCK-walkthrough-v2.mp4` (98 seconds, 1280x800, captions burned in, no audio), following the scenes below. The older 96-second tour (`AFTERSHOCK-walkthrough.mp4`) predates Plan a launch and Follow one title; do not upload it.
 
 1. **The problem (0:00-0:10).** Home page. "A show breaks out in one country. Distributors, labels and brands find out after the peak, then plan from gut feel or a chatbot."
 2. **The test that shaped the agent (0:10-0:20).** Scorecard, the Qloo-versus-LLM section. "We asked an LLM what each audience loves. It sounded right, but Qloo could not back 71% of what it named. So in our agent the LLM proposes, and Qloo decides."
