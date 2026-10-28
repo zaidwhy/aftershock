@@ -341,3 +341,16 @@ def test_fallback_examples_use_this_weeks_recent_breakout_not_a_catalog_title(ct
 def test_fallback_examples_keep_a_static_fallback_only_when_there_are_no_storms(ctx):
     msg = ask.answer("zzz yyy xxx www vvv uuu ttt sss", {**ctx, "storms": []})["answer"]["message"]
     assert "Where will Squid Game go next?" in msg and "Nightwatch: Demons Are Forever pair with in Sweden" in msg
+
+
+@pytest.mark.parametrize("question", ["does the forecast work", "Is it accurate?", "how well does it work"])
+def test_accuracy_questions_get_the_baseline_comparison_not_a_title_lookup(ctx, question):
+    # A judge asking whether it works must hear the result against the obvious guess, not "not in Netflix's Top 10".
+    r = ask.answer(question, ctx)
+    assert r["intent"] == "feature_help"
+    assert "4.1%" in r["answer"]["message"] and "9.8%" in r["answer"]["message"]
+
+
+def test_ledger_answer_says_locked_before_netflix_published(ctx):
+    msg = ask.answer("what is the ledger", ctx)["answer"]["message"]
+    assert "before Netflix published" in msg and "outcomes were known" not in msg

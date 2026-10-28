@@ -516,7 +516,7 @@ FEATURES = {
         "scorecard misses miss wrong tests tested honest failures failed", "results right track record performance"),
     "ledger": _feature(
         "Ledger", "#/ledger",
-        "The Ledger holds 3,240 forecasts that were locked before their outcomes were known. They are graded from 15 Nov.",
+        "The Ledger holds 3,240 forecasts that were locked before Netflix published the weeks they are graded on. They are graded from 15 Nov.",
         ("ledger",),
         "ledger locked graded grade grading receipts predictions", "forecasts outcomes proof verify november nov"),
     "song_check": _feature(
@@ -562,9 +562,13 @@ FEATURES = {
         "qloo taste affinity heatmap heatmaps", "ai gemini confirm reject partners audience audiences"),
     "forecast": _feature(
         "How the forecast works", "#/scorecard",
-        "The forecast uses Netflix history only: ROC AUC 0.82 on 829 held-out breakouts. A breakout is a title that "
+        "The forecast uses Netflix history only. On 829 past breakouts it never saw, its top 3 countries caught the next "
+        "market 9.8% of the time, against 4.1% for always guessing the 3 busiest countries: 2.4 times the obvious guess. "
+        "For the 113 breakouts that spread at all, 72% against 30%. It ranks a country that went on to chart above one "
+        "that did not 82% of the time (ROC AUC 0.82). It is a triage tool, not a promise. A breakout is a title that "
         "entered a country's Top 10 while not charting elsewhere.",
-        ("how accurate", "accuracy", "how does the forecast work", "how does it forecast", "how do you forecast",
+        ("how accurate", "accuracy", "how does the forecast work", "does the forecast work", "does it work",
+         "is it accurate", "is the forecast accurate", "is the forecast right", "backtest", "baseline", "how well does it work", "how does it forecast", "how do you forecast",
          "what is a breakout", "what is the forecast", "how good is the forecast", "roc auc", "auc",
          "how do you predict", "how does it predict"),
         "auc accurate accuracy model roc predict prediction algorithm held", "forecast breakout breakouts netflix history next",
