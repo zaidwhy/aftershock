@@ -14,6 +14,7 @@ from mcp.server.mcpserver import MCPServer
 from aftershock import artist_view
 from aftershock import ask as ask_agent
 from aftershock import launch_brief as brief_builder
+from aftershock import release_plan as release_planner
 from aftershock import titles as title_index
 from aftershock.qloo import Qloo
 from aftershock.ripple import MAX_SONGS, score_placements
@@ -22,8 +23,10 @@ from aftershock.sync_scout import MAX_QLOO_CALLS, TOP_N, public_ripple, scout
 WIKI_FIRST_DAY = date(2015, 8, 1)  # Wikimedia per-article pageviews start in July 2015
 RIPPLE_PER_HOUR = 20
 SCOUT_PER_HOUR = 6
+RELEASE_PER_HOUR = 6
 _ripple_calls: list[float] = []
 _scout_calls: list[float] = []
+_release_calls: list[float] = []
 
 ROOT = Path(__file__).resolve().parent.parent
 STORMS = ROOT / "data" / "private" / "storms.json"
@@ -174,6 +177,29 @@ def sync_scout(show: str) -> dict:
         return {"error": f"sync_scout is limited to {SCOUT_PER_HOUR} calls per hour per server process; try again later"}
     _scout_calls.append(now)
     return scout(Qloo(call_budget=MAX_QLOO_CALLS), name)
+
+
+@server.tool(description="Plan a release: for a film, series, music act or comedian (kind is film, series, music or "
+                         "comedy) about to release or tour, the countries where Qloo finds the audience (ranked by "
+                         "Qloo destination affinity, a relative score and not a probability), for the top three the "
+                         "cities where the audience concentrates (Qloo heatmap density over Qloo destinations), venues that fit those cities "
+                         "(cinemas, concert halls and live-music venues, or comedy clubs, picked by Qloo venue tags), and "
+                         "what that audience also likes in the top two countries. If Qloo does not know the name "
+                         "(an unreleased title), pass up to 5 comparable titles in `like` and up to 3 stand in as the "
+                         "audience; signal.used says which. Returns steps: every Qloo call made, with endpoint and "
+                         f"params. Uses up to {release_planner.MAX_CALLS} Qloo calls, about 20 seconds uncached. "
+                         f"Limited to {RELEASE_PER_HOUR} calls per hour.")
+def release_plan(name: str, kind: str, like: list[str] | None = None) -> dict:
+    try:
+        typed, kind, comparables = release_planner.validate(name, kind, like or [])
+    except release_planner.ReleaseInputError as err:
+        return {"error": str(err)}
+    now = time.time()
+    _release_calls[:] = [t for t in _release_calls if now - t < 3600]
+    if len(_release_calls) >= RELEASE_PER_HOUR:
+        return {"error": f"release_plan is limited to {RELEASE_PER_HOUR} calls per hour per server process; try again later"}
+    _release_calls.append(now)
+    return release_planner.plan_release(Qloo(call_budget=release_planner.MAX_CALLS), typed, kind, comparables)
 
 
 class _McpLive:

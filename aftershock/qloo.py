@@ -46,7 +46,10 @@ class Qloo:
         self._last = 0.0
         if not self.api_key and not offline:
             raise QlooError("QLOO_API_KEY is not set; copy .env.example to .env and fill it in")
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        except OSError as err:  # read-only filesystem: run uncached rather than not at all
+            log.warning("no Qloo disk cache at %s: %s", CACHE_DIR, err)
 
     def get(self, path, params):
         key = hashlib.sha256(json.dumps([path, sorted(params.items())], default=str).encode()).hexdigest()[:32]
@@ -71,7 +74,10 @@ class Qloo:
         if resp.status_code != 200:
             raise QlooError(f"{resp.status_code} on {path}: {resp.text[:300]}", status=resp.status_code)
         body = resp.json()
-        cached.write_text(json.dumps(body), encoding="utf-8")
+        try:
+            cached.write_text(json.dumps(body), encoding="utf-8")
+        except OSError as err:  # a read-only filesystem costs the cache, not the answer
+            log.warning("could not cache %s: %s", path, err)
         return body
 
     def search(self, query, types=None, take=5):

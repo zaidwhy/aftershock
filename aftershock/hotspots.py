@@ -98,8 +98,11 @@ def nominatim_name(lat, lon, cache_dir=None):
                          headers={"User-Agent": USER_AGENT}, timeout=20.0)
         resp.raise_for_status()
         body = resp.json()
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        cached.write_text(json.dumps(body), encoding="utf-8")
+        try:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cached.write_text(json.dumps(body), encoding="utf-8")
+        except OSError as err:  # a read-only filesystem costs the cache, not the name
+            log.warning("could not cache the geocode at %.3f,%.3f: %s", lat, lon, err)
     return place_from_address(body.get("address") or {})
 
 

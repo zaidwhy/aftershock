@@ -29,7 +29,9 @@ function cityMaps(plan) {
     const fig = h("figure", { class: "card rel-map" }, h("figcaption", null, h("span", { class: "gp-label mono qloo-mark" }, "Qloo heatmap"), h("strong", null, c.name),
       c.hotspots.places?.length ? h("span", { class: "muted" }, ` - ${c.hotspots.places.join(", ")}`) : null));
     grid.append(fig);
-    hotspotMap(c.code, c.hotspots.cells, { places: c.hotspots.places || [], width: 320, height: 220, label: `Where the audience lives in ${c.name}` })
+    const pc = c.hotspots.place_cells || [];
+    const places = (c.hotspots.places || []).slice(0, pc.length).map((name, i) => ({ name, cell: pc[i] }));
+    hotspotMap(c.code, c.hotspots.cells, { places, width: 320, height: 220, label: `Where the audience lives in ${c.name}` })
       .then((svg) => { if (svg) fig.append(svg); }).catch(() => {});
   }
   return grid;

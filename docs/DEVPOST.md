@@ -29,7 +29,10 @@ A breakout travels country by country: that is what we forecast from Netflix his
 - **Plan a launch (start here).** Pick a breakout and a country. The agent works through visible steps, each with what it found and the rule it applied: forecast, ask Qloo what the audience likes, ask an AI for more names, check every AI name against Qloo, find the cities, match artists to cities, write the Launch Brief. When Qloo's own kit is clearly specific to the title (at least 60% different from the country's general taste), the partners lead with Qloo's kit and the AI names Qloo confirmed follow, labelled as such; platform brands such as Spotify are left out. The brief names partners to approach (artists and brands), what the audience also watches (for creative and ad targeting), quick-turn activation ideas, and what the evidence does not support. Download, print or share it.
 - **Live check box.** Type any artist, brand, show or film on the plan page; Qloo confirms or rejects it for that audience, now. Names Qloo has no data on are listed separately, never struck through.
 - **For artists.** Every artist Qloo links to a breakout's audience has a page: which titles' viewers over-index on their music, where, and the cities where both audiences concentrate. Artists that appear only in countrywide kits are tagged.
-- **World map.** Follow one title and the map recolours by its chance in each country.
+- **The globe.** The home page is a 3D globe of this week's breakouts: each origin pulses, arcs carry each title to its likeliest next countries, and clicking any country gives its chance and the reason in one line from Netflix history ("Norway joined 12 of 67 past breakouts that started in Denmark"). Follow one title and Qloo's city heatmap rises out of the surface where that audience lives. Small countries (Malta, Singapore, Bahrain) get clickable markers.
+- **Plan a release (new).** For something that has not launched yet, a film, series, album or comedy special, or an artist or comedian going on tour: Qloo ranks 24 countries by audience affinity, maps the cities in the top three, finds venues there (comedy clubs, live music venues or cinemas, by Qloo place tag) and names the local shows, films and artists this audience also loves. If Qloo does not know the title yet, up to three comparables stand in for it. Every Qloo call the plan made is listed with its parameters. Worked examples: Zakir Khan, Anuv Jain, and two unreleased titles planned from comparables.
+- **Ask AFTERSHOCK.** A chat on every page answers from the site's own tools, no language model: where a title goes next, why it is breaking in a country, why a title is not here, where a release could work, what any feature does. Every answer shows the steps it took.
+- **Guided tour.** A 60-second tour highlights each feature in turn; it runs on a first visit and from the Tour button.
 - **Public ledger.** Every week's forecasts are locked in a hash-chained ledger before the outcome exists, then graded. An MCP server exposes the same tools to any agent.
 
 ## Qloo calls we make
@@ -42,6 +45,8 @@ A breakout travels country by country: that is what we forecast from Netflix his
 | The same with `filter.results.entities` = the ids of the AI's names | Confirms or rejects each AI name for this audience in this country. Also what the live check box asks. |
 | `filter.type=urn:heatmap` with `signal.interests.entities` = the title and `filter.location.query` = the country | The cities where the title's audience concentrates (hotspots). |
 | The same with an artist as the signal | Each partner artist's cities; a title city within 30 km of one of the artist's 5 strongest cells becomes an activation idea. |
+| `filter.type=urn:entity:destination` with `signal.interests.entities` = the release (or its comparables) and `filter.geocode.country_code`, once per candidate country | Plan a release: ranks 24 countries by their best city's affinity for this audience. |
+| `filter.type=urn:entity:place` with `filter.tags` (comedy club, live music venue, concert hall or movie theater) near a city | Plan a release: venues that fit the kind of release in the top cities. |
 | `filter.type=urn:demographics` with a show or artist as the signal | Age bands for Song check; with `urn:entity:artist` candidates, the ranking in Sync Scout. |
 
 ## Who would pay
@@ -75,14 +80,16 @@ Netflix's public Top 10 (credited; we use the published per-country lists), Qloo
 
 ## Testing instructions for judges
 
-No login, nothing to install. Five minutes on https://aftershock-qloo.vercel.app:
+No login, nothing to install. About eight minutes on https://aftershock-qloo.vercel.app:
 
-1. **Plan a launch:** open https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (Nightwatch: Demons Are Forever in Sweden). Watch the steps replay, then read, download or print the Launch Brief.
-2. **Check a name live:** in the box under step 4, type any artist, brand, show or film; Qloo confirms or rejects it for this audience, now. Live lookups are capped per visitor.
-3. **Home, the map:** click a "Follow one title" button; click a country for its cities and Qloo-checked picks.
-4. **Any storm page:** the launch kit per country and "AI plan, checked by Qloo".
-5. **For artists:** https://aftershock-qloo.vercel.app/#/artist/veronica-maggio.
-6. **Scorecard and Ledger (under More):** what we measured, including what went against us, and every locked forecast.
+1. **Home, the globe:** take the 60-second tour (it starts on a first visit), then pick a title in the "Follow a breakout" row and click a country.
+2. **Plan a release:** https://aftershock-qloo.vercel.app/#/release opens a worked example; type your own title (and comparables if Qloo does not know it yet). A live plan makes about 40 Qloo calls and takes around 20 seconds.
+3. **Ask AFTERSHOCK** (bottom right): try "why isn't Squid Game here?" or "why is Nightwatch breaking in Norway?".
+4. **Plan a launch:** open https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (Nightwatch: Demons Are Forever in Sweden). Watch the steps replay, then read, download or print the Launch Brief.
+5. **Check a name live:** in the box under step 4, type any artist, brand, show or film; Qloo confirms or rejects it for this audience, now. Live lookups are capped per visitor.
+6. **Any storm page:** the launch kit per country and "AI plan, checked by Qloo".
+7. **For artists:** https://aftershock-qloo.vercel.app/#/artist/veronica-maggio.
+8. **Scorecard and Ledger (under More):** what we measured, including what went against us, and every locked forecast.
 
 From an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5).
 
@@ -92,4 +99,4 @@ From an AI agent: the MCP server (`python -m aftershock.mcp_server`, README sect
 - Code: https://github.com/zaidwhy/aftershock (MIT)
 - Demo video: (YouTube link to be added)  <!-- PLACEHOLDER for Zaid: paste the unlisted YouTube link before submitting -->
 
-**Built with:** a fixed plan of tool calls with visible decision rules; the LLM (Gemini `gemini-3.5-flash`) only proposes names and drafts a validated summary. python, fastapi, httpx, d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel
+**Built with:** a fixed plan of tool calls with visible decision rules; the LLM (Gemini `gemini-3.5-flash`) only proposes names and drafts a validated summary. python, fastapi, httpx, three.js (globe.gl), d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel

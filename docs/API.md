@@ -144,6 +144,35 @@ Live. Checks one typed name for a title's audience in one of its launch-kit coun
 ```
 `verdict` is `confirmed` (Qloo places it with this audience there), `not_placed` (Qloo knows it but does not place it with this audience there) or `not_in_qloo` (no entity of that type with exactly that name); `name` is the name as Qloo spells it (the typed name for `not_in_qloo`). `domain` is one of `artist`, `brand`, `tv_show`, `movie`; `name` is 1 to 80 characters; `storm` and `country` must name a storm with a launch-kit row for that country (404 otherwise). Out-of-range input is 422. It uses the same per-visitor and daily live limit as `/api/ripple` and `/api/scout` (429), and Qloo failures come back as the same visitor-facing sentences (503 when the key is refused or Qloo is rate-limiting, 502 otherwise).
 
+## GET /api/release?name=Example%20Act&kind=music&like=Comparable%20One,Comparable%20Two
+Live. Plans a release from Qloo alone (`aftershock/release_plan.py`): which countries have the audience and where inside them, which venues there fit, and what that audience also likes locally. `kind` is `film`, `series`, `music` or `comedy`. `name` is 1 to 120 characters. `like` is optional, up to 5 comparables separated by comma, semicolon or `|`, each 1 to 120 characters.
+
+The signal is the title if Qloo knows it by exactly that name (a comedian is a Qloo `person`, "Name, Comedian"; their specials are `tv_show`s). Otherwise the first 3 comparables Qloo knows stand in, which is how an unreleased title is planned. With neither, nothing is guessed. Which call produces what:
+- **Countries** (`qloo_destinations`): `/v2/insights` with `filter.type=urn:entity:destination`, `filter.geocode.country_code` and `take=15`, once for each of 24 candidate countries. A country's `score` is its best destination affinity among destinations with Qloo popularity of at least 0.4, and the top 8 countries are returned. Destination affinity is travel-flavoured (its top row is often a village or resort), so it ranks countries and supplies city candidates; it is not shown as the audience's cities. The popularity floor removes villages (measured on 1,860 candidates: Larrabetzu 0.003, Dalyan 0.02, Lichfield 0.13, Morzine 0.38) and keeps mid-size cities (Jaipur 0.48, Nagoya 0.46); it cannot remove famous resorts (Whistler 0.90, Agra 0.77), which the density step handles.
+- **Where the audience lives** (`qloo_heatmap`): for the top 3 countries, one `urn:heatmap` call (`signal.interests.entities`, `filter.location.query` = the country), as the launch kits do (`aftershock/hotspots.py`). The country's destination candidates are scored by audience density, the sum of heatmap cell weights within 40 km; candidates with no cells nearby, or under a tenth of the best density, are dropped, candidates within 15 km of each other are merged into the most popular, ties go to the higher destination affinity, and the top 3 are kept. Only a country where no candidate has cells nearby falls back to naming its strongest cells by OpenStreetMap Nominatim reverse geocoding (not a Qloo call; within a 10 second budget, after which the cells are kept without names). The result per country is `hotspots: {cells: [[lat, lon, weight]], places: [name], place_cells: [[lat, lon]]}`, the launch kits' shape, plus `cities: [{name, lat, lon, affinity, density}]` when the destination method found them (`affinity` is the destination affinity, `density` the summed cell weight). Countries 4 to 8 have only the score.
+- **Venues** (`qloo_places`): `/v2/insights` with `filter.type=urn:entity:place`, `filter.tags` (comedy: `urn:tag:category:place:comedy_club`; music: `concert_hall` or `live_music_venue`; film and series: `movie_theater`) and a point-and-radius location (20 km) around the strongest city of each top country; a city with no tagged venue is replaced by the next one down, up to 4 calls. Unfiltered place results are noise.
+- **Local taste** (`qloo_insights`): the signal's audience in the top 2 countries (`signal.location.query`) for TV shows, films and artists, with the signal itself removed.
+```json
+{"resolved": true, "name": "Example Act", "kind": "music",
+ "signal": {"used": "title", "entities": [{"name": "Example Act", "id": "uuid", "type": "urn:entity:artist"}]},
+ "countries_checked": 24,
+ "countries": [{"code": "XA", "name": "Country A", "score": 0.778,
+                "summary": "Country A leads: Qloo's destination affinity 0.78, the highest of the 24 countries checked. Qloo's audience map peaks around City A, City B and City C.",
+                "hotspots": {"cells": [[0.0, 0.0, 1.0]], "places": ["City A"], "place_cells": [[0.0, 0.0]]},
+                "cities": [{"name": "City A", "lat": 0.0, "lon": 0.0, "affinity": 0.778, "density": 12.4}]},
+               {"code": "XD", "name": "Country D", "score": 0.61, "summary": "Country D: Qloo's destination affinity 0.61, 0.17 below Country A."}],
+ "venues": [{"city": "City A", "country": "Country A",
+             "venues": [{"name": "Example Hall", "address": "...", "lat": 0.0, "lon": 0.0, "tags": ["Concert hall"]}]}],
+ "local_taste": [{"code": "XA", "country": "Country A", "tv_show": ["Name"], "movie": ["Name"], "artist": ["Name"]}],
+ "steps": [{"tool": "qloo_search", "endpoint": "/search", "params": {"query": "Example Act", "types": "urn:entity:artist", "take": 5},
+            "ok": true, "note": "Qloo knows 'Example Act'; its audience is the signal.", "calls": 1},
+           {"tool": "qloo_destinations", "endpoint": "/v2/insights",
+            "params": {"filter.type": "urn:entity:destination", "signal.interests.entities": "uuid", "take": 3},
+            "varies": {"filter.geocode.country_code": ["XA", "XB"]}, "ok": true, "note": "...", "calls": 24}],
+ "calls": 36, "caveats": ["..."]}
+```
+`score` is Qloo's relative destination affinity, not a probability and not a forecast of ticket or stream numbers; it is a country's single best destination. `steps` lists every Qloo call in order (resolve, countries, cities, venues, taste), each saying which call produced what: `params` are the parameters all calls in the step share, `varies` the ones that differ per call, `calls` how many. The key is never included. A plan makes at most 45 Qloo calls (typically 37 to 39, 1 search, 24 destination, 3 heatmap, 3 or 4 venue, 6 taste) and takes about 17 to 25 seconds uncached; Qloo and Nominatim answers are cached on disk, under /tmp on Vercel. Venues are listed in Qloo's place ranking within the tag, not by this audience, and the tags are loose (a few bars or banquet halls appear); film and series venues are cinemas, not screening events. When neither the name nor a comparable is in Qloo the response is `{"resolved": false, "name": "...", "reason": "...", "try": ["..."], "steps": [...], "calls": n}`. Bad input is 422 naming the field and its limit; the same per-visitor and daily live limit as `/api/ripple` applies (429), and Qloo failures are the same 503 and 502 sentences as `/api/check`. The MCP tool `release_plan(name, kind, like)` returns the same shape, limited to 6 calls per hour per server process.
+
 ## GET /api/title?name=Example%20Show
 
 Netflix Top 10 history for any title that charted since 2024 (no Qloo calls, no rate limit). Matching ignores case, accents and "Season N"; a name must match closely (ratio 0.85 or a whole-word match) or the response is 404 `{"detail": "No close match in Netflix's Top 10 since 2024"}`. `name` is 1 to 80 characters.
@@ -196,7 +225,7 @@ Read-only pages load these files instead of the API, so they never wait for a co
 
 ## Limits and errors
 
-- Live endpoints (`/api/ripple`, `/api/scout`, and `/api/ask` when it routes to them) share one limit: 10 per hour per visitor (first `X-Forwarded-For` address) and 300 per day per server process across all visitors; over the limit is 429 with a plain message.
-- Text fields are length-limited (show and artist 120 characters, title lookup 80, questions 200); a missing or too-long field is 422 naming the field.
+- Live endpoints (`/api/ripple`, `/api/scout`, `/api/check`, `/api/release`, and `/api/ask` when it routes to them) share one limit: 10 per hour per visitor (first `X-Forwarded-For` address) and 300 per day per server process across all visitors; over the limit is 429 with a plain message.
+- Text fields are length-limited (show, artist and release name 120 characters, title lookup 80, questions 200); a missing or too-long field is 422 naming the field.
 - An unknown storm or title is 404 with a sentence in `detail`.
 - Qloo failing is 502 "Qloo did not answer this request; try again in a minute".

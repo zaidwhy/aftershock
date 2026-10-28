@@ -146,7 +146,7 @@ python -m uvicorn aftershock.api:app --port 8000   # site and API on http://127.
 
 A first `run_forecasts.py` takes 15 to 30 minutes: about 700 Qloo calls (paced at 4 per second) and up to about 150 OpenStreetMap lookups (1 per second); later runs reuse the disk cache in `.cache/`. `scripts/backtest_spillover.py` needs no key but reads the Netflix file that `run_forecasts.py` downloads to `data/raw/`. The research scripts (`test_ripple*.py`, `test_spillover_qloo.py`, `experiment_kits.py`) also need the key, and `experiment_kits.py` a `GEMINI_API_KEY`.
 
-From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with nine tools, `list_storms`, `spillover_forecast`, `launch_kit`, `launch_brief`, `artist_opportunities`, `ripple_score`, `sync_scout`, `netflix_history` and `ask` (the same plain-question router as the site). It reads the weekly run's output, so run `run_forecasts.py` first. In Claude Desktop's config:
+From an agent: `aftershock/mcp_server.py` is an MCP server (stdio) with ten tools, `list_storms`, `spillover_forecast`, `launch_kit`, `launch_brief`, `artist_opportunities`, `ripple_score`, `sync_scout`, `release_plan`, `netflix_history` and `ask` (the same plain-question router as the site). It reads the weekly run's output, so run `run_forecasts.py` first. In Claude Desktop's config:
 
 ```json
 { "mcpServers": { "aftershock": { "command": "<repo>/.venv/bin/python", "args": ["-m", "aftershock.mcp_server"], "cwd": "<repo>" } } }
