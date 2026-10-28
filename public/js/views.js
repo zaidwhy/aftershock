@@ -99,10 +99,13 @@ export function renderHome(root, isCurrent, followId = null) {
     const kits = st.storms.filter((x) => x.has_kit).length;
     const locked = (sc.spillover?.locked ?? 0) + (sc.ripple?.locked ?? 0);
     const lt = sc.lead_time;
-    if (lt?.model?.lead_weeks?.median != null) {
-      leadLine.append(`Backtest: in ${whole(lt.model.breakouts)} past breakouts it never saw, one of its top ${lt.top_k} countries charted the title ${share1(lt.model.hit_rate)} of the time `,
-        `(${share1(lt.baseline.hit_rate)} for the ${lt.top_k} countries that chart most titles), a median of ${weeks(lt.model.lead_weeks.median)} after the breakout. `,
-        h("a", { href: "#/scorecard", onclick: () => { wantWarning = true; } }, "How much warning it gives"));
+    if (lt?.model?.lead_weeks?.median != null && lt.breakouts_that_spread_at_all) {
+      // Most breakouts never travel, so lead with the buyer's question: when one does, did the top picks name where?
+      const spread = lt.breakouts_that_spread_at_all;
+      leadLine.append(`Backtest on ${whole(lt.model.breakouts)} past breakouts it never saw: most never left their first countries. `,
+        `Of the ${whole(spread)} that did, one of its top ${lt.top_k} countries was among the next ones ${share1(lt.model.hit_breakouts / spread)} of the time, `,
+        `against ${share1(lt.baseline.hit_breakouts / spread)} for the ${lt.top_k} countries that chart the most titles. `,
+        h("a", { href: "#/scorecard", onclick: () => { wantWarning = true; } }, "The full test, misses included"));
       leadLine.hidden = false;
     }
     const items = [
