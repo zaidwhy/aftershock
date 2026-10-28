@@ -201,3 +201,18 @@ def test_unknown_place_is_named_in_the_steps_not_ignored(ctx):
     r = ask.answer("What should Fukrey Returns pair with in Narnia?", ctx)
     assert any("I don't know a country called Narnia" in s["note"] for s in r["steps"])
     assert r["answer"]["kind"] in ("storm", "title")
+
+
+def test_where_next_for_a_title_netflix_never_charted_says_so_and_suggests_breakouts(ctx):
+    r = ask.answer("where will visionquest go next?", ctx)
+    assert r["intent"] == "forecast"
+    assert r["answer"]["message"].startswith("visionquest has not been in Netflix's Top 10 in any country since 2024")
+    assert "this week's include Fukrey Returns" in r["answer"]["message"]
+    assert r["links"][0] == {"label": "Fukrey Returns", "href": "#/storm/fukrey-returns"}
+    assert [s["ok"] for s in r["steps"]] == [True, False]
+
+
+def test_help_example_uses_the_featured_plan(ctx):
+    ctx["featured"] = {"title": "Nightwatch: Demons Are Forever", "country": "Sweden"}
+    msg = ask.answer("blah blah", ctx)["answer"]["message"]
+    assert "What should Nightwatch: Demons Are Forever pair with in Sweden?" in msg and "Fukrey Returns pair" not in msg

@@ -35,9 +35,26 @@ SONGS_FOR = re.compile(r"\b(?:songs?|artists?|music|musicians?|tracks?|soundtrac
                        r"|that fit|that suit|that match|suited to)\s+(?P<show>.+)$", re.I)
 SONG_CHECK = re.compile(r"^(?:(?:check|score|compare|try|test|rate)\s+)?(?P<songs>.+?\s+by\s+.+?)\s+(?:for|in)\s+(?P<show>.+)$", re.I)
 HELP = ("I can answer: where a title goes next (\"Where will Squid Game go next?\"), what to pair a breakout with in a "
-        "country (\"What should Fukrey Returns pair with in Bangladesh?\"), artists for a show (\"Find songs for Stranger "
+        "country (\"What should {kit_example} pair with in {kit_country}?\"), artists for a show (\"Find songs for Stranger "
         "Things\"), whether a song reaches a new crowd (\"Running Up That Hill by Kate Bush for Stranger Things\"), and "
         "what is heading to a country (\"What is heading to Brazil?\").")
+# "Where will X go next?" and its variants: the asker clearly wants a forecast for X, even when X never charted.
+WHERE_NEXT = re.compile(r"^(?:where\s+(?:will|would|could|does|is|might)\s+|where'?s\s+)(?P<title>.+?)\s+"
+                        r"(?:go|going|head|heading|chart|charting|travel|traveling|travelling|spread|spreading|land)"
+                        r"(?:\s+next)?\s*\??$", re.I)
+SUGGEST = 3
+
+
+def _help(ctx):
+    """HELP with this week's featured plan as the pairing example, so the example is always a real breakout."""
+    featured = ctx.get("featured") or {}
+    return HELP.format(kit_example=featured.get("title") or "Nightwatch: Demons Are Forever",
+                       kit_country=featured.get("country") or "Sweden")
+
+
+def _breakout_links(ctx):
+    ranked = sorted(ctx["storms"], key=lambda i: -((i["summary"].get("top_forecast") or {}).get("probability") or 0))
+    return [{"label": i["summary"]["title"], "href": f"#/storm/{i['summary']['id']}"} for i in ranked[:SUGGEST]]
 
 
 class LiveError(Exception):
@@ -386,13 +403,13 @@ def _title_of(found):
 def answer(question, ctx):
     raw = _clean(question)
     if not raw:
-        return _fail("none", "The question was empty. " + HELP)
+        return _fail("none", "The question was empty. " + _help(ctx))
     raw = raw[:MAX_QUESTION]
     norm = _norm(raw)
     if not norm:
         # Netflix's Top 10 data and Qloo list titles in Latin script, so "जब वी मेट" matches nothing
         return _fail("none", "I could not read that question. Titles are matched as Netflix lists them, in "
-                             "the Latin alphabet: try \"Jab We Met\". " + HELP)
+                             "the Latin alphabet: try \"Jab We Met\". " + _help(ctx))
     steps = []
 
     # a) song check: "<song> by <artist> for|in <show>"
@@ -451,7 +468,22 @@ def answer(question, ctx):
     if country and not [t for t in _mask(norm, country[2]).split() if t not in COUNTRY_OK]:
         return _done("country", steps, _country_answer(ctx, country, steps))
 
-    # f) fallback
+    # f) a forecast question about a title Netflix never charted: answer it as asked, then point at this week's breakouts
+    m = WHERE_NEXT.match(raw)
+    if m and len(m.group("title")) <= MAX_FIELD:
+        name = m.group("title").strip(" \"'")
+        since = ctx["titles"][0]["since"][:4] if ctx.get("titles") else "2024"
+        steps.append(_step("understand", None, True, f"Next countries for {name}."))
+        steps.append(_step("title_lookup", name, False, f"{name} is not in Netflix's Top 10 in any country since {since}."))
+        links = _breakout_links(ctx)
+        picks = ", ".join(link["label"] for link in links)
+        msg = (f"{name} has not been in Netflix's Top 10 in any country since {since}, so there is no breakout to forecast. "
+               f"AFTERSHOCK follows titles that have just broken out on Netflix" + (f"; this week's include {picks}." if picks else "."))
+        done = _done("forecast", steps, {"kind": "help", "message": msg})
+        done["links"] = links
+        return done
+
+    # g) fallback
     steps.append(_step("understand", None, False, "I could not match this to a title, a country or a song."))
     steps.append(_step("title_lookup", raw, False, "No close match for the text in Netflix's Top 10 since 2024."))
-    return _done("none", steps, {"kind": "help", "message": "I could not tell what you are asking. " + HELP})
+    return _done("none", steps, {"kind": "help", "message": "I could not tell what you are asking. " + _help(ctx)})

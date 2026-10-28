@@ -522,7 +522,7 @@ def ask_context(live=None):
     for item in data["storms"]:
         grounded_plan.clean_rows(item.get("detail") or {})
     return {"storms": data["storms"], "week": data["week"], "titles": title_index.load(TITLES), "live": live,
-            "week_map": lambda: _week_map(data["storms"])}
+            "week_map": lambda: _week_map(data["storms"]), "featured": featured_plan(data["storms"], data["week"])}
 
 
 @app.get("/api/ask")
