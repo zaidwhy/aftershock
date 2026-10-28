@@ -1,0 +1,36 @@
+{
+  "status": "exploratory, not pre-registered; designed after the registered result, same 81 pairs and cached Gemini answers",
+  "model": "gemini-3.5-flash",
+  "pairs": 81,
+  "pairs_checked": 81,
+  "picks_checked": 1615,
+  "verdict_shares": {
+    "confirmed": 0.286,
+    "not_placed": 0.375,
+    "not_in_qloo": 0.339
+  },
+  "verdict_counts": {
+    "confirmed": 462,
+    "not_placed": 605,
+    "not_in_qloo": 548
+  },
+  "title_specificity_same_pairs": {
+    "pairs": 79,
+    "qloo_kit": 0.607,
+    "llm_all_picks": 0.812,
+    "grounded_plan_confirmed_only": 0.862,
+    "note": "against the LLM country-only kit, as in the registered metric; Qloo's kit is scored against Qloo's country-only kit"
+  },
+  "confirmed_picks": {
+    "total": 462,
+    "also_in_qloo_top5_kit": 47,
+    "not_in_qloo_top5_kit": 415,
+    "mean_new_per_pair": 5.123
+  },
+  "calls": {
+    "qloo_live": 296,
+    "qloo_budget": 600,
+    "llm_live": 0,
+    "llm_cached": 7
+  }
+}

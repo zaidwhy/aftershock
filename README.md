@@ -82,6 +82,22 @@ What this says: no Qloo signal predicts which soundtrack songs spike on this dat
 
 By the registered rule the LLM is more title-specific (paired difference -0.195, one-sided permutation p below 0.001 in the LLM's favour). This is the result we said we would report whichever way it landed, and it went against Qloo. Two things qualify it without reversing it: only 66% of the LLM's 1,620 picks resolve to a Qloo entity of the right type (the rest may be real names Qloo lacks, or not audience taste at all, such as the title's own cast), and the LLM still leads when only resolving picks count. Qloo's lists differ more between titles in the same country, a secondary metric with no registered test. What we changed: nothing in the product claims a kit beats an LLM; each kit is compared with Qloo's country-only answer and the 33 of 81 that mostly match it are labelled countrywide on the storm page.
 
+**The LLM proposes, Qloo grounds** (`scripts/measure_grounded_plan.py` -> `grounded_plan.json`; **exploratory, not pre-registered**: designed after the result above, on the same 81 pairs and the same cached Gemini answers, so it describes the idea and does not confirm it). The storm page's "AI plan, checked by Qloo" block (`aftershock/grounded_plan.py`) resolves each LLM-proposed name to a Qloo entity by exact name, then asks Qloo, in one filtered insights call per domain, which of them it places with this title's audience in this country. 1,615 proposed names (5 of the 1,620 were duplicates or unusable):
+
+| Verdict | Share of the LLM's picks |
+|---|---|
+| Confirmed: Qloo places it with this audience | 28.6% (462) |
+| Not placed: Qloo knows it, does not place it with this audience here | 37.5% (605) |
+| Not in Qloo: no exact-name entity | 33.9% (548) |
+
+| Mean title-specificity, 79 pairs where all three can be scored | |
+|---|---|
+| Qloo's own kit | 0.607 |
+| The LLM's picks, all of them | 0.812 |
+| The LLM's picks, confirmed only | 0.862 |
+
+Of the 462 confirmed names, 47 were also in Qloo's own top-5 kit and 415 were not: about 5 per pair that the LLM adds and Qloo vouches for. Caveats: confirmed names carry Qloo's spelling while the control is the LLM's country-only list, and a smaller set can overlap less by chance, so 0.862 against 0.812 is not a clean comparison; "confirmed" means Qloo places the entity with this audience, not that the pick is good (no outcome data tests either); Qloo's kit here is scored against Qloo's country-only kit, so its 0.607 is on 79 pairs rather than the registered 81 (0.617). The measurement used 296 live Qloo calls and no new Gemini calls.
+
 How we got here, for the record: an earlier version of this test used placement lists collected from Tunefind and showed a significant age-gap effect on releases from 2024 on. We then found that Tunefind's terms do not permit automated collection, discarded that data and everything computed from it, and rebuilt the ground truth from MusicBrainz (CC0). The effect did not replicate. The song score is therefore shown as an explorer, not a predictor, and nothing in the product claims otherwise.
 
 ## 4. The ledger
