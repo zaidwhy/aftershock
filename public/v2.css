@@ -311,3 +311,25 @@ main { max-width: 1180px; }
 .rel-stages { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 6px; color: var(--ink-soft); }
 .rel-stages li.now { color: var(--ink); font-weight: 600; }
 .rel-stages li.done { color: var(--qloo); }
+
+/* Evidence: the forecast against its baseline, who decides what, and each brief claim with its gap. */
+.fc-band, .use-band { margin-top: 64px; }
+.fc-grid { display: grid; gap: 14px; margin: 16px 0; }
+@media (min-width: 820px) { .fc-grid { grid-template-columns: 1fr 1fr; } }
+.fc-card { padding: 18px; border: 1px solid var(--rule); border-radius: 16px; background: var(--paper-2); min-width: 0; }
+.fc-row { display: grid; grid-template-columns: 130px minmax(0, 1fr) 56px; gap: 10px; align-items: center; margin: 8px 0; font-size: 0.88rem; }
+.fc-track { height: 12px; border-radius: 6px; background: rgba(255, 255, 255, .05); overflow: hidden; }
+.fc-fill { display: block; height: 100%; border-radius: 6px; }
+.fc-us .fc-fill { background: linear-gradient(90deg, var(--amber), var(--accent)); }
+.fc-base .fc-fill { background: #5b6472; }
+.fc-us .fc-v { color: var(--accent); font-weight: 600; }
+.fc-say { margin: 10px 0 0; font-size: 0.88rem; color: var(--ink-soft); }
+.use-table td, .ev-table td { vertical-align: top; font-size: 0.9rem; }
+.use-table th, .ev-table th { text-align: left; font: 500 0.72rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.ev-gap { color: var(--amber); }
+.plan-decision-box { margin: 10px 0 14px; padding: 12px 14px; border-left: 3px solid var(--amber); background: rgba(255, 196, 120, .06); border-radius: 0 10px 10px 0; }
+.plan-decision-box p { margin: 0; }
+.plan-decision-box .gp-label { margin-bottom: 4px; }
+
+/* The brief and the steps use the full column; at 760px the evidence table was cramped and the right side empty. */
+.plan-brief, .plan-steps { max-width: 1000px; }

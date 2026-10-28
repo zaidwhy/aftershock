@@ -56,6 +56,7 @@ export function renderHome(root, isCurrent, followId = null) {
   const stormBox = h("div", null);
   const stats = h("div", { class: "stage-stats", hidden: true });
   const proofBar = h("div", { class: "qproof", hidden: true });
+  const testBox = h("div", { class: "fc-test", hidden: true });
   const agentBox = h("p", { class: "agent-line", hidden: true });
   const planCta = h("a", { class: "btn btn-primary", href: "#/plan", "data-tour": "plan" }, "Plan a launch");
   const globeHost = h("div", { class: "globe-host", role: "img", "aria-label": "Globe of this week's Netflix breakouts and where each is forecast to chart next" });
@@ -95,6 +96,20 @@ export function renderHome(root, isCurrent, followId = null) {
     h("section", { class: "qloo-band", "aria-labelledby": "qp-h", "data-tour": "qloo" },
       h("h2", { id: "qp-h" }, "Why it needs Qloo"),
       proofBar),
+    h("section", { class: "fc-band", "aria-labelledby": "fc-h" },
+      h("h2", { id: "fc-h" }, "Does the forecast work?"),
+      testBox),
+    h("section", { class: "use-band", "aria-labelledby": "use-h" },
+      h("h2", { id: "use-h" }, "Who uses it, for which decision"),
+      h("div", { class: "table-wrap" }, h("table", { class: "plain use-table" },
+        h("thead", null, h("tr", null, h("th", null, "Who"), h("th", null, "The decision"), h("th", null, "What AFTERSHOCK gives them"), h("th", null, "What it does not prove"))),
+        h("tbody", null, [
+          ["A label's catalogue team", "Which market gets this week's playlist push for a song tied to a breakout", "The next likely country, the artists Qloo links to that audience there, the cities", "That the push lifts streams"],
+          ["An artist's team", "Where to post, play a DJ set or announce a show next", "The artist page: titles whose viewers over-index on the artist, and where both audiences live", "That fans will buy tickets"],
+          ["A promoter", "Which cities to research for a tour or a one-off show", "Plan a release: countries and cities by Qloo affinity, venues of the right type", "Ticket demand or open dates"],
+          ["A brand's local marketing", "Whether to run local ads next to a breakout this week", "The brands Qloo links to this audience in the country, checked one by one", "That the ad converts"],
+        ].map((r) => h("tr", null, r.map((c, i) => h("td", { class: i === 3 ? "ev-gap" : null }, i === 0 ? h("strong", null, c) : c))))))),
+      h("p", { class: "muted" }, "Every output is a shortlist for further research: a predicted opportunity, not a confirmed business one. We have no customers or pilots yet and say so.")),
     h("section", { "aria-labelledby": "live-h", "data-tour": "storms" },
       h("h2", { id: "live-h" }, "This week's breakouts"),
       agentBox,
@@ -114,6 +129,27 @@ export function renderHome(root, isCurrent, followId = null) {
     ].filter(Boolean);
     stats.replaceChildren(...tiles.map(([v, k]) => h("div", { class: "stat" }, h("span", { class: "stat-v" }, v), h("span", { class: "stat-k" }, k))));
     stats.hidden = !tiles.length;
+    const lt = sc.lead_time;
+    if (lt?.model?.breakouts && lt.breakouts_that_spread_at_all) {
+      const share = (x) => `${(x * 100).toFixed(1)}%`;
+      const spread = lt.breakouts_that_spread_at_all;
+      const rateRow = (label, rate, max, cls) => h("div", { class: `fc-row ${cls}` }, h("span", { class: "fc-l" }, label),
+        h("span", { class: "fc-track" }, h("span", { class: "fc-fill", style: `width:${(rate / max) * 100}%` })), h("span", { class: "fc-v mono" }, share(rate)));
+      const ours = lt.model.hit_rate, guess = lt.baseline.hit_rate;
+      const oursSpread = lt.model.hit_breakouts / spread, guessSpread = lt.baseline.hit_breakouts / spread;
+      testBox.replaceChildren(
+        h("p", { class: "qp-lede" }, `We hid ${whole(lt.model.breakouts)} past breakouts from the model and asked it, for each, to name the top ${lt.top_k} countries it would go to next. The fair comparison is the obvious guess: the ${lt.top_k} countries that chart the most titles.`),
+        h("div", { class: "fc-grid" },
+          h("div", { class: "fc-card" }, h("p", { class: "gp-label mono" }, `All ${whole(lt.model.breakouts)} breakouts`),
+            rateRow("AFTERSHOCK", ours, Math.max(ours, guess), "fc-us"), rateRow("Busiest countries", guess, Math.max(ours, guess), "fc-base"),
+            h("p", { class: "fc-say" }, `${(ours / guess).toFixed(1)} times the obvious guess. Low in absolute terms because most breakouts never spread anywhere.`)),
+          h("div", { class: "fc-card" }, h("p", { class: "gp-label mono" }, `The ${whole(spread)} that spread`),
+            rateRow("AFTERSHOCK", oursSpread, Math.max(oursSpread, guessSpread), "fc-us"), rateRow("Busiest countries", guessSpread, Math.max(oursSpread, guessSpread), "fc-base"),
+            h("p", { class: "fc-say" }, "When a breakout did travel, its top 3 usually named where."))),
+        h("p", { class: "qp-foot" }, "In plain words: it is a triage tool that points at the right next market far more often than the obvious guess, not a promise that a title will chart. ",
+          h("a", { href: "#/scorecard" }, "Every test, including what did not work")));
+      testBox.hidden = false;
+    }
     if (gc) {
       const seg = (cls, x, label) => h("span", { class: `qp-seg ${cls}`, style: `flex:${x}` }, h("span", { class: "qp-v mono" }, p(x)), h("span", { class: "qp-l" }, label));
       proofBar.replaceChildren(

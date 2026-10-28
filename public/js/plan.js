@@ -142,12 +142,51 @@ function partnerSection(b) {
       partnerList(watches, kitFirst)) : null);
 }
 
+// Frozen backtest numbers (data/results/lead_time.json, 829 held-out breakouts): how often the top 3 countries
+// included one that charted next, against always naming the three busiest countries.
+const BACKTEST = { model: "9.8%", baseline: "4.1%", times: "2.4", spread: "113", modelSpread: "72%", baseSpread: "30%" };
+const pctOf = (p) => (p == null ? "n/a" : `${Math.round(p * 100)}%`);
+
+/** What decision the brief supports, and for each claim the signal behind it and what is still unproven. */
+function evidenceTable(st, b, row) {
+  const fc = (st.spillover?.forecasts || []).find((r) => r.code === b.code);
+  const confirmed = row?.plan?.confirmed?.length ?? 0;
+  const dropped = row?.plan?.dropped || {};
+  const proposed = confirmed + (dropped.not_placed || 0) + (dropped.not_in_qloo || 0);
+  const spec = row?.specificity;
+  const rows = [
+    [`${b.country} is a likely next market`,
+      `${pctOf(fc?.probability)} chance to chart within 4 weeks${fc?.why ? `; ${fc.why}` : ""}. In the backtest the top 3 countries caught a next market ${BACKTEST.model} of the time against ${BACKTEST.baseline} for the busiest-countries baseline (${BACKTEST.times} times).`,
+      "This title's forecast is not graded yet; most breakouts never spread at all."],
+    ["These partners fit this audience",
+      `Qloo confirmed ${confirmed} of the ${proposed} names an AI proposed for these viewers in ${b.country}${spec != null ? `; Qloo's own kit is ${Math.round(spec * 100)}% different from the country's general taste, so it is about this title` : ""}.`,
+      "No data yet that these partners move streams, tickets or sales."],
+    [`Start in ${(b.cities || []).slice(0, 3).join(", ") || "the mapped cities"}`,
+      "Qloo's heatmap of this title's audience in the country peaks there.",
+      "The heatmap shows where the audience lives, not where it will buy."],
+  ];
+  if ((b.event_ideas || []).length) rows.push(["Quick-turn activations",
+    "An artist's five strongest heatmap cells sit within 30 km of a title hotspot.",
+    "Audience overlap is not ticket demand; venue dates are unknown."]);
+  return h("section", { class: "plan-evidence", "aria-labelledby": "bs-ev" },
+    h("h3", { id: "bs-ev" }, "Evidence behind each claim"),
+    h("div", { class: "table-wrap" }, h("table", { class: "plain ev-table" },
+      h("thead", null, h("tr", null, h("th", null, "Claim"), h("th", null, "What supports it"), h("th", null, "What is still missing"))),
+      h("tbody", null, rows.map(([c, e, m]) => h("tr", null, h("td", null, h("strong", null, c)), h("td", null, e), h("td", { class: "ev-gap" }, m)))))));
+}
+
+function decisionLine(b) {
+  return h("div", { class: "plan-decision-box" }, h("p", { class: "gp-label mono" }, "The decision this supports"),
+    h("p", null, `Is ${b.country} worth a week of ${b.title} promotion, and where should it start? Read this as a shortlist for further research, a predicted opportunity, not a confirmed business one.`));
+}
+
 function briefCard(st, made, row) {
   const b = made.brief;
   const note = b.summary_source === "template" ? "Template summary, no AI wrote it." : "Written by AI from this brief; every name and number in it checked against the brief.";
   return h("article", { class: "plan-brief", "aria-labelledby": "brief-h" },
     h("p", { class: "eyebrow" }, "Deliverable"),
     h("h2", { id: "brief-h" }, `Launch brief: ${b.title} in ${b.country}`),
+    decisionLine(b),
     b.window ? h("p", { class: "plan-window" }, b.window) : null,
     statTiles(b, row),
     h("p", { class: "plan-headline" }, b.headline),
@@ -167,6 +206,7 @@ function briefCard(st, made, row) {
       h("p", { class: "plan-note mono" }, "Things doable within about a week, such as a club night, a screening party, a DJ set, a sponsor activation or a playlist push, in cities where Qloo's map of the title's audience and of the artist's audience overlap. Tours are booked months ahead; these are short activations where both audiences already live."),
       h("ul", null, b.event_ideas.map((e) => h("li", null, artistName(e.artist), ` in ${joinList(e.cities)}: both audiences concentrate there.`)))) : null,
     partnerSection(b),
+    evidenceTable(st, b, row),
     h("section", { "aria-labelledby": "bs-avoid" },
       h("h3", { id: "bs-avoid" }, "What not to claim"), h("ul", null, b.avoid.map((a) => h("li", null, a)))),
     h("section", { "aria-labelledby": "bs-evidence" },
