@@ -67,13 +67,16 @@ The buyer is whoever spends money on a title in a market it has not reached yet:
 | When they know | after the title charts there | the week it breaks out anywhere |
 | Where | gut feel, or the biggest markets | a probability per country with its reason, graded in public |
 | With whom | a chatbot list nobody checked | partners Qloo confirms for this audience in this country |
+| Which artist, which city | a promoter's hunch | event ideas where the show's audience and the artist's audience concentrate in the same city ("Yo Yo Honey Singh in Delhi and Jaipur" for Fukrey Returns in India) |
 | Trust | none to inspect | every forecast locked before the outcome; every claim with its test |
+
+Live events are the sharpest case. Qloo [names Live Nation among the companies using its technology](https://www.prnewswire.com/news-releases/qloo-recognized-in-the-set-diamonds-category-in-the-2026-gartner-emerging-tech-ai-to-watch-in-synthetic-popular-simulation-research-302878163.html), and a Netflix title becoming a ticketed tour already happens: Netflix and AEG Presents [announced a KPop Demon Hunters world tour](https://www.sherwood.news/culture/netflix-confirms-a-kpop-demon-hunters-world-concert-tour-is-on-the-way/). A promoter reacting to a breakout needs the artist and the city, and that pairing needs two audience maps, which an LLM does not have. We present these as ideas to investigate: they show where audiences overlap, not ticket demand.
 
 The weekly run costs a few hundred Qloo calls and about ten LLM calls; the Launch Brief is the product, per territory or per catalogue.
 
 ## What's next
 
-Grade the ledger weekly as horizons close and publish the hit rate; lock a Qloo-informed country ranking next to the history-only one so the two are graded head to head; check whether launch-kit and hotspot suggestions match where a title actually grows; and send the weekly brief to a first few distributors and publishers to learn which parts they act on.
+Grade the ledger weekly as horizons close and publish the hit rate; lock a Qloo-informed country ranking next to the history-only one so the two are graded head to head; check whether launch-kit and hotspot suggestions match where a title actually grows; and send the weekly brief to a first few distributors, promoters and publishers to learn which parts they act on. Travel is the next buyer: in Expedia's [Unpack '24](https://www.expedia.com/newsroom/introducing-unpack-24-the-trends-in-travel-from-expedia-hotels-com-and-vrbo) survey, 53% of travellers said they had researched or booked a trip after seeing a destination on screen, and Netflix [partnered with the Korea Tourism Organization](https://about.netflix.com/news/netflix-partners-with-kto-to-promote-korean-tourism-globally) in 2025. The cities where a breakout's audience lives, in the countries it is spreading to, are a targeting list for a tourism board or airline promoting the show's destination; we have not built it because the only free route data we found stopped updating in 2014.
 
 ## Built with
 
