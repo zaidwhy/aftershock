@@ -24,7 +24,7 @@ Check when you wake up: the two logs end with "pipeline done" and "experiment do
 
 Needs you (nothing below is done for you):
 1. Submit on Devpost yourself before 31 Oct 09:15 IST; all four teammates on the team; paste docs/DEVPOST.md.
-2. Gallery: `projects/aftershock-team/gallery/` (7 images, in order). Video: `projects/aftershock-team/video/AFTERSHOCK-walkthrough.mp4` as an unlisted YouTube link.
+2. Gallery: `projects/aftershock-team/gallery/` (7 images, in order). Video: `projects/aftershock-team/video/AFTERSHOCK-walkthrough-v2.mp4 (88 s, 2560x1600)` as an unlisted YouTube link.
 3. Rotate the Gemini key (printed once in an agent's terminal, never written to a file).
 4. Git history still has the Tunefind CSVs from before 27 Oct (removed from the tree, disclosed in README): leave it, or rewrite history / start a fresh repo (irreversible, resets ledger timestamps).
 5. GitHub profile: the FLAKE LAUNDERING section another session added links to a private repo (404).
@@ -91,7 +91,7 @@ Manual run 40581939996 on GitHub: success in 8.5 minutes (limit now 50), 608 liv
 ## Submission assets (28 Oct, ready for Zaid)
 
 - Gallery images (1600x1000, light mode, final UI): `projects/aftershock-team/gallery/` 1-home, 2-ask, 3-storm-top, 4-launch-kit, 5-week-map, 6-scorecard, 7-agent. Upload them to the Devpost gallery in that order.
-- Walkthrough video: `projects/aftershock-team/video/AFTERSHOCK-walkthrough.mp4` (96 s, captioned, recorded from the live site). Optional per the rules but judges may judge from text, images and video alone: upload to YouTube as unlisted and paste the link into Devpost's video field. Re-record after the Qloo-vs-LLM result lands if the scorecard caption should mention it.
+- Walkthrough video: `projects/aftershock-team/video/AFTERSHOCK-walkthrough-v2.mp4` (88 s, 2560x1600, captioned, recorded 28 Oct from the live site; the older 96 s tour was deleted). Optional per the rules but judges may judge from text, images and video alone: upload to YouTube as unlisted and paste the link into Devpost's video field. Re-record after the Qloo-vs-LLM result lands if the scorecard caption should mention it.
 - LinkedIn drafts: `projects/career/linkedin-refresh-2026-10-28.md` (nothing posted).
 
 ## Data licensing (27 Oct, done)
