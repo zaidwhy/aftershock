@@ -9,7 +9,6 @@ import logging
 import random
 import re
 import sys
-import time
 import unicodedata
 from collections import defaultdict
 from itertools import combinations
@@ -21,25 +20,17 @@ from dotenv import find_dotenv, load_dotenv  # noqa: E402
 
 load_dotenv(find_dotenv(usecwd=True))
 from aftershock.launch_kit import DOMAINS, country_picks  # noqa: E402
-from aftershock.llm_baseline import generate, calls as llm_calls  # noqa: E402
+from aftershock.llm_baseline import calls as llm_calls  # noqa: E402
+from aftershock.llm_kits import MODEL, PAIRS_PER_CALL, TITLE_PROMPT, ask, title_kits as llm_title_kits  # noqa: E402
 from aftershock.qloo import Qloo, QlooError, resolve  # noqa: E402
 
 log = logging.getLogger("experiment_kits")
 STORMS = ROOT / "data" / "private" / "storms_2026-10-18.json"  # the registered week (docs/EXPERIMENT_KITS.md), pinned so a new weekly run cannot change the pairs
 OUT = ROOT / "data" / "results" / "kit_experiment.json"
-MODEL = "gemini-3.5-flash"
-PAIRS_PER_CALL = 20
 COUNTRIES_PER_CALL = 21
 GENERIC_OVERLAP = 0.6
 FLIPS, SEED = 10_000, 7
 MAX_SEARCHES = 1_500
-
-TITLE_PROMPT = """For each item below, a {kind_note} has just become popular in a country. For each item, list the 5
-names in each category that THIS title's audience in THAT country particularly likes (more than the average
-person there): "artist" (music artists), "tv_show", "movie", "brand". Use real, specific names only.
-Return JSON: {{"results": [{{"id": <id>, "artist": [5 names], "tv_show": [5], "movie": [5], "brand": [5]}}]}}.
-Items:
-{items}"""
 
 COUNTRY_PROMPT = """For each country below, list the 5 names in each category that people in that country
 particularly like (more than people elsewhere): "artist" (music artists), "tv_show", "movie", "brand".
@@ -62,18 +53,6 @@ def jaccard(a, b):
     return len(a & b) / len(a | b) if a | b else None
 
 
-def ask(prompt, attempts=4):
-    """Gemini's free tier answers 503 under load; wait and try again a few times, then give up loudly."""
-    for attempt in range(attempts):
-        try:
-            return generate(MODEL, prompt)
-        except RuntimeError as err:
-            if "HTTP 503" not in str(err) and "HTTP 429" not in str(err) or attempt == attempts - 1:
-                raise
-            log.warning("Gemini busy (%s); retrying in %ds", str(err)[:60], 30 * (attempt + 1))
-            time.sleep(30 * (attempt + 1))
-
-
 def load_pairs():
     storms = json.loads(STORMS.read_text(encoding="utf-8"))["storms"]
     pairs = []
@@ -87,17 +66,6 @@ def load_pairs():
                               "code": row["code"], "country": names[row["code"]],
                               "Q": {d: [p["name"] for p in row["kit"].get(d, [])] for d in DOMAINS}})
     return pairs
-
-
-def llm_title_kits(pairs):
-    kits = {}
-    for start in range(0, len(pairs), PAIRS_PER_CALL):
-        batch = pairs[start:start + PAIRS_PER_CALL]
-        items = "\n".join(f'{p["id"]}: the {p["kind"]} "{p["title"]}" in {p["country"]}' for p in batch)
-        body = ask(TITLE_PROMPT.format(kind_note="Netflix film or TV show", items=items))
-        for row in body.get("results", []):
-            kits[int(row["id"])] = {d: row.get(d, [])[:5] for d in DOMAINS}
-    return kits
 
 
 def llm_country_kits(countries):
