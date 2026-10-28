@@ -130,7 +130,7 @@ export function renderHome(root, isCurrent, followId = null) {
       h("div", { class: "ex-grid" },
         step("1 Breakout", h("p", null, `Broke out in ${origins(x.origin_countries)}`),
           x.just_added ? h("p", { class: "ex-why" }, `An older title: ${origins(x.origin_countries)} just added it to its Top 10 this week.`) : null),
-        step("2 Likely next", h("p", null, `Likely next: `, h("strong", null, x.country), " ", h("span", { class: "mono" }, pct(x.probability))),
+        step("2 Where next", h("p", null, h("strong", null, x.country), " ", h("span", { class: "mono" }, pct(x.probability)), " chance to chart within 4 weeks"),
           x.why ? h("p", { class: "ex-why" }, x.why) : null),
         step("3 Pair it with", h("p", null, `Qloo: this audience in ${x.country} loves ${join(x.artists)}`, x.brands.length ? `; brands ${join(x.brands)}` : "")),
         step("4 Start in", h("p", null, `Start in ${join(x.places)}`))),
