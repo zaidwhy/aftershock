@@ -96,7 +96,7 @@ def brief(detail, code):
     names = sum(len(v) for v in kit.values())
     domains = sum(1 for v in kit.values() if v)
     generic, spec = bool(row.get("generic")), row.get("specificity")
-    spec_text = "" if spec is None else f" (specificity {spec:g} of 1)"
+    spec_text = "" if spec is None else f" ({round(spec * 100)}% different from what the whole country likes)"
     if generic:
         found = (f"Qloo lists {names} names across {domains} domains for this audience in {country}, but the list "
                  f"mostly matches what people there like in general{spec_text}: a countrywide kit.")

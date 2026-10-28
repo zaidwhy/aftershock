@@ -8,15 +8,24 @@ const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const planHref = (id, code) => `#/plan/${encodeURIComponent(id)}/${encodeURIComponent(code)}`;
 const kitRows = (st) => (st.launch_kit || []).filter((r) => r.brief);
 
-/** The week's top storm that has a launch kit, and its first kit country: {id, title, code, country}, or null. */
+const DEFAULT_SEARCH = 8;
+const MIN_CONFIRMED = 3;
+
+/** The plan to open on: among the week's top storms, the first title-specific kit country where Qloo confirmed at
+ *  least MIN_CONFIRMED AI picks, so the first plan a visitor sees shows the agent's check doing its job. Falls back
+ *  to the top storm's first kit country. {id, title, code, country}, or null. */
 export async function defaultPlan() {
   const { storms } = await getStorms();
   const ranked = storms.filter((s) => s.has_kit).sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
-  for (const s of ranked.slice(0, 3)) {
-    const row = kitRows(await getStorm(s.id))[0];
-    if (row) return { id: s.id, title: s.title, code: row.code, country: row.brief.brief.country };
+  let fallback = null;
+  for (const s of ranked.slice(0, DEFAULT_SEARCH)) {
+    const rows = kitRows(await getStorm(s.id));
+    const pick = (row) => ({ id: s.id, title: s.title, code: row.code, country: row.brief.brief.country });
+    const grounded = rows.find((r) => !r.generic && (r.plan?.confirmed?.length ?? 0) >= MIN_CONFIRMED);
+    if (grounded) return pick(grounded);
+    if (!fallback && rows[0]) fallback = pick(rows[0]);
   }
-  return null;
+  return fallback;
 }
 
 /** Plain-text-to-Markdown for the downloaded file, built from the brief alone. */
@@ -25,7 +34,7 @@ export function briefMarkdown(b, url) {
   const partners = b.partners.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) =>
     p.name + (p.source === "ai_confirmed" ? (p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's kit)" : " (AI pick confirmed by Qloo)") : " (Qloo's kit)"))), ""]);
   return [`# Launch brief: ${b.title} in ${b.country}`, "", b.headline, "",
-    `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI, every name checked against Qloo"}.*`, "",
+    `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
     "## Partners to approach", ...partners,
     "## What not to claim", ...list(b.avoid), "",
@@ -42,7 +51,7 @@ function stepCard(s, n) {
 
 function briefCard(st, made) {
   const b = made.brief;
-  const note = b.summary_source === "template" ? "Template summary, no AI wrote it." : "Written by AI, every name checked against Qloo.";
+  const note = b.summary_source === "template" ? "Template summary, no AI wrote it." : "Written by AI from this brief; every name and number in it checked against the brief.";
   return h("article", { class: "plan-brief", "aria-labelledby": "brief-h" },
     h("p", { class: "eyebrow" }, "Deliverable"),
     h("h2", { id: "brief-h" }, `Launch brief: ${b.title} in ${b.country}`),
