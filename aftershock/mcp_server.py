@@ -187,11 +187,17 @@ def sync_scout(show: str) -> dict:
                          "what that audience also likes in the top two countries. If Qloo does not know the name "
                          "(an unreleased title), pass up to 5 comparable titles in `like` and up to 3 stand in as the "
                          "audience; signal.used says which. Returns steps: every Qloo call made, with endpoint and "
-                         f"params. Uses up to {release_planner.MAX_CALLS} Qloo calls, about 20 seconds uncached. "
+                         f"params. Optional: region (any, asia, europe, americas, middle-east-africa, oceania) limits the countries; "
+                         f"home (ISO2 code such as IN) leaves the home market out of the ranking; goal is tour, premiere "
+                         f"or digital (digital makes no venue calls; default tour for music and comedy, premiere for "
+                         f"film and series). Also returns scores, every country checked. Uses up to "
+                         f"{release_planner.MAX_CALLS} Qloo calls, about 20 seconds uncached. "
                          f"Limited to {RELEASE_PER_HOUR} calls per hour.")
-def release_plan(name: str, kind: str, like: list[str] | None = None) -> dict:
+def release_plan(name: str, kind: str, like: list[str] | None = None, region: str = "any", home: str | None = None,
+                 goal: str | None = None) -> dict:
     try:
         typed, kind, comparables = release_planner.validate(name, kind, like or [])
+        region, home, goal, _ = release_planner.validate_options(kind, region, home, goal)
     except release_planner.ReleaseInputError as err:
         return {"error": str(err)}
     now = time.time()
@@ -199,7 +205,8 @@ def release_plan(name: str, kind: str, like: list[str] | None = None) -> dict:
     if len(_release_calls) >= RELEASE_PER_HOUR:
         return {"error": f"release_plan is limited to {RELEASE_PER_HOUR} calls per hour per server process; try again later"}
     _release_calls.append(now)
-    return release_planner.plan_release(Qloo(call_budget=release_planner.MAX_CALLS), typed, kind, comparables)
+    return release_planner.plan_release(Qloo(call_budget=release_planner.MAX_CALLS), typed, kind, comparables,
+                                        region=region, home=home, goal=goal)
 
 
 class _McpLive:

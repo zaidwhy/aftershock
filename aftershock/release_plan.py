@@ -22,6 +22,7 @@ import os
 import re
 import threading
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
@@ -36,7 +37,7 @@ log = logging.getLogger(__name__)
 MAX_FIELD = 120
 MAX_LIKE = 5  # comparables accepted; the first MAX_USED_LIKE that Qloo resolves are the signal
 MAX_USED_LIKE = 3
-MAX_CALLS = 45
+MAX_CALLS = 52  # worst case below is 51
 WORKERS = 8  # the Qloo client paces and locks its requests (4 a second); threads only overlap the network waits
 
 # Big streaming and touring markets with diaspora spread, name as Qloo's location query spells it.
@@ -45,6 +46,25 @@ CANDIDATES = {"US": "United States", "GB": "United Kingdom", "CA": "Canada", "AU
               "IT": "Italy", "NL": "Netherlands", "SE": "Sweden", "BR": "Brazil", "MX": "Mexico", "AR": "Argentina",
               "JP": "Japan", "KR": "South Korea", "ID": "Indonesia", "PH": "Philippines", "NG": "Nigeria",
               "ZA": "South Africa", "TR": "Turkey", "SG": "Singapore"}
+# Countries added so that every region has enough of them. Bangladesh was tried and Qloo returns no destinations for it.
+EXTRA_POOL = {"TH": "Thailand", "MY": "Malaysia", "VN": "Vietnam", "TW": "Taiwan", "PK": "Pakistan", "PL": "Poland",
+              "NO": "Norway", "DK": "Denmark", "IE": "Ireland", "CO": "Colombia", "CL": "Chile", "PE": "Peru",
+              "EG": "Egypt", "KE": "Kenya", "MA": "Morocco", "NZ": "New Zealand"}
+POOL = CANDIDATES | EXTRA_POOL
+REGIONS = {
+    "asia": ("IN", "JP", "KR", "ID", "PH", "SG", "TH", "MY", "VN", "TW", "PK"),
+    "europe": ("GB", "DE", "FR", "ES", "IT", "NL", "SE", "PL", "NO", "DK", "IE"),
+    "americas": ("US", "CA", "BR", "MX", "AR", "CO", "CL", "PE"),
+    "middle-east-africa": ("AE", "SA", "TR", "NG", "ZA", "EG", "KE", "MA"),
+    "oceania": ("AU", "NZ"),
+}
+REGION_CHOICES = ("any", *REGIONS)  # "any" is the original 24 CANDIDATES, so its time and calls stay as they were
+GOALS = ("tour", "premiere", "digital")
+# A comedian is a person in Qloo and their specials are tv_shows; the retry search for a name Qloo does not
+# have under the chosen kind looks across all of these.
+ALL_TYPES = "urn:entity:movie,urn:entity:tv_show,urn:entity:artist,urn:entity:person"
+TYPE_LABELS = {"urn:entity:tv_show": "a TV show", "urn:entity:movie": "a film", "urn:entity:artist": "a music artist",
+               "urn:entity:person": "a person"}
 DESTINATION_TAKE = 15  # the country's destinations: the best affinity ranks the country, the rest are city candidates
 MIN_POPULARITY = 0.4  # Qloo's destination popularity; see _candidates
 CITIES_PER_COUNTRY = 3
@@ -54,7 +74,7 @@ MIN_RELATIVE_DENSITY = 0.1  # a city under a tenth of the country's best density
 HEATMAP_COUNTRIES = 3
 GEOCODE_BUDGET_S = 10  # Nominatim allows 1 request per second; past this the cells stay and the names are dropped
 VENUE_CITIES = 3
-VENUE_ATTEMPTS = 4  # worst case 6 searches + 24 countries + 3 heatmaps + 4 venues + 6 taste = 43, under MAX_CALLS
+VENUE_ATTEMPTS = 6  # worst case 12 searches (every name retried) + 24 countries + 3 heatmaps + 6 venues + 6 taste = 51
 VENUES_PER_CITY = 5
 VENUE_RADIUS_M = 20000
 TASTE_COUNTRIES = 2
@@ -66,19 +86,21 @@ TASTE_DOMAINS = (("tv_show", "urn:entity:tv_show"), ("movie", "urn:entity:movie"
 # music tag here: in probes they returned restaurants and hotels. `urn:tag:setting:qloo:music_venue` exists as
 # a tag but matches no place.
 KINDS = {
-    "film": {"types": "urn:entity:movie,urn:entity:tv_show", "label": "film", "venue": "cinemas",
-             "tags": ("urn:tag:category:place:movie_theater",)},
-    "series": {"types": "urn:entity:tv_show,urn:entity:movie", "label": "series", "venue": "cinemas",
-               "tags": ("urn:tag:category:place:movie_theater",)},
-    "music": {"types": "urn:entity:artist", "label": "music", "venue": "concert halls and live-music venues",
-              "tags": ("urn:tag:category:place:concert_hall", "urn:tag:category:place:live_music_venue")},
-    "comedy": {"types": "urn:entity:person,urn:entity:tv_show", "label": "comedy", "venue": "comedy clubs",
-               "tags": ("urn:tag:category:place:comedy_club",)},
+    "film": {"types": "urn:entity:movie,urn:entity:tv_show", "label": "film"},
+    "series": {"types": "urn:entity:tv_show,urn:entity:movie", "label": "series"},
+    "music": {"types": "urn:entity:artist", "label": "music"},
+    "comedy": {"types": "urn:entity:person,urn:entity:tv_show", "label": "comedy"},
 }
+# Venue tags and the plain-words label by goal. A tour plays live rooms; a premiere plays cinemas; digital has no venue.
+# Film and series have no live-room tour, so their tour is a premiere.
+TOUR_VENUES = {"music": ("concert halls and live-music venues",
+                         ("urn:tag:category:place:concert_hall", "urn:tag:category:place:live_music_venue")),
+               "comedy": ("comedy clubs", ("urn:tag:category:place:comedy_club",))}
+PREMIERE_VENUES = ("cinemas", ("urn:tag:category:place:movie_theater",))
 VENUE_NOTE = ("Qloo lists venues by its own place ranking within the tag, not by this audience: adding the audience "
               "signal cut a probe list to a single venue, so it is left out. Tags are Qloo's and loose; a few results "
-              "are bars, banquet halls or hotels that carry the venue tag. For film and series these are cinemas, "
-              "not screening events.")
+              "are bars, banquet halls or hotels that carry the venue tag.")
+CINEMA_NOTE = " Cinemas are listed, not screening events."
 
 
 class ReleaseInputError(ValueError):
@@ -91,6 +113,33 @@ class _CapReached(Exception):
 
 def _clean(text):
     return " ".join(str(text or "").split())
+
+
+def validate_options(kind, region=None, home=None, goal=None):
+    """(region, home or None, goal, goal_note or None); ReleaseInputError names the field. The default goal is a
+    tour for music and comedy and a premiere for film and series, which also have no live-room tour."""
+    region = _clean(region).lower() or "any"
+    if region not in REGION_CHOICES:
+        raise ReleaseInputError(f"region must be one of {', '.join(REGION_CHOICES)}; got {region[:MAX_FIELD]!r}")
+    home = _clean(home).upper() or None
+    if home is not None and not re.fullmatch(r"[A-Z]{2}", home):
+        raise ReleaseInputError(f"home must be a 2-letter ISO country code such as IN; got {home[:MAX_FIELD]!r}")
+    goal = _clean(goal).lower() or None
+    if goal is not None and goal not in GOALS:
+        raise ReleaseInputError(f"goal must be one of {', '.join(GOALS)}; got {goal[:MAX_FIELD]!r}")
+    note = None
+    if goal is None:
+        goal = "tour" if kind in TOUR_VENUES else "premiere"
+    elif goal == "tour" and kind not in TOUR_VENUES:
+        goal, note = "premiere", f"A {KINDS[kind]['label']} has no live tour, so the goal tour is treated as a premiere."
+    return region, home, goal, note
+
+
+def pool_for(region):
+    """{code: name} for a region: `any` is exactly CANDIDATES, a region uses every pool country in it."""
+    if region == "any":
+        return dict(CANDIDATES)
+    return {code: POOL[code] for code in REGIONS[region]}
 
 
 def split_like(text):
@@ -157,17 +206,29 @@ def _fatal(err):
     return err.status in (401, 403, 429) or "QLOO_API_KEY is not set" in str(err)
 
 
+def _fold(text):
+    """Case and whitespace folded, accents and non-Latin scripts kept (norm() drops anything non-ASCII)."""
+    return " ".join(unicodedata.normalize("NFKC", str(text or "")).casefold().split())
+
+
 def _find(trace, name, types, order):
     """The search hit named `name`, or None. Exact name, or Qloo's "Name, Occupation" form for people ("Zakir
-    Khan, Comedian"); a hit whose name only starts with `name` is not a match, since /search always returns its
+    Khan, Comedian"), or, folded but not ASCII-stripped, the hit's name or one of its `properties.akas` ("오징어 게임"
+    for Squid Game). A hit whose name only starts with `name` is not a match, since /search always returns its
     nearest hit ("Zakir Khan: Tathastu" for "Zakir Khan")."""
     want = norm(name, keep_subtitle=True)
     hits = trace.search("resolve", name, types, order=order)
+    if want:  # a non-Latin name norms to "" and would equal any other non-Latin hit
+        for hit in hits:
+            if norm(hit.get("name", ""), keep_subtitle=True) == want:
+                return hit
+        for hit in hits:
+            if "," in hit.get("name", "") and norm(hit["name"].split(",", 1)[0], keep_subtitle=True) == want:
+                return hit
+    folded = _fold(name)
     for hit in hits:
-        if norm(hit.get("name", ""), keep_subtitle=True) == want:
-            return hit
-    for hit in hits:
-        if "," in hit.get("name", "") and norm(hit["name"].split(",", 1)[0], keep_subtitle=True) == want:
+        akas = ((hit.get("properties") or {}).get("akas")) or []
+        if folded and folded in {_fold(v) for v in [hit.get("name"), *(a.get("value") for a in akas)] if v}:
             return hit
     return None
 
@@ -220,8 +281,8 @@ def _candidates(body, code):
     return rows
 
 
-def _rank_countries(trace, signal_ids, countries, keep):
-    """(the `keep` countries with the highest destination affinity, best first, countries asked, countries with
+def _rank_countries(trace, signal_ids, countries):
+    """(every country with data by destination affinity, best first, countries asked, countries with
     nothing). Each country is {code, name, score, candidates}; score is its best candidate's affinity, so a village
     below the popularity floor cannot lift a country."""
     def one(item):
@@ -246,7 +307,7 @@ def _rank_countries(trace, signal_ids, countries, keep):
     with ThreadPoolExecutor(max_workers=WORKERS) as workers:
         results = list(workers.map(one, enumerate(countries.items())))
     ranked = sorted((r for r in results if r), key=lambda c: (-c["score"], c["name"]))
-    return ranked[:keep], len(results), sum(1 for r in results if r is None)
+    return ranked, len(results), sum(1 for r in results if r is None)
 
 
 class _TracedClient:
@@ -287,6 +348,18 @@ class _Geocode:
         return self.base(lat, lon)
 
 
+def _same_city(a, b):
+    """True when two candidates are one city: within MERGE_KM, or within DENSITY_KM with related names (one name
+    starts with the other, or they share a first word: "Bangkok" and "Bangkok Metropolis")."""
+    km = audience_map.distance_km((a["lat"], a["lon"]), (b["lat"], b["lon"]))
+    if km <= MERGE_KM:
+        return True
+    if km > DENSITY_KM:
+        return False
+    x, y = _fold(a["name"]), _fold(b["name"])
+    return x.startswith(y) or y.startswith(x) or x.split()[0] == y.split()[0]
+
+
 def _pick_cities(candidates, cells):
     """Up to CITIES_PER_COUNTRY {name, lat, lon, affinity, density} for the candidates the heatmap favours: density
     is the sum of cell weights within DENSITY_KM, candidates with none (or under MIN_RELATIVE_DENSITY of the best) are
@@ -298,7 +371,7 @@ def _pick_cities(candidates, cells):
     merged = []  # [representative, density]
     for c in sorted(candidates, key=lambda c: -c["popularity"]):
         here = density(c)
-        near = next((m for m in merged if audience_map.distance_km((c["lat"], c["lon"]), (m[0]["lat"], m[0]["lon"])) <= MERGE_KM), None)
+        near = next((m for m in merged if _same_city(c, m[0])), None)
         if near:
             near[1] = max(near[1], here)
         else:
@@ -356,16 +429,62 @@ def _join(items):
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def _tag_names(entity, wanted):
-    """Up to three tag names for a place: the venue tag it was filtered on first, then its other place tags."""
-    wanted_keys = {t.rsplit(":", 1)[-1] for t in wanted}
-    tags = sorted(entity.get("tags") or [], key=lambda t: (t.get("id") or "").rsplit(":", 1)[-1] not in wanted_keys)
+# Qloo's venue tags are loose: a tag filter returns a homeopath that lists "comedy club", a hotel with a ballroom, a
+# banquet hall. The lists below are built from the tags seen on the showcase plans (Zakir Khan, Dua Lipa, the
+# Korean and Spanish examples, Kevin Hart, Cedric the Entertainer); matching is by substring on the lower-cased tag.
+# A place that carries a HARD tag is never a venue. A place with a SOFT tag (an incidental business: a school, a
+# gym, a pharmacy) is dropped unless it also has a strong performance tag, and a restaurant needs one too. A
+# comedy or music place needs a strong tag (music also accepts "live music"). A premiere needs a movie theater and
+# not a museum; its mall tags (pharmacy, parking, a gym) say nothing, because cinemas sit in malls.
+_HARD = ("homeopath", "mental health", "clinic", "chiropract", "counsel", "ayurved", "wellness", "meditation",
+         "real estate", "interior", "salon", "hotel", "banquet", "wedding")
+_SOFT = ("school", "training center", "function room", "gym", "fitness", "pharmacy", "supermarket", "grocery",
+         "library", "personal care", "parking", "car repair", "dating", "party planner", "medical")
+_HARD_NAMES = ("interio", "clinic", "homeopath", "wellness")  # a place whose tags say only "comedy club"
+_CINEMA = ("movie theater", "imax", "cinema", "drive in")
+_STRONG = {
+    "comedy": ("comedy club", "performing arts", "theater", "theatre", "auditorium", "stage", "amphitheater"),
+    "music": ("concert hall", "performing arts", "theater", "theatre", "auditorium", "amphitheater", "stage",
+              "jazz club", "blues club", "philharmonic"),
+}
+
+
+def _place_tags(entity):
+    """Every place tag name on a Qloo entity, in order, without repeats."""
     names = []
-    for tag in tags:
+    for tag in entity.get("tags") or []:
         tid, label = tag.get("id") or "", (tag.get("name") or "").strip()
         if label and ("category:place:" in tid or "genre:place:" in tid) and label not in names:
             names.append(label)
-    return names[:3]
+    return names
+
+
+def _is_venue(tags, rule, name=""):
+    """True when a place with these tag names is a performance venue for `rule` (premiere, comedy or music).
+    Music tours also drop opera houses, which do not host a touring act's show."""
+    low = [t.lower() for t in tags]
+    if any(bad in t for bad in _HARD for t in low) or any(bad in name.lower() for bad in _HARD_NAMES):
+        return False
+    if rule == "premiere":
+        return not any("museum" in t for t in low) and any(c in t for c in _CINEMA for t in low)
+    low = [t for t in low if not any(c in t for c in _CINEMA)]  # a cinema is not a stage for a tour
+    if rule == "music" and any("opera" in t for t in low):
+        return False
+    strong = any(good in t for good in _STRONG[rule] for t in low)
+    live = rule == "music" and any("live music" in t or "musical club" in t for t in low)
+    if not (strong or live):
+        return False
+    if not strong and (any("restaurant" in t for t in low) or any(soft in t for soft in _SOFT for t in low)):
+        return False
+    return strong or not any(soft in t for soft in _SOFT for t in low)
+
+
+def _tag_names(entity, wanted):
+    """Up to three tag names for a place: the venue tag it was filtered on first, then its other place tags."""
+    wanted_keys = {t.rsplit(":", 1)[-1] for t in wanted}
+    ids = {(t.get("name") or "").strip(): (t.get("id") or "").rsplit(":", 1)[-1] for t in entity.get("tags") or []
+           if "category:place:" in (t.get("id") or "") or "genre:place:" in (t.get("id") or "")}
+    return sorted(_place_tags(entity), key=lambda name: ids.get(name) not in wanted_keys)[:3]
 
 
 def _venue(entity, wanted):
@@ -377,8 +496,9 @@ def _venue(entity, wanted):
     return out
 
 
-def _venue_call(trace, wanted, city, order):
-    """{city, country, venues} for one city (venues may be empty), or None when the call failed or hit the cap."""
+def _venue_call(trace, wanted, city, order, rule):
+    """{city, country, venues, dropped} for one city (venues may be empty; dropped counts the places that were not
+    performance venues), or None when the call failed or hit the cap. Each venue carries its `id` for de-duplication."""
     try:
         body = trace.get("venues", "/v2/insights",
                          {"filter.type": "urn:entity:place", "filter.tags": ",".join(wanted),
@@ -392,24 +512,53 @@ def _venue_call(trace, wanted, city, order):
             raise
         log.warning("release plan: no venues near %s: %s", city["name"], err)
         return None
-    rows = [_venue(e, wanted) for e in (body.get("results") or {}).get("entities") or [] if e.get("name")]
-    return {"city": city["name"], "country": city["country"], "venues": rows}
+    rows, dropped = [], 0
+    for entity in (body.get("results") or {}).get("entities") or []:
+        if not entity.get("name"):
+            continue
+        if not _is_venue(_place_tags(entity), rule, entity["name"]):
+            dropped += 1
+            continue
+        rows.append(_venue(entity, wanted) | {"id": entity.get("entity_id")})
+    return {"city": city["name"], "country": city["country"], "venues": rows, "dropped": dropped}
 
 
-def _venues(trace, kind, cities):
-    """([{city, country, venues}] for up to VENUE_CITIES cities that have venues, [names of cities with none]).
-    The strongest VENUE_CITIES cities are asked together; a small town can have no tagged venue, so each empty one
-    is replaced by the next city down, up to VENUE_ATTEMPTS calls in all."""
-    wanted = KINDS[kind]["tags"]
+def _dedupe(found, seen):
+    """Remove venues already listed under an earlier city (a place near two cities is kept under the first);
+    returns how many were removed. `seen` holds the ids and name-and-position keys already used."""
+    removed = 0
+    for entry in found:
+        keep = []
+        for venue in entry["venues"]:
+            key = venue.pop("id", None) or (venue["name"], round(venue["lat"] or 0, 3), round(venue["lon"] or 0, 3))
+            if key in seen:
+                removed += 1
+            else:
+                seen.add(key)
+                keep.append(venue)
+        entry["venues"] = keep
+    return removed
+
+
+def _venues(trace, wanted, cities, rule):
+    """([{city, country, venues}] for up to VENUE_CITIES cities that have venues, [names of cities with none],
+    non-venues dropped, duplicates dropped). The strongest VENUE_CITIES cities are asked together; a small town can
+    have no tagged venue, so each empty one is replaced by the next city down, up to VENUE_ATTEMPTS calls in all."""
     first = cities[:VENUE_CITIES]
     with ThreadPoolExecutor(max_workers=WORKERS) as workers:
-        found = list(workers.map(lambda item: _venue_call(trace, wanted, item[1], item[0]), enumerate(first)))
+        found = [f for f in workers.map(lambda item: _venue_call(trace, wanted, item[1], item[0], rule),
+                                        enumerate(first)) if f]
+    seen = set()
+    dupes = _dedupe(found, seen)
     for order, city in enumerate(cities[VENUE_CITIES:VENUE_ATTEMPTS], start=len(first)):
-        if sum(1 for f in found if f and f["venues"]) >= VENUE_CITIES:
+        if sum(1 for f in found if f["venues"]) >= VENUE_CITIES:
             break
-        found.append(_venue_call(trace, wanted, city, order))
-    done = [f for f in found if f and f["venues"]]
-    return done, [f["city"] for f in found if f and not f["venues"]]
+        extra = _venue_call(trace, wanted, city, order, rule)
+        if extra:
+            dupes += _dedupe([extra], seen)
+            found.append(extra)
+    done = [{k: v for k, v in f.items() if k != "dropped"} for f in found if f["venues"]]
+    return done, [f["city"] for f in found if not f["venues"]], sum(f["dropped"] for f in found), dupes
 
 
 def _is_signal(entity, signal):
@@ -460,42 +609,69 @@ def _collect_taste(jobs):
     return list(rows.values())
 
 
-def _refuse(trace, name, kind, reason, steps):
-    return {"resolved": False, "name": name, "kind": kind, "reason": reason, "steps": steps, "calls": trace.calls,
-            "try": ["the title or artist name as Wikipedia, Spotify or Netflix spells it",
-                    f"up to {MAX_USED_LIKE} comparable {KINDS[kind]['label']} titles or acts Qloo knows, in `like`"]}
+def _refuse(trace, name, kind, reason, steps, like, echo):
+    """A refusal keeps `reason` and `try`; with no comparables the first thing to try is adding some."""
+    tries = [f"the title or artist name as Wikipedia, Spotify or Netflix spells it (a name in another script works "
+             f"when Qloo lists it as an alternative title)"]
+    if like:
+        tries.insert(0, "check how the comparables are spelled, or swap in others Qloo knows")
+    else:
+        tries.insert(0, f"add 2 or 3 similar {KINDS[kind]['label']} titles or acts Qloo knows (up to {MAX_LIKE} in "
+                        f"`like`); an unreleased or unlisted title is planned from their audience")
+    return {"resolved": False, "name": name, "kind": kind, "reason": reason, "try": tries, **echo, "scores": [],
+            "steps": steps, "calls": trace.calls}
+
+
+def _lookup(trace, text, kind, order):
+    """(hit, found-as note or None). The kind's own types first; when nothing matches there, the same text once with
+    every type, so "Squid Game" typed as music is still found, as the TV show it is."""
+    hit = _find(trace, text, KINDS[kind]["types"], order * 2)
+    if hit:
+        return hit, None
+    hit = _find(trace, text, ALL_TYPES, order * 2 + 1)
+    if not hit:
+        return None, None
+    found = TYPE_LABELS.get((hit.get("types") or [None])[0], "another kind of entity")
+    return hit, f"{hit.get('name')!r} was found as {found} although you chose {KINDS[kind]['label']}"
 
 
 def _resolve_signal(trace, name, kind, like):
-    """([entity], "title" | "comparables" | None): the title if Qloo knows it, else the first comparables it does."""
-    types = KINDS[kind]["types"]
-    hit = _find(trace, name, types, 0)
+    """([entity], "title" | "comparables" | None, [found-as notes]): the title if Qloo knows it, else the first
+    comparables it does."""
+    hit, note = _lookup(trace, name, kind, 0)
     if hit:
-        return [_entity(hit)], "title"
-    signal = []
+        return [_entity(hit)], "title", [note] if note else []
+    signal, notes = [], []
     for i, other in enumerate(like, start=1):
-        found = _find(trace, other, types, i)
+        found, note = _lookup(trace, other, kind, i)
         if found and found.get("entity_id") not in {e["id"] for e in signal}:
             signal.append(_entity(found))
+            if note:
+                notes.append(note)
         if len(signal) >= MAX_USED_LIKE:
             break
-    return signal, "comparables" if signal else None
+    return signal, "comparables" if signal else None, notes
 
 
-def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geocode=None):
-    """The plan for one release: {resolved, name, kind, signal, countries, venues, local_taste, steps, calls, caveats}.
-    `signal.used` says whether Qloo knew the title or the comparables stood in for it; with neither it returns
-    {resolved: False, reason, try, steps} and nothing is guessed. ReleaseInputError for a bad field; QlooError
-    only when Qloo refuses the key or rate-limits (a country or venue call that fails is skipped and shows in steps).
-    `geocode(lat, lon)` names heatmap cells (OpenStreetMap by default)."""
+def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geocode=None, region="any", home=None,
+                 goal=None):
+    """The plan for one release: {resolved, name, kind, region, home, goal, signal, scores, countries, venues,
+    local_taste, steps, calls, caveats}. `signal.used` says whether Qloo knew the title or the comparables stood in
+    for it; with neither it returns {resolved: False, reason, try, steps} and nothing is guessed.
+    `region` limits the country pool, `home` (ISO2) leaves a home market out of the ranking and `goal` picks the
+    venues (tour, premiere, or digital for none); `scores` is every country checked, best first.
+    ReleaseInputError for a bad field; QlooError only when Qloo refuses the key or rate-limits (a country or venue
+    call that fails is skipped and shows in steps). `geocode(lat, lon)` names heatmap cells (OpenStreetMap by
+    default). `countries`, when given, replaces the region's pool."""
     name, kind, like = validate(name, kind, like)
-    countries = dict(countries or CANDIDATES)
-    n_countries = max(1, min(int(n_countries), len(countries)))
-    cfg = KINDS[kind]
+    region, home, goal, goal_note = validate_options(kind, region, home, goal)
+    echo = {"region": region, "home": home, "goal": goal}
+    countries = {c: n for c, n in (countries or pool_for(region)).items() if c != home}
+    n_countries = max(1, min(int(n_countries), len(countries) or 1))
     trace = _Trace(client)
     steps = []
 
-    signal, used = _resolve_signal(trace, name, kind, like)
+    signal, used, found_as = _resolve_signal(trace, name, kind, like)
     if used == "title":
         note = f"Qloo knows {signal[0]['name']!r}; its audience is the signal."
     elif used == "comparables":
@@ -505,27 +681,34 @@ def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geo
         note = f"Qloo knows neither {name!r} nor any of the {len(like)} comparables."
     else:
         note = f"Qloo does not know {name!r}, and no comparables were given."
+    note += "".join(f" {n}." for n in found_as)
     steps.append(_step(trace, "resolve", "qloo_search", note, ok=used is not None))
     if not signal:
-        return _refuse(trace, name, kind, note, steps)
+        return _refuse(trace, name, kind, note, steps, like, echo)
     ids = ",".join(e["id"] for e in signal)
 
-    ranked, asked, empty = _rank_countries(trace, ids, countries, n_countries)
-    if not ranked:
+    ranked_all, asked, empty = _rank_countries(trace, ids, countries)
+    where = f"the {region} region" if region != "any" else "the default pool"
+    left_out = f"; {home} is left out as the home market" if home else ""
+    if not ranked_all:
         steps.append(_step(trace, "countries", "qloo_destinations",
-                           f"Qloo returned no destinations for this audience in any of {asked} countries.", ok=False))
-        return _refuse(trace, name, kind, "Qloo has no destination affinity for this audience", steps)
+                           f"Qloo returned no destinations for this audience in any of {asked} countries in {where}"
+                           f"{left_out}.", ok=False))
+        return _refuse(trace, name, kind, "Qloo has no destination affinity for this audience", steps, like, echo)
+    scores = [{"code": c["code"], "name": c["name"], "score": c["score"]} for c in ranked_all]
+    ranked = ranked_all[:n_countries]
     steps.append(_step(trace, "countries", "qloo_destinations",
-                       f"Destination calls, one per country, rank the {asked} countries by Qloo's best destination "
-                       f"affinity there and supply the city candidates (they are not shown as cities unless the heatmap favours "
-                       f"them); kept {len(ranked)}." + (f" {empty} returned nothing." if empty else "")))
+                       f"Destination calls, one per country, rank the {asked} countries of {where} by Qloo's best "
+                       f"destination affinity there and supply the city candidates (they are not shown as cities "
+                       f"unless the heatmap favours them){left_out}; kept {len(ranked)}."
+                       + (f" {empty} returned nothing." if empty else "")))
 
     # The heatmaps and the taste calls are independent, so they share a pool; Nominatim naming then runs one
     # request at a time on this thread while the taste calls finish.
     top = ranked[:HEATMAP_COUNTRIES]
     with ThreadPoolExecutor(max_workers=WORKERS) as workers:
         heat = [workers.submit(_heat, trace, ids, c["name"], order) for order, c in enumerate(top)]
-        taste_jobs = _start_taste(workers, trace, signal, ranked, countries)
+        taste_jobs = _start_taste(workers, trace, signal, ranked, POOL | countries)
         fallback = _place_hotspots(top, [h.result() for h in heat], geocode)
         taste = _collect_taste(taste_jobs)
     for country in ranked[HEATMAP_COUNTRIES:]:
@@ -535,7 +718,7 @@ def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geo
     steps.append(_step(trace, "cities", "qloo_heatmap",
                        f"Heatmap calls, one per top country, say where the audience concentrates. Cities are the "
                        f"destinations from the step above (popularity at least {MIN_POPULARITY}), each scored by the "
-                       f"heatmap weight within {DENSITY_KM} km and merged within {MERGE_KM} km; no Nominatim "
+                       f"heatmap weight within {DENSITY_KM} km and merged within {MERGE_KM} km (or {DENSITY_KM} km with related names); no Nominatim "
                        f"lookup was needed there. Cities in {', '.join(mapped) or 'no country'}."
                        + (f" No destination had heatmap cells nearby in {', '.join(fallback)}, so its strongest cells "
                           f"were named by OpenStreetMap reverse geocoding (not Qloo)." if fallback else ""),
@@ -544,23 +727,36 @@ def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geo
     # Venue anchors: each top country's strongest city first, then the next one down in each, so a city
     # with no tagged venue is replaced rather than leaving a country empty. A country whose cells could not be
     # named is anchored on its strongest cell.
-    rows = []
-    for c in top:
-        hs = c["hotspots"]
-        if hs["places"]:
-            rows.append([{"name": p, "country": c["name"], "lat": cell[0], "lon": cell[1]}
-                         for p, cell in zip(hs["places"], hs["place_cells"])])
-        elif hs["cells"]:
-            lat, lon = hs["cells"][0][:2]
-            rows.append([{"name": f"the strongest cell ({lat:.2f}, {lon:.2f})", "country": c["name"],
-                          "lat": lat, "lon": lon}])
-    pool = [row[i] for i in range(audience_map.MAX_PLACES) for row in rows if i < len(row)][:VENUE_ATTEMPTS]
-    venues, bare = _venues(trace, kind, pool) if pool else ([], [])
-    steps.append(_step(trace, "venues", "qloo_places",
-                       f"Venue calls look for {cfg['venue']} within {VENUE_RADIUS_M // 1000} km of the strongest "
-                       f"cities; found {sum(len(v['venues']) for v in venues)} in "
-                       f"{', '.join(v['city'] for v in venues) or 'none'}."
-                       + (f" Qloo lists none near {', '.join(bare)}." if bare else ""), ok=bool(venues)))
+    venues, bare = [], []
+    if goal == "digital":
+        steps.append({"tool": "qloo_places", "endpoint": None, "params": {}, "ok": True, "calls": 0,
+                      "note": "The goal is digital, so no venue calls were made."})
+    else:
+        label, tags = TOUR_VENUES[kind] if goal == "tour" else PREMIERE_VENUES
+        rows = []
+        for c in top:
+            hs = c["hotspots"]
+            if hs["places"]:
+                rows.append([{"name": p, "country": c["name"], "lat": cell[0], "lon": cell[1]}
+                             for p, cell in zip(hs["places"], hs["place_cells"])])
+            elif hs["cells"]:
+                lat, lon = hs["cells"][0][:2]
+                rows.append([{"name": f"the strongest cell ({lat:.2f}, {lon:.2f})", "country": c["name"],
+                              "lat": lat, "lon": lon}])
+        pool = [row[i] for i in range(audience_map.MAX_PLACES) for row in rows if i < len(row)][:VENUE_ATTEMPTS]
+        rule = "premiere" if goal == "premiere" else kind
+        venues, bare, dropped, dupes = _venues(trace, tags, pool, rule) if pool else ([], [], 0, 0)
+        steps.append(_step(trace, "venues", "qloo_places",
+                           f"Venue calls look for {label} within {VENUE_RADIUS_M // 1000} km of the strongest "
+                           f"cities; found {sum(len(v['venues']) for v in venues)} in "
+                           f"{', '.join(v['city'] for v in venues) or 'none'}."
+                           + (f" Qloo lists none near {', '.join(bare)}." if bare else "")
+                           + (f" Dropped {dropped} non-venue{'s' if dropped != 1 else ''} (a place with a health, hotel, "
+                              f"school, banquet or similar tag, or without a performing-arts tag"
+                              f"{', or an opera house' if rule == 'music' else ''})." if dropped else "")
+                           + (f" Dropped {dupes} duplicate{'s' if dupes != 1 else ''} already listed under an earlier city."
+                              if dupes else "")
+                           + (f" {goal_note}" if goal_note else ""), ok=bool(venues)))
     steps.append(_step(trace, "taste", "qloo_insights",
                        f"Taste calls ask Qloo what this audience also likes in "
                        f"{', '.join(r['country'] for r in taste) or 'the top countries'}, leaving out the signal itself.",
@@ -571,11 +767,15 @@ def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geo
                "Countries are ranked by destination affinity, which is travel-flavoured and is a country's single best "
                "destination, so a small country with one strong destination can outrank a large one. The cities "
                "inside a country are Qloo destinations ranked by how much of Qloo's audience heatmap lies within "
-               f"{DENSITY_KM} km; a country the heatmap barely touches shows few or odd cities.", VENUE_NOTE]
+               f"{DENSITY_KM} km; a country the heatmap barely touches shows few or odd cities."]
+    if goal != "digital":
+        caveats.append(VENUE_NOTE + (CINEMA_NOTE if goal == "premiere" else ""))
+    if goal_note:
+        caveats.append(goal_note)
     if used == "comparables":
         caveats.append("The title itself is not in Qloo, so this is the audience of the comparables, not of the release.")
     if trace.calls >= trace.cap:
         caveats.append(f"The plan hit its {trace.cap}-call cap; later steps may be shorter than usual.")
-    return {"resolved": True, "name": name, "kind": kind, "signal": {"used": used, "entities": signal},
-            "countries": ranked, "countries_checked": asked, "venues": venues, "local_taste": taste,
+    return {"resolved": True, "name": name, "kind": kind, **echo, "signal": {"used": used, "entities": signal},
+            "scores": scores, "countries": ranked, "countries_checked": asked, "venues": venues, "local_taste": taste,
             "steps": steps, "calls": trace.calls, "caveats": caveats}

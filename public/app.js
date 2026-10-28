@@ -34,7 +34,7 @@ const routes = [
   [/^#\/agent$/, () => renderAgent],
   [/^#\/artists$/, () => renderArtists],
   [/^#\/artist\/([^/]+)$/, (m) => (el, t) => renderArtist(el, decodeURIComponent(m[1]), t)],
-  [/^#\/release(?:\?(.*))?$/, (m) => (el, t) => { const q = new URLSearchParams(m[1] || ""); renderRelease(el, t, { name: q.get("name") || "", kind: q.get("kind") || "" }); }],
+  [/^#\/release(?:\?(.*))?$/, (m) => (el, t) => { const q = new URLSearchParams(m[1] || ""); renderRelease(el, t, Object.fromEntries(["name", "kind", "like", "region", "home", "goal", "run"].map((k) => [k, q.get(k) || ""]))); }],
   [/^#\/about$/, () => renderAbout],
   [/^#\/plan(?:\/([^/]+)\/([^/]+))?$/, (m) => (el, t) => renderPlan(el, t, m[1] && decodeURIComponent(m[1]), m[2] && decodeURIComponent(m[2]))],
 ];

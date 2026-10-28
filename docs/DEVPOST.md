@@ -10,7 +10,7 @@
 |---|---|
 | Qloo alone, an LLM alone, an LLM checked by Qloo | How specific to the title the picks are (0 to 1, same 81 title-country pairs): Qloo alone 0.62, LLM alone 0.81, LLM checked by Qloo 0.86 (exploratory, not pre-registered). 71% of the LLM's names are not backed by Qloo. Of 1,615 names an AI proposed, Qloo could back 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not backed, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not place with that audience. Only confirmed names ship in a plan. |
 | Forecast backtest (829 held-out breakouts) | Counting all 829: its top 3 named a next country for 9.8% of breakouts against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. For scale, a typical country charts a given breakout about 1% of the time (758 of 76,760 held-out pairs), so the featured 14% for Sweden is about 14 times that. A case where it worked: an Arabic series broke out in Kuwait in April 2026; its top two forecasts, Saudi Arabia (30%) and Oman (19%), both charted one week later. |
-| Forecasts locked in public | 3,240 so far, each fixed before its outcome exists; grading starts 15 Nov 2026. |
+| Forecasts locked in public | 3,240 so far, each locked before Netflix published the week it is graded on; grading starts 15 Nov 2026. |
 
 ## Why this only works with Qloo
 
@@ -33,7 +33,7 @@ A breakout travels country by country: that is what we forecast from Netflix his
 - **Plan a release (new).** For something that has not launched yet, a film, series, album or comedy special, or an artist or comedian going on tour: Qloo ranks 24 countries by audience affinity, maps the cities in the top three, finds venues there (comedy clubs, live music venues or cinemas, by Qloo place tag) and names the local shows, films and artists this audience also loves. If Qloo does not know the title yet, up to three comparables stand in for it. Every Qloo call the plan made is listed with its parameters. Worked examples: Zakir Khan, Anuv Jain, and two unreleased titles planned from comparables.
 - **Ask AFTERSHOCK.** A chat on every page answers from the site's own tools, no language model: where a title goes next, why it is breaking in a country, why a title is not here, where a release could work, what any feature does. Every answer shows the steps it took.
 - **Guided tour.** A 60-second tour highlights each feature in turn; it runs on a first visit and from the Tour button.
-- **Public ledger.** Every week's forecasts are locked in a hash-chained ledger before the outcome exists, then graded. An MCP server exposes the same tools to any agent.
+- **Public ledger.** Every week's forecasts are locked in a hash-chained ledger before Netflix publishes the weeks they are graded on, then graded. An MCP server exposes the same tools to any agent.
 
 ## Qloo calls we make
 

@@ -5,7 +5,7 @@ import { h, s } from "./dom.js";
 const SEEN_KEY = "aftershock-tour-seen";
 const PAD = 8;
 const STEPS = [
-  { sel: '[data-tour="globe"]', title: "This week's breakouts, live", text: "Each glowing country is where a Netflix title just broke out. Arcs show where it is forecast to chart next. Drag to spin, scroll to zoom, click any country for its chance and the reason." },
+  { sel: '[data-tour="globe"]', clearOf: ".stage-copy h1", title: "This week's breakouts, live", text: "Each glowing country is where a Netflix title just broke out. Arcs show where it is forecast to chart next. Drag to spin, scroll to zoom, click any country for its chance and the reason." },
   { sel: '[data-tour="rail"]', title: "Follow one breakout", text: "Pick a title: the globe flies to it, draws its next countries, and raises Qloo's city heatmap where that audience lives." },
   { sel: '[data-tour="plan"]', title: "Plan a launch", text: "The agent's seven steps, all visible: forecast, Qloo's own picks, an AI's ideas, Qloo checking every one, the cities, artists matched to cities, and a Launch Brief to download." },
   { sel: '[data-tour="release"]', title: "Plan a release", text: "Releasing a new film, series, album or comedy special, or going on tour? Qloo ranks countries and cities by audience affinity, suggests venues, and names the local taste to pair with." },
@@ -48,7 +48,11 @@ export function startTour() {
     const el = document.querySelector(steps[i].sel);
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const box = { x: Math.max(4, r.left - PAD), y: Math.max(4, r.top - PAD), w: Math.min(innerWidth - 8, r.width + PAD * 2), h: Math.min(innerHeight - 8, r.height + PAD * 2) };
+    let edge = r.left;
+    // A target that sits under other content (the globe under the headline) starts where that content ends.
+    const over = steps[i].clearOf && document.querySelector(steps[i].clearOf)?.getBoundingClientRect();
+    if (over && over.right > edge && over.right < r.right - 200) edge = over.right + PAD;
+    const box = { x: Math.max(4, edge - PAD), y: Math.max(4, r.top - PAD), w: Math.min(innerWidth - 8, r.right - edge + PAD * 2), h: Math.min(innerHeight - 8, r.height + PAD * 2) };
     Object.assign(hole.style, { left: `${box.x}px`, top: `${box.y}px`, width: `${box.w}px`, height: `${box.h}px` });
     // The blur covers everything except the target, so the feature stays sharp.
     blur.style.clipPath = `path(evenodd, "M0 0H${innerWidth}V${innerHeight}H0Z M${box.x} ${box.y}h${box.w}v${box.h}h${-box.w}Z")`;

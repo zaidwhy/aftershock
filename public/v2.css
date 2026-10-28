@@ -244,3 +244,70 @@ main { max-width: 1180px; }
   .globe-panel { margin: 0 16px; }
   .globe-legend { position: static; padding: 8px 16px 0; }
 }
+
+/* Release form: numbered questions. */
+.rel-form { gap: 0; padding: 8px 20px 20px; max-width: 760px; }
+.rel-field { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.rel-step { color: var(--accent); font-size: 0.8rem; padding-top: 3px; }
+.rel-field-body { display: grid; gap: 6px; min-width: 0; }
+.rel-label { margin: 0; font-weight: 600; color: var(--ink); }
+.rel-hint { margin: 0; font-size: 0.82rem; color: var(--ink-soft); }
+.rel-two { display: grid; gap: 8px; }
+@media (min-width: 640px) { .rel-two { grid-template-columns: 1fr 1fr; } }
+.rel-form input, .rel-form select { width: 100%; }
+.rel-form > .btn { margin-top: 16px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg-b { font: 500 0.9rem var(--sans); color: var(--ink-soft); background: transparent; border: 1px solid var(--rule); border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer; transition: all .15s; }
+.seg-b:hover { color: var(--ink); border-color: var(--ink-soft); }
+.seg-b[aria-pressed="true"] { color: var(--on-accent); background: linear-gradient(135deg, var(--amber), var(--accent)); border-color: transparent; }
+.rel-refuse { margin-top: 24px; padding: 18px 20px; border: 1px solid rgba(255, 196, 120, .45); border-radius: 14px; background: var(--paper-2); }
+.rel-refuse ul { margin: 6px 0 12px; }
+
+/* Global heatmap: ranked list beside a tiered world. */
+.wh { margin-top: 14px; }
+.wh-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 12px; }
+.wh-head h3 { margin: 0; }
+.wh-body { display: grid; gap: 16px; }
+@media (min-width: 900px) { .wh-body { grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); align-items: center; } }
+.wh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.wh-list li { display: grid; grid-template-columns: 22px 30px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 0.88rem; }
+.wh-n, .wh-code { color: var(--ink-soft); font-size: 0.75rem; }
+.wh-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wh-tier { font: 600 0.62rem var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; }
+.wh-svg { width: 100%; height: auto; display: block; }
+.wh-c { stroke: rgba(7, 9, 13, .9); stroke-width: 0.4; transition: opacity .2s; }
+.wh-c:hover { opacity: .8; }
+.t0 { fill: #1b212b; } .t4 { fill: #1f6f63; } .t3 { fill: #22a38a; } .t2 { fill: #2fd0a5; } .t1 { fill: #7ff5cf; }
+.wh-tier.t1 { background: #7ff5cf; color: #04150F; } .wh-tier.t2 { background: #2fd0a5; color: #04150F; } .wh-tier.t3 { background: #22a38a; color: #04150F; } .wh-tier.t4 { background: #1f6f63; color: var(--ink); }
+.wh-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font-size: 0.78rem; color: var(--ink-soft); }
+.wh-key::before { content: ""; display: inline-block; width: 18px; height: 6px; border-radius: 3px; margin-right: 6px; vertical-align: middle; background: currentColor; }
+.wh-key.t1::before { background: #7ff5cf; } .wh-key.t2::before { background: #2fd0a5; } .wh-key.t3::before { background: #22a38a; } .wh-key.t4::before { background: #1f6f63; } .wh-key.t0::before { background: #1b212b; outline: 1px solid var(--rule); }
+.wh-key { fill: none; }
+.rel-city-proof { margin: 8px 0 0; padding-left: 18px; font-size: 0.85rem; }
+.rel-proof ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.rel-proof h2 { margin-top: 0; }
+.rel-sched { list-style: none; margin: 12px 0 0; padding: 0; border-left: 2px solid var(--rule); }
+.rel-sched li { position: relative; display: grid; grid-template-columns: minmax(150px, 190px) minmax(0, 1fr); gap: 12px; padding: 8px 0 8px 16px; }
+.rel-sched li::before { content: ""; position: absolute; left: -6px; top: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--rule); }
+.rel-sched li.now::before { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+.rel-when { font-size: 0.8rem; color: var(--amber); }
+@media (max-width: 560px) { .rel-sched li { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Review fixes: phones get a wrapping two-row nav instead of a clipped scroller; long tags wrap; the chat
+   button no longer sits on the last breakout chip. */
+@media (max-width: 720px) {
+  .site-head { flex-wrap: wrap; row-gap: 2px; }
+  .site-head nav { flex-wrap: wrap; overflow: visible; gap: 0 12px; width: 100%; }
+  .site-head nav a, .nav-more summary { font-size: 0.8rem; min-height: 34px; padding: 6px 0; }
+  .site-head .icon-btn { min-height: 30px; padding: 4px 10px; font-size: 0.78rem; }
+  .nav-more-list { position: absolute; top: 100%; right: 0; }
+  .chat-fab { padding: 10px 14px; font-size: 0.85rem; }
+}
+.rel-example { white-space: normal; max-width: 100%; }
+.title-rail { padding-right: 200px; }
+@media (max-width: 720px) { .title-rail { padding-right: 150px; } }
+.qp-nq { background: rgba(151, 160, 174, .14); color: var(--ink-soft); }
+.rel-running { margin-top: 24px; padding: 18px 20px; border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2); }
+.rel-stages { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 6px; color: var(--ink-soft); }
+.rel-stages li.now { color: var(--ink); font-weight: 600; }
+.rel-stages li.done { color: var(--qloo); }

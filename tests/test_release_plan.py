@@ -77,10 +77,13 @@ class FakeClient:
         if kind == "urn:heatmap":
             return heatmap(params["filter.location.query"])
         if kind == "urn:entity:place":
-            return {"results": {"entities": [{"name": "Hall", "location": {"lat": 1.0, "lon": 2.0},
+            tag = params["filter.tags"].split(",")[0]
+            where = params["filter.location"]
+            return {"results": {"entities": [{"name": f"Hall {where}", "entity_id": f"hall-{where}",
+                                              "location": {"lat": 1.0, "lon": 2.0},
                                               "properties": {"address": "1  Main St"},
                                               "tags": [{"id": "urn:tag:category:place:bar", "name": "Bar"},
-                                                       {"id": params["filter.tags"].split(",")[0], "name": "Venue"}]}]}}
+                                                       {"id": tag, "name": tag.rsplit(":", 1)[-1].replace("_", " ").title()}]}]}}
         ents = [{"name": n, "entity_id": f"t-{n}"} for n in ["Act", "Other A", "Other B", *self.taste_extra]]
         return {"results": {"entities": ents}}
 
@@ -108,7 +111,7 @@ def test_refuses_when_nothing_resolves_and_never_guesses():
     out = run(client, "Nobody", "film", like=["Also Nobody"])
     assert out["resolved"] is False and "Nobody" in out["reason"] and out["try"]
     assert client.gets == []
-    assert out["steps"][0]["ok"] is False and out["calls"] == 2
+    assert out["steps"][0]["ok"] is False and out["calls"] == 4  # each name is tried by kind, then across all types
 
 
 def test_nearest_hit_with_a_longer_name_is_not_a_match():
@@ -185,7 +188,8 @@ def test_venue_calls_carry_the_tag_filter_around_each_top_countrys_strongest_pla
             "POINT({1} {0})".format(*cell(code, 0)) for code in ("IN", "AE", "GB"))
         assert [v["city"] for v in out["venues"]] == [place_name(c, 0) for c in ("IN", "AE", "GB")]
         venue = out["venues"][0]["venues"][0]
-        assert venue["address"] == "1 Main St" and venue["tags"][0] == "Venue" and len(venue["tags"]) <= 3
+        assert venue["address"] == "1 Main St" and len(venue["tags"]) <= 3
+        assert venue["tags"][0] == tag.split(",")[0].rsplit(":", 1)[-1].replace("_", " ").title() and "id" not in venue
 
 
 def test_local_taste_drops_signal_entities_for_top_two_countries():
@@ -238,14 +242,16 @@ def test_api_bounds_return_422_naming_the_field(params, field):
 def test_api_runs_the_plan_with_split_comparables_under_the_live_limit(monkeypatch):
     seen = {}
 
-    def fake(client, name, kind, like):
-        seen.update(name=name, kind=kind, like=like)
+    def fake(client, name, kind, like, **options):
+        seen.update(name=name, kind=kind, like=like, **options)
         return {"resolved": True}
     monkeypatch.setattr(api.release_plan, "plan_release", fake)
     monkeypatch.setattr(api, "Qloo", lambda **k: None)
     api._ripple_hits.clear()
     resp = web.get("/api/release", params={"name": " An  Act ", "kind": "series", "like": "Squid Game, Alice in Borderland"})
-    assert resp.status_code == 200 and seen == {"name": "An Act", "kind": "series", "like": ["Squid Game", "Alice in Borderland"]}
+    assert resp.status_code == 200 and seen == {
+        "name": "An Act", "kind": "series", "like": ["Squid Game", "Alice in Borderland"], "region": "any", "home": None,
+        "goal": "premiere"}
     codes = [web.get("/api/release", params={"name": "A", "kind": "film"}).status_code for _ in range(11)]
     assert codes[-1] == 429
 
@@ -375,3 +381,261 @@ def test_a_read_only_cache_costs_the_cache_not_the_answer(monkeypatch, tmp_path)
     monkeypatch.setattr(hotspots, "_last_request", [1e12])
     monkeypatch.setattr(hotspots.time, "sleep", lambda s: None)
     assert hotspots.nominatim_name(1.0, 2.0, cache_dir=unwritable) == "Testville"
+
+
+# ---- name resolution: akas, retry across types ----------------------------------------------------------
+
+SQUID = {"name": "Squid Game", "entity_id": "id-squid", "types": ["urn:entity:tv_show"],
+         "properties": {"akas": [{"language": "es", "value": "El juego del calamar"},
+                                 {"language": "ko", "value": "오징어 게임"}]}}
+
+
+class Catalog(FakeClient):
+    """A search that answers like Qloo: only entities whose type is in `types`, else the nearest unrelated hit."""
+
+    def __init__(self, *entities):
+        super().__init__(known=())
+        self.entities = list(entities)
+
+    def search(self, query, types=None, take=5):
+        self.searches.append((query, types))
+        wanted = set((types or "").split(","))
+        fold = release_plan._fold
+        hits = [e for e in self.entities if set(e["types"]) & wanted
+                and fold(query) in {fold(e["name"]), *(fold(a["value"]) for a in e.get("properties", {}).get("akas", []))}]
+        return hits or [{"name": "Game of Thrones: Nearest", "entity_id": "nearest", "types": ["urn:entity:tv_show"]},
+                        {"name": "그 다른 노래", "entity_id": "other-korean", "types": ["urn:entity:artist"]}]
+
+
+def test_a_korean_alternative_title_resolves_to_the_entity():
+    out = run(Catalog(SQUID), "오징어 게임", "series")
+    assert out["resolved"] and out["signal"]["used"] == "title"
+    assert out["signal"]["entities"][0] == {"name": "Squid Game", "id": "id-squid", "type": "urn:entity:tv_show"}
+
+
+def test_a_non_latin_name_never_matches_another_non_latin_hit_by_default():
+    # norm() turns every non-Latin name into "", which would have made the unrelated Korean artist a match
+    out = run(Catalog(), "오징어 게임", "music")
+    assert out["resolved"] is False
+
+
+def test_folding_keeps_accents_and_ignores_case_and_spacing():
+    hit = {"name": "Amélie", "entity_id": "a", "types": ["urn:entity:movie"],
+           "properties": {"akas": [{"language": "fr", "value": "Le Fabuleux Destin d'Amélie Poulain"}]}}
+    assert run(Catalog(hit), "  LE fabuleux   destin d'amélie poulain ", "film")["signal"]["entities"][0]["id"] == "a"
+    assert run(Catalog(hit), "amelie poulain", "film")["resolved"] is False
+
+
+def test_a_name_missing_under_the_chosen_kind_is_retried_across_all_types_and_says_so():
+    client = Catalog(SQUID)
+    out = run(client, "Squid Game", "music")
+    assert out["signal"]["used"] == "title" and out["signal"]["entities"][0]["type"] == "urn:entity:tv_show"
+    assert [t for _, t in client.searches] == ["urn:entity:artist", release_plan.ALL_TYPES]
+    assert "found as a TV show although you chose music" in out["steps"][0]["note"]
+    assert out["steps"][0]["calls"] == 2
+
+
+def test_each_comparable_is_retried_across_all_types_too():
+    client = Catalog(SQUID)
+    out = run(client, "Unreleased Act", "music", like=["Squid Game"])
+    assert out["signal"]["used"] == "comparables" and out["signal"]["entities"][0]["id"] == "id-squid"
+    assert "'Squid Game' was found as a TV show although you chose music" in out["steps"][0]["note"]
+    assert [t for _, t in client.searches] == ["urn:entity:artist", release_plan.ALL_TYPES] * 2
+
+
+def test_a_name_found_under_the_chosen_kind_is_not_retried():
+    client = Catalog(SQUID)
+    run(client, "Squid Game", "series")
+    assert len(client.searches) == 1
+
+
+# ---- region, home, goal, scores ---------------------------------------------------------------------------
+
+def asked_codes(client):
+    return sorted(p["filter.geocode.country_code"] for _, p in client.gets if p.get("filter.type") == "urn:entity:destination")
+
+
+def test_region_any_keeps_exactly_the_original_24_and_a_region_uses_every_pool_country_in_it():
+    base = FakeClient()
+    out = run(base, "Act", "music")
+    assert asked_codes(base) == sorted(release_plan.CANDIDATES) and len(release_plan.CANDIDATES) == 24
+    assert out["countries_checked"] == 24 and out["region"] == "any"
+    asia = FakeClient()
+    out = run(asia, "Act", "music", region="asia")
+    assert asked_codes(asia) == sorted(release_plan.REGIONS["asia"]) and out["countries_checked"] == 11
+    assert {"TH", "MY", "VN", "TW", "PK"} <= set(asked_codes(asia)) and out["region"] == "asia"
+    names = [code for region in release_plan.REGIONS.values() for code in region]
+    assert len(names) == len(set(names)) and set(names) == set(release_plan.POOL)  # each pool country in one region
+
+
+def test_home_is_left_out_of_the_ranking_the_calls_and_named_in_the_steps():
+    client = FakeClient()
+    out = run(client, "Act", "music", home="in")
+    assert out["home"] == "IN" and "IN" not in asked_codes(client) and out["countries_checked"] == 23
+    assert "IN" not in [c["code"] for c in out["countries"]] and "IN" not in [s["code"] for s in out["scores"]]
+    assert out["countries"][0]["code"] == "AE" and "IN is left out as the home market" in out["steps"][1]["note"]
+
+
+def test_scores_list_every_country_with_data_best_first_not_just_the_top_n():
+    out = run(FakeClient(), "Act", "music", n_countries=2)
+    assert [s["code"] for s in out["scores"]] == ["IN", "AE", "GB", "US", "CA"] and len(out["countries"]) == 2
+    assert out["scores"][0] == {"code": "IN", "name": "India", "score": 0.9}
+    assert [s["score"] for s in out["scores"]] == sorted((s["score"] for s in out["scores"]), reverse=True)
+
+
+def venue_tags(client):
+    return {p["filter.tags"] for _, p in client.gets if p.get("filter.type") == "urn:entity:place"}
+
+
+def test_goal_picks_the_venues_and_defaults_by_kind():
+    tour, premiere = "urn:tag:category:place:comedy_club", "urn:tag:category:place:movie_theater"
+    for kind, goal, tags, effective in (("comedy", None, {tour}, "tour"), ("film", None, {premiere}, "premiere"),
+                                        ("series", None, {premiere}, "premiere"),
+                                        ("comedy", "premiere", {premiere}, "premiere"),
+                                        ("music", "premiere", {premiere}, "premiere")):
+        client = FakeClient()
+        out = run(client, "Act", kind, goal=goal)
+        assert venue_tags(client) == tags and out["goal"] == effective
+    music = FakeClient()
+    run(music, "Act", "music")
+    assert venue_tags(music) == {"urn:tag:category:place:concert_hall,urn:tag:category:place:live_music_venue"}
+
+
+def test_a_film_with_goal_tour_is_treated_as_a_premiere_and_says_so():
+    client = FakeClient()
+    out = run(client, "Act", "film", goal="tour")
+    assert out["goal"] == "premiere" and venue_tags(client) == {"urn:tag:category:place:movie_theater"}
+    assert "treated as a premiere" in out["steps"][3]["note"]
+
+
+def test_goal_digital_makes_no_venue_calls_and_says_so():
+    client = FakeClient()
+    out = run(client, "Act", "music", goal="digital")
+    assert out["goal"] == "digital" and out["venues"] == [] and venue_tags(client) == set()
+    venue_step = out["steps"][3]
+    assert venue_step["calls"] == 0 and "digital" in venue_step["note"]
+    assert out["calls"] == len(client.searches) + len(client.gets)
+    assert not any("venue tag" in c for c in out["caveats"])
+
+
+def test_refusals_keep_reason_and_try_and_echo_the_options():
+    out = run(FakeClient(known=()), "Nobody", "film", region="europe", home="gb", goal="digital")
+    assert out["resolved"] is False and out["reason"] and out["try"] and out["scores"] == []
+    assert "add 2 or 3 similar film titles" in out["try"][0]
+    assert (out["region"], out["home"], out["goal"]) == ("europe", "GB", "digital")
+    with_like = run(FakeClient(known=()), "Nobody", "film", like=["Also Nobody"])
+    assert "comparables" in with_like["try"][0] and with_like["try"][1:]
+
+
+@pytest.mark.parametrize("kwargs,field", [({"region": "mars"}, "region"), ({"home": "India"}, "home"),
+                                          ({"home": "1N"}, "home"), ({"goal": "party"}, "goal")])
+def test_bad_options_name_the_field(kwargs, field):
+    with pytest.raises(ReleaseInputError) as err:
+        run(FakeClient(), "Act", "music", **kwargs)
+    assert str(err.value).startswith(field)
+
+
+@pytest.mark.parametrize("params,field", [({"region": "mars"}, "region"), ({"goal": "party"}, "goal"),
+                                          ({"home": "India"}, "home"), ({"home": "I"}, "home")])
+def test_api_rejects_bad_region_home_and_goal_with_422_naming_the_field(params, field):
+    resp = web.get("/api/release", params={"name": "Act", "kind": "music", **params})
+    assert resp.status_code == 422 and field in str(resp.json()["detail"])
+
+
+# ---- venue quality: non-venues, opera houses, duplicates, city names ------------------------------------------
+
+def place(name, entity_id, *tags, lat=1.0, lon=2.0):
+    return {"name": name, "entity_id": entity_id, "location": {"lat": lat, "lon": lon},
+            "tags": [{"id": f"urn:tag:category:place:{t.lower().replace(' ', '_')}", "name": t} for t in tags]}
+
+
+class Places(FakeClient):
+    """Every venue call returns `rows`, in order, whatever the city."""
+    rows = ()
+
+    def get(self, path, params):
+        if params.get("filter.type") == "urn:entity:place":
+            self.gets.append((path, dict(params)))
+            return {"results": {"entities": list(self.rows)}}
+        return super().get(path, params)
+
+
+def venue_names(out):
+    return [[v["name"] for v in city["venues"]] for city in out["venues"]]
+
+
+def test_non_venues_are_dropped_and_counted_in_the_step_note():
+    class Comedy(Places):
+        rows = [place("Comedy Store", "a", "Comedy club", "Performing arts theater"),
+                place("The Integral Space", "b", "Comedy club", "Mental health service", "Homeopath"),
+                place("rynO interiO", "c", "Comedy club", "Interior designer"),
+                place("Grand Hotel", "d", "Comedy club", "Hotel"),
+                place("Bistro", "e", "Restaurant", "Bar")]  # no performing-arts tag at all
+    out = run(Comedy(), "Act", "comedy")
+    assert all(names == ["Comedy Store"] for names in venue_names(out)[:1])
+    note = out["steps"][3]["note"]
+    assert f"Dropped {4 * out['steps'][3]['calls']} non-venues" in note
+
+
+def test_a_non_venue_count_is_exact_for_one_city():
+    class One(Places):
+        rows = [place("Club", "a", "Comedy club"), place("Clinic", "b", "Comedy club", "Homeopath"),
+                place("Grand Hotel", "c", "Comedy club", "Hotel")]
+    out = run(One(), "Act", "comedy", n_countries=1)
+    assert venue_names(out) == [["Club"]]
+    assert f"Dropped {2 * out['steps'][3]['calls']} non-venues" in out["steps"][3]["note"]  # 2 in each city's call
+
+
+def test_music_tours_drop_opera_houses_but_other_goals_keep_them():
+    rows = [place("Concert Arena", "a", "Concert hall"), place("Teatro Colon", "b", "Opera house", "Concert hall")]
+
+    class Music(Places):
+        pass
+    Music.rows = rows
+    assert venue_names(run(Music(), "Act", "music", n_countries=1)) == [["Concert Arena"]]
+    Comedy = type("Comedy", (Places,), {"rows": [place("Opera Theatre", "b", "Opera house", "Performing arts theater")]})
+    assert venue_names(run(Comedy(), "Act", "comedy", n_countries=1)) == [["Opera Theatre"]]
+
+
+def test_a_venue_needs_a_performing_arts_style_tag_for_the_goal():
+    cinema = [place("Odeon", "a", "Movie theater", "Candy store", "Popcorn store"),
+              place("Playhouse", "b", "Performing arts theater")]  # a stage is not a cinema
+    club = [place("Comedy Store", "c", "Comedy club"), place("Odeon", "d", "Movie theater")]
+    assert venue_names(run(type("Film", (Places,), {"rows": cinema})(), "Act", "film", n_countries=1)) == [["Odeon"]]
+    assert venue_names(run(type("Tour", (Places,), {"rows": club})(), "Act", "comedy", n_countries=1)) == [["Comedy Store"]]
+
+
+def test_a_venue_listed_under_two_cities_is_kept_under_the_first_and_counted():
+    class Shared(Places):
+        rows = [place("Dad's Garage", "garage", "Comedy club"), place("Second Venue", "second", "Comedy club")]
+    out = run(Shared(), "Act", "comedy")
+    names = venue_names(out)
+    assert names[0] == ["Dad's Garage", "Second Venue"]
+    assert out["venues"][0]["city"] == place_name("IN", 0) and len(out["venues"]) == 1  # later cities had only repeats
+    assert "duplicate" in out["steps"][3]["note"]
+
+
+def test_bangkok_and_bangkok_metropolis_are_one_city_unrelated_neighbours_are_not():
+    cells = [[13.75, 100.5, 1.0]]
+    picked = release_plan._pick_cities([cand("Bangkok", 13.75, 100.5, popularity=0.99),
+                                        cand("Bangkok Metropolis", 13.75, 100.5 + 0.35, popularity=0.8),  # ~38 km
+                                        cand("Nonthaburi", 13.75, 100.5 + 0.3, popularity=0.7)], cells)
+    assert [c["name"] for c in picked] == ["Bangkok", "Nonthaburi"]
+    assert release_plan._same_city(cand("Playa del Carmen", 20.6, -87.1), cand("Playa Norte", 20.6, -86.8))
+    assert not release_plan._same_city(cand("Santa Clara", 37.3, -121.9), cand("Santa Rosa", 38.44, -122.7))  # same first word, 140 km
+
+
+def test_a_school_or_gym_tag_does_not_drop_a_place_with_a_strong_performance_tag_but_a_restaurant_needs_one():
+    class Mixed(Places):
+        rows = [place("Playhouse", "a", "Comedy club", "Performing arts theater", "Drama school"),
+                place("Brasserie", "b", "Live music venue", "Restaurant"),
+                place("Bar Stage", "c", "Live music venue", "Gym")]
+    music = run(type("M", (Mixed,), {})(), "Act", "music", n_countries=1)
+    assert venue_names(music) == [["Playhouse"]]  # live-music-only places with a restaurant or gym tag are not venues
+    assert venue_names(run(Mixed(), "Act", "comedy", n_countries=1)) == [["Playhouse"]]
+
+
+def test_a_place_whose_name_says_it_is_an_interior_design_firm_is_dropped():
+    class Named(Places):
+        rows = [place("rynO interiO", "a", "Comedy club"), place("Laugh Factory", "b", "Comedy club")]
+    assert venue_names(run(Named(), "Act", "comedy", n_countries=1)) == [["Laugh Factory"]]

@@ -493,17 +493,24 @@ def check(request: Request, storm_id: str = Query(..., alias="storm", min_length
 @app.get("/api/release")
 def release(request: Request, name: str = Query(..., min_length=1, max_length=MAX_FIELD),
             kind: Literal["film", "series", "music", "comedy"] = Query(...),
-            like: str = Query("", max_length=release_plan.MAX_LIKE * (release_plan.MAX_FIELD + 1))):
-    """Plan a release from Qloo: countries and cities with the audience, venues that fit, what to pair it with
-    locally, and the steps trail of every Qloo call. `like` is up to five comparables (comma or semicolon separated)
-    for a title Qloo does not know yet. Live; same limiter as /api/ripple."""
+            like: str = Query("", max_length=release_plan.MAX_LIKE * (release_plan.MAX_FIELD + 1)),
+            region: Literal["any", "asia", "europe", "americas", "middle-east-africa", "oceania"] = "any",
+            home: str | None = Query(None, pattern="^[A-Za-z]{2}$"),
+            goal: Literal["tour", "premiere", "digital"] | None = None):
+    """Plan a release from Qloo: countries with the audience (and a score for every country checked), the cities
+    inside the top three, venues that fit, what to pair it with locally, and the steps trail of every Qloo call.
+    `like` is up to five comparables (comma or semicolon separated) for a title Qloo does not know yet; `region`
+    limits the countries, `home` (ISO2) is left out as the home market, `goal` is tour, premiere or digital (no
+    venues). Live; same limiter as /api/ripple."""
     try:
         typed, kind, comparables = release_plan.validate(name, kind, like)
+        region, home, goal, _ = release_plan.validate_options(kind, region, home, goal)
     except release_plan.ReleaseInputError as err:
         raise HTTPException(422, str(err)) from err
     _take_live_slot(request)
     try:
-        return release_plan.plan_release(Qloo(call_budget=release_plan.MAX_CALLS), typed, kind, comparables)
+        return release_plan.plan_release(Qloo(call_budget=release_plan.MAX_CALLS), typed, kind, comparables,
+                                         region=region, home=home, goal=goal)
     except QlooError as err:
         log.warning("release plan failed: %s", err)
         raise HTTPException(*qloo_failure(err)) from err

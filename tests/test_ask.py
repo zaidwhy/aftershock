@@ -132,7 +132,7 @@ def test_country_with_no_forecast_says_so(ctx):
 def test_unparseable_question_fails_gracefully(ctx):
     r = ask.answer("who will win the world cup", ctx)
     assert r["intent"] == "none" and r["answer"]["kind"] == "help"
-    assert "Where will Squid Game go next?" in r["answer"]["message"]
+    assert "Where will Fukrey Returns go next?" in r["answer"]["message"]  # this week's lead breakout, not a fixed title
     assert r["links"][0] == {"label": "Plan a launch", "href": "#/plan"} and r["steps"][0]["ok"] is False
     assert ask.answer("   ", ctx)["answer"]["kind"] == "help"
 

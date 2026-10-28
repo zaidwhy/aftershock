@@ -110,7 +110,7 @@ export function renderHome(root, isCurrent, followId = null) {
     const tiles = [
       gc ? [p(gc.not_placed + gc.not_in_qloo), `of an AI's ${whole(n)} launch names Qloo could not back`] : null,
       auc != null ? [plain2(auc), `forecast AUC on ${whole(sc.backtest.spillover.test_breakouts)} breakouts it never saw`] : null,
-      locked ? [whole(locked), "forecasts locked in public before the outcome"] : null,
+      locked ? [whole(locked), "forecasts locked before Netflix published the outcome; graded from 15 Nov"] : null,
     ].filter(Boolean);
     stats.replaceChildren(...tiles.map(([v, k]) => h("div", { class: "stat" }, h("span", { class: "stat-v" }, v), h("span", { class: "stat-k" }, k))));
     stats.hidden = !tiles.length;
@@ -119,7 +119,7 @@ export function renderHome(root, isCurrent, followId = null) {
       proofBar.replaceChildren(
         h("p", { class: "qp-lede" }, `We asked an AI alone for launch partners for 81 title-country audiences and checked all ${whole(n)} names against Qloo.`),
         h("div", { class: "qp-bar", role: "img", "aria-label": `${p(gc.confirmed)} backed by Qloo, ${p(gc.not_placed)} known but not linked to that audience, ${p(gc.not_in_qloo)} not in Qloo` },
-          seg("qp-ok", gc.confirmed, "backed by Qloo for that audience"), seg("qp-np", gc.not_placed, "Qloo knows them, not for these viewers"), seg("qp-nq", gc.not_in_qloo, "no Qloo data")),
+          seg("qp-ok", gc.confirmed, "backed by Qloo for that audience"), seg("qp-np", gc.not_placed, "Qloo knows them, not for these viewers"), seg("qp-nq", gc.not_in_qloo, "not in Qloo's data yet")),
         h("p", { class: "qp-foot" }, "So in AFTERSHOCK the AI only proposes. Qloo decides what goes in the plan, supplies its own picks for the audience, and maps the cities. ",
           h("a", { href: "#/scorecard" }, "Every test, misses included")));
       proofBar.hidden = false;
@@ -573,7 +573,7 @@ export function renderScorecard(root, isCurrent) {
           h("p", null, `${sc.top_pick.top_pick_hits} of ${sc.top_pick.breakouts} top picks have already charted. If the forecasts were exactly calibrated we would expect ${sc.top_pick.expected_hits}. Always picking the country that charts the most titles (${sc.top_pick.baseline_country}) gets ${sc.top_pick.baseline_hits}.`),
           h("p", { class: "muted" }, "Defined before the data existed, reported every week whichever way it goes. The 4-week result is the real grade. ",
             h("a", { href: "https://github.com/zaidwhy/aftershock/blob/main/docs/EARLY_GRADE.md", rel: "noopener" }, "How it is defined"))) : null,
-        h("div", { class: "grid2" }, spillSection, rippleSection),
+        h("div", { class: "grid2" }, spillSection, rp.locked ? rippleSection : null),
         h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),
           sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? "Ledger hash chain verified." : "Ledger hash chain FAILED verification."),
           sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null)),

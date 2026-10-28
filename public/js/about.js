@@ -37,7 +37,7 @@ export function renderAbout(root) {
     h("section", { "aria-labelledby": "next-h" },
       h("h2", { id: "next-h" }, "Where it goes next"),
       h("div", { class: "cards" },
-        card("More charts, with permission", h("p", null, "Netflix is the only streamer that publishes per-country weekly charts with years of history, which is what let us backtest on 829 past breakouts. Any other chart (music, video, other streamers) plugs into the same forecast once its terms allow it; we do not scrape.")),
+        card("More charts, with permission", h("p", null, "Netflix is the only streamer we found that publishes per-country weekly charts with years of history, which is what let us backtest on 829 past breakouts. Any other chart (music, video, other streamers) plugs into the same forecast once its terms allow it; we do not scrape.")),
         card("Demand where there is no release", h("p", null, "With streaming availability data, the agent could flag countries where Qloo sees the audience but the title is not offered, so a distributor can license it there. Not built yet.")),
         card("Live shows and comedy", h("p", null, "Plan a release already handles comedians and touring artists. Next: ticketing and event calendars, so a promoter sees open dates beside the audience.")),
         card("What it will not claim", h("p", null, "No customers, pilots or prices yet. Forecasts are probabilities, graded in public on the ledger from 15 November.")))),

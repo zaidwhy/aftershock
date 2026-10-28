@@ -82,7 +82,10 @@ export async function lookupTitle(name) {
 }
 
 /** A release planned live by Qloo (GET /api/release): about 40 Qloo calls, so it takes a while. */
-export async function planRelease(name, kind, like) {
+export async function planRelease(name, kind, like, { region = "any", home = "", goal = "" } = {}) {
   if (cfg.mock) throw new Error("Planning a release needs the live API; mock mode has none.");
-  return getJson(`${cfg.apiBase}/release?name=${encodeURIComponent(name.slice(0, 120))}&kind=${encodeURIComponent(kind)}&like=${encodeURIComponent((like || "").slice(0, 600))}`);
+  const q = new URLSearchParams({ name: name.slice(0, 120), kind, like: (like || "").slice(0, 600), region });
+  if (home) q.set("home", home);
+  if (goal) q.set("goal", goal);
+  return getJson(`${cfg.apiBase}/release?${q}`);
 }

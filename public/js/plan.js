@@ -171,7 +171,7 @@ function briefCard(st, made, row) {
       h("h3", { id: "bs-avoid" }, "What not to claim"), h("ul", null, b.avoid.map((a) => h("li", null, a)))),
     h("section", { "aria-labelledby": "bs-evidence" },
       h("h3", { id: "bs-evidence" }, "Evidence"), h("ul", null, b.evidence.map((a) => h("li", null, a)))),
-    h("p", { class: "plan-note" }, "Forecast locked in the public ", h("a", { href: "#/ledger" }, "ledger"), " before the outcome exists. ",
+    h("p", { class: "plan-note" }, "Forecast locked in the public ", h("a", { href: "#/ledger" }, "ledger"), " before Netflix published the outcome. ",
       h("a", { href: `#/storm/${encodeURIComponent(st.id)}` }, "Full forecast for this title"), "."));
 }
 

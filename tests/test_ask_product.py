@@ -134,7 +134,7 @@ def test_where_should_i_release_x_links_plan_a_release_with_the_name(ctx):
     for q, name in (("Where should I release Midnight Drive?", "Midnight%20Drive"),
                     ("I'm launching Midnight Drive", "Midnight%20Drive"),
                     ("plan a release for The Long Walk", "The%20Long%20Walk"),
-                    ("where will my album Blue Hour work", "Blue%20Hour")):
+                    ("where will my album Blue Hour work", "Blue%20Hour&kind=music")):
         r = ask.answer(q, ctx)
         assert r["intent"] == "release_plan" and "Qloo ranks countries and cities by audience affinity" in r["answer"]["message"]
         assert r["links"][0]["href"] == f"#/release?name={name}", q
@@ -154,7 +154,7 @@ def test_a_release_title_is_url_encoded(ctx):
 
 def test_a_song_by_an_artist_in_a_release_question_is_not_a_song_check(ctx):
     r = ask.answer("where should I release my album Blue Hour by Nova in Brazil", ctx)
-    assert r["intent"] == "release_plan" and r["links"][0]["href"] == "#/release?name=Blue%20Hour%20by%20Nova"
+    assert r["intent"] == "release_plan" and r["links"][0]["href"] == "#/release?name=Blue%20Hour%20by%20Nova&kind=music"
 
 
 def test_who_is_this_for_names_the_buyers_and_admits_there_are_no_customers(ctx):
@@ -200,3 +200,144 @@ def test_product_answers_keep_the_response_shape(ctx):
         assert set(r) == {"intent", "steps", "answer", "links"}
         assert all(set(link) == {"label", "href"} for link in r["links"])
         assert all(set(s) >= {"tool", "input", "ok", "note", "n"} for s in r["steps"])
+
+
+# ---- round 2: the cold review's findings -------------------------------------------------------------------------
+
+from test_ask import storm  # noqa: E402
+
+
+@pytest.mark.parametrize("question,href", [
+    ("where should Kevin Hart tour", "#/release?name=Kevin%20Hart&kind=music"),
+    ("Where should Dua Lipa tour in 2027?", "#/release?name=Dua%20Lipa&kind=music"),
+    ("plan a tour for Dua Lipa", "#/release?name=Dua%20Lipa&kind=music"),
+    ("plan a tour for Kevin Hart the comedian", "#/release?name=Kevin%20Hart&kind=comedy"),
+    ("where should comedian Kevin Hart tour", "#/release?name=Kevin%20Hart&kind=comedy"),
+])
+def test_a_touring_question_goes_to_plan_a_release_not_the_site_tour(ctx, question, href):
+    r = ask.answer(question, ctx)
+    assert r["intent"] == "release_plan" and r["links"][0]["href"] == href
+
+
+def test_a_music_default_for_a_tour_is_admitted_as_a_guess(ctx):
+    guess = ask.answer("where should Dua Lipa tour", ctx)["answer"]["message"]
+    assert "That is a guess, so switch the type on that page" in guess
+    assert "guess" not in ask.answer("where should comedian Kevin Hart tour", ctx)["answer"]["message"]
+
+
+@pytest.mark.parametrize("question", ["give me a guided tour", "take the tour", "Replay the tour", "show me around", "how do I use this"])
+def test_only_the_guided_tour_phrases_map_to_the_site_tour(ctx, question):
+    r = ask.answer(question, ctx)
+    assert r["intent"] == "tour" and "tour button replays the guided tour" in r["answer"]["message"]
+
+
+def test_the_word_tour_alone_is_not_the_site_tour(ctx):
+    assert ask.answer("tour", ctx)["intent"] != "tour"
+    assert ask.answer("which countries should my band tour", ctx)["intent"] == "release_plan"
+
+
+@pytest.mark.parametrize("question,name", [("Cedric the Entertainer", "Cedric the Entertainer"), ("Kevin Hart", "Kevin Hart"),
+                                           ("who is Kevin Hart", "Kevin Hart"), ("Who's dua lipa?", "dua lipa")])
+def test_a_bare_name_is_not_called_a_netflix_title(ctx, question, name):
+    r = ask.answer(question, ctx)
+    msg = r["answer"]["message"]
+    assert r["intent"] == "unknown_name" and f"AFTERSHOCK tracks Netflix breakouts, and {name} is not one this week" in msg
+    assert "has not been in Netflix's Top 10" not in msg and "switch the type on that page" in msg
+    assert r["links"][-1]["href"] == f"#/release?name={ask.quote(name, safe='')}&kind=music"
+    assert [s["ok"] for s in r["steps"]] == [True, False]
+
+
+@pytest.mark.parametrize("question", ["privacy", "Is my data stored?", "what data do you use", "legal", "terms of use"])
+def test_a_data_question_gets_the_privacy_answer(ctx, question):
+    r = ask.answer(question, ctx)
+    msg = r["answer"]["message"]
+    assert r["intent"] == "data_privacy" and r["links"] == [{"label": "About and data sources", "href": "#/about"}]
+    assert "no accounts" in msg and "no cookies for tracking" in msg and "used only in memory" in msg and "not stored" in msg
+    for source in ("Netflix's public Top 10 lists", "Qloo audience data", "Wikimedia pageviews", "MusicBrainz", "OpenStreetMap"):
+        assert source in msg
+
+
+def test_the_ip_claim_matches_the_limiter():
+    """The privacy answer says the address lives only in memory; the limiter must be a plain in-process dict of timestamps."""
+    from collections import deque
+
+    from aftershock import api
+
+    class Req:
+        headers = {"x-forwarded-for": "203.0.113.9"}
+        client = None
+
+    api._ripple_hits.clear()
+    api._take_live_slot(Req())
+    (hits,) = api._ripple_hits.values()
+    assert isinstance(hits, deque) and all(isinstance(t, float) for t in hits)
+    api._ripple_hits.clear()
+
+
+@pytest.mark.parametrize("question", ["best pizza in new york", "what is the best pizza in new york", "how tall is the eiffel tower",
+                                      "cheap flights to paris next week"])
+def test_off_topic_questions_get_generic_help_not_a_title_answer(ctx, question):
+    r = ask.answer(question, ctx)
+    msg = r["answer"]["message"]
+    assert r["intent"] == "none" and "I can answer questions like" in msg
+    assert "has not been in Netflix's Top 10" not in msg
+
+
+@pytest.mark.parametrize("question", ["what does Qloo think Fukrey Returns fans in Bangladesh like",
+                                      "what does Qloo think Fukrey fans in Bangladesh like",
+                                      "What do Fukrey Returns fans in Bangladesh listen to",
+                                      "what do fukrey returns viewers from Bangladesh watch"])
+def test_what_do_fans_in_a_country_like_returns_the_kit_rows(ctx, question):
+    r = ask.answer(question, ctx)
+    a = r["answer"]
+    assert r["intent"] == "launch_kit" and a["kind"] == "kit" and (a["title"], a["country"]) == ("Fukrey Returns", "Bangladesh")
+    assert a["picks"]["artist"] == ["Mika Singh"] and a["places"] == ["Dhaka", "Sylhet"]
+
+
+def test_fans_in_a_country_outside_the_kit_says_so(ctx):
+    a = ask.answer("what do Fukrey Returns fans in Brazil like", ctx)["answer"]
+    assert a["kind"] == "storm" and "no launch kit for Brazil" in a["note"]
+
+
+@pytest.fixture
+def primate_ctx(ctx):
+    return {**ctx, "storms": ctx["storms"] + [storm("Primate", ("JM", "Jamaica"))]}
+
+
+@pytest.mark.parametrize("question", ["why is Primate breaking in Jamaica", "Why will Primate go to Jamaica?"])
+def test_why_a_title_in_its_origin_country_says_it_broke_out_there(primate_ctx, question):
+    r = ask.answer(question, primate_ctx)
+    msg = r["answer"]["message"]
+    assert r["intent"] == "why_forecast" and "Primate broke out in Jamaica" in msg
+    assert "not in the forecast" not in msg and "Bangladesh (38%), Nepal (20%), Sri Lanka (10%)" in msg
+
+
+@pytest.mark.parametrize("alias,code,name", [("Trinidad", "TT", "Trinidad and Tobago"), ("Korea", "KR", "South Korea"),
+                                             ("UAE", "AE", "United Arab Emirates"), ("Emirates", "AE", "United Arab Emirates"),
+                                             ("Holland", "NL", "Netherlands"), ("Czechia", "CZ", "Czechia"), ("Czech", "CZ", "Czechia")])
+def test_country_aliases_resolve_even_when_no_forecast_names_the_country(alias, code, name):
+    found = ask.find_country(ask._norm(f"what is heading to {alias}"), f"what is heading to {alias}", {"BR": "Brazil"})
+    assert found[:2] == (code, name)
+
+
+def test_aliases_resolve_to_the_forecasts_own_spelling(ctx):
+    names = {"KR": "South Korea", "NL": "Netherlands"}
+    assert ask.find_country("korea", "Korea", names)[:2] == ("KR", "South Korea")
+    a = ask.answer("what is heading to Holland", ctx)["answer"]
+    assert a["kind"] == "country" and a["code"] == "NL"
+
+
+def test_fallback_examples_use_this_weeks_recent_breakout_not_a_catalog_title(ctx):
+    old = storm("Old Catalog Show")
+    old["summary"]["meta"]["year"] = 2009
+    old["summary"]["top_forecast"] = {**old["summary"]["top_forecast"], "probability": 0.9}
+    new = storm("Fresh Release")
+    new["summary"]["top_forecast"] = {**new["summary"]["top_forecast"], "probability": 0.3}
+    msg = ask.answer("zzz yyy xxx www vvv uuu ttt sss", {**ctx, "storms": [old, new]})["answer"]["message"]
+    assert 'Where will Fresh Release go next?' in msg and "What should Fresh Release pair with in Bangladesh?" in msg
+    assert "Old Catalog Show" not in msg and "Squid Game" not in msg
+
+
+def test_fallback_examples_keep_a_static_fallback_only_when_there_are_no_storms(ctx):
+    msg = ask.answer("zzz yyy xxx www vvv uuu ttt sss", {**ctx, "storms": []})["answer"]["message"]
+    assert "Where will Squid Game go next?" in msg and "Nightwatch: Demons Are Forever pair with in Sweden" in msg

@@ -23,7 +23,7 @@ EXAMPLE_ACT = "Worked example for a real act, not an announced tour or release."
 SHOWCASES = [
     {"slug": "zakir-khan", "name": "Zakir Khan", "kind": "comedy", "like": [], "headline": "A comedian's tour",
      "note": EXAMPLE_ACT},
-    {"slug": "anuv-jain", "name": "Anuv Jain", "kind": "music", "like": [], "headline": "An artist's tour or album",
+    {"slug": "kevin-hart", "name": "Kevin Hart", "kind": "comedy", "like": [], "headline": "A comedian's tour",
      "note": EXAMPLE_ACT},
     {"slug": "korean-survival-thriller", "name": "An upcoming Korean survival thriller", "kind": "series",
      "like": ["Squid Game", "Alice in Borderland"], "headline": "An unreleased series, planned from comparables",
@@ -46,14 +46,16 @@ def main():
     client = Qloo(call_budget=len(SHOWCASES) * MAX_CALLS)
     index = []
     for spec in SHOWCASES:
-        plan = plan_release(client, spec["name"], spec["kind"], spec["like"])
+        plan = plan_release(client, spec["name"], spec["kind"], spec["like"], region=spec.get("region", "any"),
+                            home=spec.get("home"), goal=spec.get("goal"))
         plan |= {"example": True, "example_note": spec["note"], "headline": spec["headline"], "like": spec["like"]}
         _write(OUT / f"{spec['slug']}.json", plan)
         top = [{"name": c["name"], "places": (c.get("hotspots") or {}).get("places", []), "score": c["score"]}
                for c in plan.get("countries", [])[:3]]
         index.append({"slug": spec["slug"], "name": spec["name"], "kind": spec["kind"], "headline": spec["headline"],
                       "example_note": spec["note"], "resolved": plan["resolved"],
-                      "signal_used": (plan.get("signal") or {}).get("used"), "top_countries": top})
+                      "signal_used": (plan.get("signal") or {}).get("used"), "region": plan["region"], "home": plan["home"],
+                      "goal": plan["goal"], "top_countries": top})
         print(f"{spec['slug']}: resolved={plan['resolved']} signal={(plan.get('signal') or {}).get('used')} "
               f"calls={plan['calls']} top={[(t['name'], t['places'], t['score']) for t in top]}")
     _write(OUT / "index.json", {"examples": index})

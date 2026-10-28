@@ -36,7 +36,7 @@ export function renderAgent(root, isCurrent) {
           s.detail ? h("p", { class: "agent-detail" }, s.detail) : null,
           s.not_found?.length ? h("details", { class: "row-details" }, h("summary", null, `Not found in Qloo (${s.not_found.length})`),
             h("p", null, s.not_found.join("; "))) : null)))),
-      h("p", { class: "muted" }, "Every forecast is locked in the public ledger before its outcome exists; ",
+      h("p", { class: "muted" }, "Every forecast is locked in the public ledger before Netflix publishes the week it is graded on; ",
         h("a", { href: "#/ledger" }, "open the ledger"), " or see how past forecasts scored on the ", h("a", { href: "#/scorecard" }, "scorecard"), "."));
   }).catch((err) => { if (isCurrent()) box.replaceChildren(errorBox("the agent's last run", err)); });
 }

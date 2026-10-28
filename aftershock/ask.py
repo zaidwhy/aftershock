@@ -24,7 +24,13 @@ KIT_DOMAINS = ("artist", "tv_show", "movie", "brand")
 ALIASES = {"usa": "US", "united states": "US", "america": "US", "uk": "GB", "britain": "GB",
            "great britain": "GB", "england": "GB", "united kingdom": "GB", "uae": "AE", "emirates": "AE",
            "korea": "KR", "russia": "RU", "turkey": "TR", "czech republic": "CZ", "holland": "NL",
-           "ivory coast": "CI", "vietnam": "VN", "burma": "MM"}
+           "ivory coast": "CI", "vietnam": "VN", "burma": "MM", "trinidad": "TT", "trinidad and tobago": "TT",
+           "czechia": "CZ", "czech": "CZ", "south korea": "KR", "the netherlands": "NL", "u s": "US", "u s a": "US",
+           "u k": "GB", "u a e": "AE"}
+# Names for aliased countries that no storm or forecast mentions yet, so "Trinidad" still resolves to a country.
+ALIAS_NAMES = {"US": "United States", "GB": "United Kingdom", "AE": "United Arab Emirates", "KR": "South Korea",
+               "RU": "Russia", "TR": "Turkey", "CZ": "Czechia", "NL": "Netherlands", "CI": "Ivory Coast",
+               "VN": "Vietnam", "MM": "Myanmar", "TT": "Trinidad and Tobago"}
 STOP = set("""what should which where will would did does do is are has have can could go goes going next chart charts
 charted spread spreads spreading head heading headed to in for with pair partner partners brand brands artist artists
 launch kit market markets forecast forecasts a an of and find me tell about how far it by on at get reach reaches this
@@ -37,7 +43,7 @@ KIT_WORDS = re.compile(r"\b(pair|pairs|pairing|partner|partners|brand|brands|art
 SONGS_FOR = re.compile(r"\b(?:songs?|artists?|music|musicians?|tracks?|soundtrack|singers?)\s+(?:for|to go with|to pair with"
                        r"|that fit|that suit|that match|suited to)\s+(?P<show>.+)$", re.I)
 SONG_CHECK = re.compile(r"^(?:(?:check|score|compare|try|test|rate)\s+)?(?P<songs>.+?\s+by\s+.+?)\s+(?:for|in)\s+(?P<show>.+)$", re.I)
-HELP = ("I can answer: where a title goes next (\"Where will Squid Game go next?\"), what to pair a breakout with in a "
+HELP = ("I can answer: where a title goes next (\"Where will {title_example} go next?\"), what to pair a breakout with in a "
         "country (\"What should {kit_example} pair with in {kit_country}?\"), artists for a show (\"Find songs for Stranger "
         "Things\"), whether a song reaches a new crowd (\"Running Up That Hill by Kate Bush for Stranger Things\"), and "
         "what is heading to a country (\"What is heading to Brazil?\").")
@@ -57,9 +63,10 @@ DID_YOU_MEAN_CUTOFF = 0.8
 
 def _help(ctx):
     """HELP with this week's featured plan as the pairing example, so the example is always a real breakout."""
-    featured = ctx.get("featured") or {}
-    return HELP.format(kit_example=featured.get("title") or "Nightwatch: Demons Are Forever",
-                       kit_country=featured.get("country") or "Sweden")
+    lead = _lead(ctx)
+    return HELP.format(title_example=lead[0] if lead else "Squid Game",
+                       kit_example=lead[0] if lead else "Nightwatch: Demons Are Forever",
+                       kit_country=lead[1] if lead else "Sweden")
 
 
 def _breakout_links(ctx):
@@ -117,8 +124,9 @@ def find_country(norm_text, raw_text, names):
     A bare upper-case ISO code counts only after 'in' or 'to' ("in BR")."""
     table = {_norm(n): (c, n) for c, n in names.items()}
     for alias, code in ALIASES.items():
-        if code in names and _norm(alias) not in table:
-            table[_norm(alias)] = (code, names[code])
+        name = names.get(code) or ALIAS_NAMES.get(code)
+        if name and _norm(alias) not in table:
+            table[_norm(alias)] = (code, name)
     for key in sorted(table, key=len, reverse=True):
         if _has(norm_text, key):
             return table[key][0], table[key][1], key
@@ -500,7 +508,7 @@ FEATURES = {
         "For artists", "#/artists",
         "For artists shows an artist where their next fans are this week.",
         ("for artists", "for artist", "artists page", "artist page"),
-        "musician musicians singer singers band bands", "artist artists fans next week"),
+        "musician musicians singer singers band bands", "artist artists fans"),
     "scorecard": _feature(
         "Scorecard", "#/scorecard",
         "The Scorecard has every test of the forecast, including the misses.",
@@ -539,10 +547,10 @@ FEATURES = {
         "The tour button replays the guided tour. Otherwise: the map on the home page shows this week's breakouts, "
         "Plan a launch builds the launch for one of them, and Plan a release does the same for your own film, "
         "series, album or comedy special.",
-        ("a tour", "the tour", "take a tour", "guided tour", "show me around", "walk me through", "walkthrough",
-         "tutorial", "onboarding", "how do i use", "how to use", "getting started", "get started", "how do i start",
-         "how does this work", "replay the tour", "start the tour", "tour button"),
-        "tour tutorial walkthrough onboarding guide guided", "start use started begin help how", "Home page map",
+        ("guided tour", "take the tour", "take a tour", "give me a tour", "show me around", "walk me through",
+         "walkthrough", "tutorial", "onboarding", "how do i use", "how to use", "getting started", "get started",
+         "how do i start", "how does this work", "replay the tour", "start the tour", "tour button"),
+        "tutorial walkthrough onboarding guided", "start use started begin help how guide", "Home page map",
         more=("plan", "release")),
     "qloo": _feature(
         "Qloo's role", "#/plan",
@@ -572,7 +580,7 @@ FEATURES = {
         "", "", "Home page map", more=("plan", "release")),
 }
 QWORDS = {"what", "whats", "explain", "describe", "how", "tell", "give", "show", "define", "can", "does", "do", "is",
-          "are", "walk", "take", "start", "replay", "open", "who", "wat", "wht"}
+          "are", "walk", "take", "start", "replay", "open", "who", "wat", "wht", "where"}
 SMALL_GREET = set("""hi hello hey hiya yo howdy sup thanks thank thx ty cheers bye goodbye cool nice great awesome ok okay
 morning afternoon evening gm wow greetings""".split())
 SMALL_FILL = set("""there you so much a lot very again aftershock bot assistant good all everyone team friend man dude
@@ -592,7 +600,20 @@ RELEASE_TRIGGERS = [
     re.compile(rf"\b{ASKING}\b.*\b(?:my|our)\s+(?:\w+\s+){{0,2}}{KIND_NOUN}\b", re.I),  # "where will my comedy special work"
     re.compile(rf"\b{RELEASE_VERB}\s+(?:my|our)\b", re.I),  # "release my film"
     re.compile(r"^plan\s+(?:a\s+)?release\b", re.I),
+    # touring: "where should Kevin Hart tour", "plan a tour for X"; "tour" alone never means the site tour
+    re.compile(r"\bwhere\b.*\b(?:tour|touring)\b", re.I),
+    re.compile(r"^plan\s+(?:a\s+|the\s+|his\s+|her\s+|their\s+)?(?:world\s+|national\s+)?tour\b", re.I),
+    re.compile(r"\b(?:which|what)\s+(?:countries|country|cities|city|markets?)\b.*\b(?:tour|touring)\b", re.I),
 ]
+# The name a touring question is about, as typed; it is None for "I" and "we", which are handled by the generic path.
+TOUR_SUBJECT = [
+    re.compile(r"^wh\w+\s+(?:should|can|could|would|will|does|do|is)\s+(?P<n>.+?)\s+(?:go\s+on\s+tour|go\s+touring|tour|touring)\b", re.I),
+    re.compile(r"^plan\s+(?:a\s+|the\s+)?(?:world\s+|national\s+)?tour\s+(?:for|of|with)\s+(?P<n>.+)$", re.I),
+    re.compile(r"^(?:where\s+(?:will|would|should)\s+)?(?P<n>[^,]+?)'s\s+(?:world\s+)?tour\b", re.I),
+]
+COMEDY_WORDS = re.compile(r"\b(?:comedian|comedians|comic|comics|comedy|stand\s?-?\s?up|standup)\b", re.I)
+MUSIC_WORDS = re.compile(r"\b(?:album|song|single|ep|music|band|concert|singer|rapper|tour|touring|gig|festival)\b", re.I)
+FIRST_PERSON_WORDS = {"i", "we", "you", "it", "they"}
 RELEASE_LEAD = set("for of my our called named titled new upcoming this next in to".split())
 RELEASE_ARTICLES = {"a", "an", "the"}
 RELEASE_TRAIL = set("""work works land lands resonate sell play perform soon abroad worldwide globally anywhere well there
@@ -626,14 +647,61 @@ WHO_FOR = re.compile(r"\b(?:who\s+(?:is|s|are)\s+(?:this|it|aftershock|the\s+(?:
 WHO_MADE = re.compile(r"\b(?:who\s+(?:made|built|created|developed|designed|wrote|is\s+behind|s\s+behind|runs|owns)"
                       r"|who\s+are\s+(?:the\s+team|the\s+people|the\s+builders|the\s+makers)|about\s+(?:us|the\s+team)"
                       r"|the\s+team|(?:team|about)\s+page|the\s+builders)\b")
+DATA_Q = re.compile(r"\b(?:privacy|cookies?|gdpr|tracking|personal\s+(?:data|information)|terms|legal|data\s+protection"
+                    r"|(?:is|are)\s+my\s+(?:data|info|information|ip)|what\s+data|which\s+data|data\s+(?:do|does)\s+(?:you|it|this)"
+                    r"|data\s+(?:sources?|stored|collected|retention|policy)|(?:do|does)\s+(?:you|it|this)\s+(?:store|track|collect|keep|save|log)"
+                    r"|where\s+does\s+(?:the|your)\s+data\s+come|(?:what|where)\s+(?:is|are)\s+(?:the\s+)?(?:data\s+)?sources?)\b")
+DATA_ANSWER = ("AFTERSHOCK has no accounts, collects no personal data and sets no cookies for tracking. Your IP address is used only in "
+               "memory, to count recent live Qloo calls for the per-visitor rate limit, and it is not stored. The data comes from "
+               "Netflix's public Top 10 lists, Qloo audience data (anonymous groups, cached privately and never published), "
+               "Wikimedia pageviews, MusicBrainz and OpenStreetMap.")
+WHO_IS = re.compile(r"^who\s+(?:is|was|are)\s+(?P<x>.+)$|^who'?s\s+(?P<y>.+)$", re.I)
+FORECAST_CUE = re.compile(r"\b(?:forecast|forecasts|breakout|breakouts|chart|charts|charting|charted|spread|spreads|spreading"
+                          r"|reach|reaches|travel|travels|launch|plan|pair|partner|partners|heading|countries|country|how\s+will|how\s+far)\b")
+NAME_CONNECTORS = {"the", "of", "and", "de", "la", "le", "von", "van", "da", "di", "jr", "mc", "el"}
+FANS_LIKE = re.compile(r"(?P<x>[^?]+?)\s+(?:fans|viewers|watchers|audience)\s+(?:in|from)\s+(?P<y>.+?)\s+"
+                       r"(?:like|love|enjoy|prefer|want|buy|read|follow|stream|watch|listen|eat|play|are\s+into)\b", re.I)
+FANS_LEAD = set("""what does do did would qloo think thinks say says know show tell me which are is so how about fans of
+the data""".split()) - {"the"}
 # The vocabulary that misspellings of feature words are repaired against ("scorcard", "ledgr").
 REPAIR_WORDS = {w for f in FEATURES.values() for w in (*f["keys"], *(w for a in f["aliases"] for w in a.split())) if len(w) >= 5}
 
 
-def _examples(ctx):
+RECENT_YEARS = 5  # a breakout released longer ago than this is catalog, not a good first example
+
+
+def _lead(ctx):
+    """(title, country) of this week's example breakout, or None when ctx has no storms. The featured plan when there is
+    one; else the likeliest storm released within RECENT_YEARS of the data week (catalog titles come last), with the
+    country of its first launch-kit row or its top forecast."""
     featured = ctx.get("featured") or {}
-    return ["Where will Squid Game go next?",
-            f"What should {featured.get('title') or 'Nightwatch: Demons Are Forever'} pair with in {featured.get('country') or 'Sweden'}?",
+    if featured.get("title") and featured.get("country"):
+        return featured["title"], featured["country"]
+    storms = ctx.get("storms") or []
+    if not storms:
+        return None
+    try:
+        data_year = int(str(ctx.get("week"))[:4])
+    except (TypeError, ValueError):
+        data_year = None
+
+    def recent(item):
+        year = (item["summary"].get("meta") or {}).get("year")
+        return data_year is not None and isinstance(year, int) and data_year - year <= RECENT_YEARS
+
+    ranked = sorted(storms, key=lambda i: -((i["summary"].get("top_forecast") or {}).get("probability") or 0))
+    item = next((i for i in ranked if recent(i)), ranked[0])
+    forecasts = item["detail"]["spillover"]["forecasts"]
+    names = {f["code"]: f["name"] for f in forecasts}
+    row = next((r for r in item["detail"].get("launch_kit", []) if r.get("kit") and any(r["kit"].values()) and r["code"] in names), None)
+    country = names[row["code"]] if row else (forecasts[0]["name"] if forecasts else None)
+    return (item["summary"]["title"], country) if country else None
+
+
+def _examples(ctx):
+    title, country = _lead(ctx) or ("", "Sweden")
+    return ["Where will " + (title or "Squid Game") + " go next?",
+            "What should " + (title or "Nightwatch: Demons Are Forever") + " pair with in " + country + "?",
             "What does Plan a launch do?"]
 
 
@@ -715,8 +783,23 @@ def _feature_answer(ctx, key, steps):
     return _guide(intent, steps, msg, links, feature=key)
 
 
+ROLE = r"(?:comedian|comic|singer|rapper|band|artist|musician|dj)"
+
+
+def _strip_role(name):
+    """"comedian Kevin Hart" and "Kevin Hart the comedian" name Kevin Hart; the role is read for the type instead."""
+    out = re.sub(rf"^(?:the\s+)?{ROLE}\s+", "", name, flags=re.I)
+    out = re.sub(rf"\s+(?:the\s+)?{ROLE}$", "", out, flags=re.I)
+    return out.strip() or name
+
+
 def _release_name(raw, names):
     """The title a release question names, as typed, or None when it only names a kind of thing ("my comedy special")."""
+    # a touring question names the touring act ("where should Kevin Hart tour"), not what follows the verb
+    subject = next((m for m in (pat.search(raw) for pat in TOUR_SUBJECT) if m), None)
+    who = subject.group("n").strip(" ,;:\"'") if subject else ""
+    if who and (_norm(who).split() or ["i"])[0] not in FIRST_PERSON_WORDS | {"my", "our"} and len(who) <= MAX_FIELD and len(who.split()) <= 6:
+        return _strip_role(who)
     # "my" / "our" first: "release my album X" names X, and "my comedy tour" must not take "tour" as the verb
     m = re.search(r"\b(?:my|our)\s+(?P<n>.+)$", raw, re.I)
     popped = bool(m)
@@ -744,15 +827,33 @@ def _release_name(raw, names):
     return name
 
 
+def _release_kind(raw):
+    """(kind, guessed) for the release page's type switch. Comedy words say comedy; music words (tour, album...) say music;
+    a touring question with only "tour" to go on is a guess for music, and the answer admits it. (None, False) when
+    nothing says."""
+    if COMEDY_WORDS.search(raw):
+        return "comedy", False
+    if MUSIC_WORDS.search(raw):
+        only_tour = not re.search(r"\b(?:album|song|single|ep|music|band|singer|rapper|concert)\b", raw, re.I)
+        return "music", only_tour
+    return None, False
+
+
 def _release_answer(raw, steps, names):
     name = _release_name(raw, names)
+    kind, guessed = _release_kind(raw.replace(name, " ")) if name else (None, False)  # a word in the title is not a signal
     about = f" about {name}" if name else ""
     steps.append(_step("understand", name, True, f"Release question{about}: this is not a Netflix breakout, so it goes to Plan a release."))
     steps.append(_step("route", "#/release", True, "Plan a release asks Qloo which countries and cities have the most audience affinity."))
-    href = "#/release" + (f"?name={quote(name, safe='')}" if name else "")
+    href = "#/release" + (f"?name={quote(name, safe='')}" if name else "") + (f"&kind={kind}" if kind else "")
+    if not name:
+        fill = " Type your title on that page."
+    elif kind:
+        fill = f" I have filled in {name} as {kind}." + (" That is a guess, so switch the type on that page if it is a comedy act, film or series." if guessed else "")
+    else:
+        fill = f" I have filled in {name} for you."
     msg = ("Plan a release is built for this. For an upcoming film, series, album, comedy special or tour, Qloo ranks countries "
-           "and cities by audience affinity, then suggests venues and local taste."
-           + (f" I have filled in {name} for you." if name else " Type your title on that page."))
+           "and cities by audience affinity, then suggests venues and local taste." + fill)
     return _guide("release_plan", steps, msg, [{"label": "Plan a release" + (f" for {name}" if name else ""), "href": href}],
                   name=name)
 
@@ -811,16 +912,17 @@ def _why_rows(found, names):
         summ, detail = found["storm"]["summary"], found["storm"]["detail"]
         rows = [{"code": f["code"], "name": f["name"], "probability": f["probability"], "why": f.get("why")}
                 for f in detail["spillover"]["forecasts"]]
-        return summ["title"], _origins(summ), summ["origin_week"], detail["spillover"].get("horizon_weeks"), rows, summ["id"]
+        return (summ["title"], _origins(summ), summ["origin_week"], detail["spillover"].get("horizon_weeks"), rows, summ["id"],
+                {c["code"] for c in summ["origin_countries"]})
     rec = found["history"]
     fc = rec.get("forecast") or {}
     origin = ", ".join(names.get(c, c) for c in fc.get("origin", [])) or "one country"
     rows = [{"code": n["code"], "name": n["name"], "probability": n["probability"], "why": n.get("why")} for n in fc.get("next", [])]
-    return rec["title"], origin, rec["first_week"], fc.get("horizon_weeks"), rows, rec.get("storm_id")
+    return rec["title"], origin, rec["first_week"], fc.get("horizon_weeks"), rows, rec.get("storm_id"), set(fc.get("origin", []))
 
 
 def _why_title_answer(found, country, steps, names):
-    title, origin, week, horizon, rows, sid = _why_rows(found, names)
+    title, origin, week, horizon, rows, sid, origin_codes = _why_rows(found, names)
     focus = f" in {country[1]}" if country else ""
     steps.append(_step("understand", title, True, f"The reason behind the forecast for {title}{focus}."))
     links = [{"label": f"Full forecast for {title}", "href": f"#/storm/{sid}"}] if sid else []
@@ -830,6 +932,12 @@ def _why_title_answer(found, country, steps, names):
         return _guide("why_forecast", steps, f"There is no forecast for {title}, so there is nothing to explain: {reason}", links)
     row = next((r for r in rows if r["code"] == country[0]), None) if country else rows[0]
     others = ", ".join(f"{r['name']} ({pct(r['probability'])})" for r in rows[:3])
+    if country and country[0] in origin_codes:
+        # where it broke out is not a destination; saying "not in the forecast" would contradict the title's own origin
+        steps.append(_step("forecast", title, True, f"{title} broke out in {country[1]}; read its next countries."))
+        msg = (f"{title} broke out in {country[1]} (week of {week}), so that is where it started, not where it is heading. "
+               f"Its likeliest next countries are {others}.")
+        return _guide("why_forecast", steps, msg, links)
     if row is None:
         steps.append(_step("forecast", title, False, f"{country[1]} is not in the forecast for {title}."))
         msg = (f"{country[1]} is not in the forecast for {title}. It started in {origin} ({week}); the countries it is forecast to reach "
@@ -898,12 +1006,83 @@ def _why_question(ctx, raw, names):
     return _why_title_answer(found, country, [], names) if found else None
 
 
+def _name_like(raw, lower_ok):
+    """True when the text reads as a person's or act's name: up to four words, no question or forecast words, and
+    capitalised ("Cedric the Entertainer") unless it is one word or the asker wrote "who is ..." (lower_ok)."""
+    words = raw.split()
+    if not words or len(words) > 4 or not re.search(r"[A-Za-z]", raw):
+        return False
+    for w in words:
+        n = _norm(w)
+        if not n or (n in INTENT and n not in NAME_CONNECTORS) or any(ch.isdigit() for ch in n):
+            return False
+    if len(words) == 1 or lower_ok:
+        return True
+    return all(w[0].isupper() or _norm(w) in NAME_CONNECTORS for w in words)
+
+
+def _unknown_name_answer(ctx, name, steps):
+    """A name that is not a Netflix breakout or a Top 10 title: say what AFTERSHOCK tracks and offer Plan a release for it.
+    Qloo is not called here; whether the name is a comedian, band or film is not knowable offline, so the type is a
+    music default the answer says can be switched."""
+    steps.append(_step("understand", name, True, f"{name} looks like a name, not a title AFTERSHOCK tracks."))
+    steps.append(_step("title_lookup", name, False, f"{name} is not in Netflix's Top 10 in any country since {_since(ctx)}."))
+    mean = _did_you_mean(ctx, name)
+    if mean:
+        steps.append(_step("did_you_mean", name, True, f"The closest title is {mean['title']}."))
+    msg = (f"AFTERSHOCK tracks Netflix breakouts, and {name} is not one this week."
+           + (f" Did you mean {mean['title']}?" if mean else "")
+           + f" If {name} has a film, series, album, comedy special or tour coming up, Plan a release ranks countries and cities by "
+             "Qloo audience affinity. I have filled in the name as music; switch the type on that page if it is a comedy act, film or series.")
+    links = [{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []
+    links.append({"label": f"Plan a release for {name}", "href": f"#/release?name={quote(name, safe='')}&kind=music"})
+    return _guide("unknown_name", steps, msg, links, name=name, did_you_mean=mean)
+
+
+def _storm_loose(storms, x):
+    """The storm whose title is x, x plus a subtitle ("Nightwatch" for "Nightwatch: Demons Are Forever"), or x without
+    a leading "the"; None otherwise."""
+    wanted = {x, x[4:] if x.startswith("the ") else x}
+    hits = [i for i in storms
+            if any(_norm(i["summary"]["title"]) == w or _norm(i["summary"]["title"].split(":")[0]) == w
+                   or _norm(i["summary"]["title"]).startswith(w + " ") for w in wanted if w)]
+    return _best_storm(hits) if hits else None
+
+
+def _fans_like(ctx, raw, names):
+    """"What does Qloo think Nightwatch fans in Sweden like": the launch kit for that title and country, or None when the
+    question does not name both a known title and a country."""
+    m = FANS_LIKE.search(raw)
+    country = find_country(_norm(m.group("y")), m.group("y"), names) if m else None
+    if not country:
+        return None
+    toks = _norm(m.group("x")).split()
+    while toks and toks[0] in FANS_LEAD:
+        toks.pop(0)
+    x = " ".join(toks)
+    storm = _storm_loose(ctx["storms"], x) if x else None
+    found = {"storm": storm, "history": None, "phrase": x} if storm else (resolve_title(ctx, x, None) if x else None)
+    if not found:
+        return None
+    title = _title_of(found)
+    steps = [_step("understand", None, True, f"What {title} fans in {country[1]} like: the Qloo launch kit.")]
+    if found["storm"]:
+        return _done("launch_kit", steps, _kit_answer(found["storm"], country, steps))
+    steps.append(_step("title_lookup", title, True, f"Found {title} in Netflix's Top 10 history, but it is not one of this week's breakouts."))
+    note = f"{title} is not one of this week's breakouts, so there is no launch kit for it. Here is its Netflix history and forecast instead."
+    return _done("launch_kit", steps, _title_answer(found["history"], country, steps, note=note))
+
+
 def _meta(ctx, raw, norm):
     """The questions about the product rather than about one title; a done answer or None."""
     talk = _small_talk(norm)
     if talk:
         return _guide("small_talk", [_step("understand", None, True, "Small talk.")], talk + _try(ctx) + ".",
                       [_flink("plan"), _flink("release")])
+    if DATA_Q.search(norm) and len(norm.split()) <= 9 and not _storm_by_title(ctx["storms"], norm, [])[0]:
+        steps = [_step("understand", None, True, "Question about data and privacy."),
+                 _step("data_policy", None, True, "Read the data and privacy summary.")]
+        return _guide("data_privacy", steps, DATA_ANSWER, [{"label": "About and data sources", "href": "#/about"}])
     if WHO_FOR.search(norm):
         steps = [_step("understand", None, True, "Who AFTERSHOCK is for.")]
         msg = ("It is built for labels' catalogue teams, artist teams and managers, promoters and brand marketers who need to know "
@@ -965,6 +1144,12 @@ def answer(question, ctx):
         return _fail("none", "I could not read that question. Titles are matched as Netflix lists them, in "
                              "the Latin alphabet: try \"Jab We Met\". " + _help(ctx))
     steps = []
+    names = country_names(ctx["storms"], ctx.get("titles"))
+
+    # "what do Nightwatch fans in Sweden like" is a launch-kit question even though it names no pairing word
+    fans = _fans_like(ctx, raw, names)
+    if fans:
+        return fans
 
     # questions about the product itself come first: "what is the ledger" or "where should I release my album"
     # must not be read as a title, and a release question can contain "X by Y" that looks like a song check
@@ -981,7 +1166,6 @@ def answer(question, ctx):
                 return _fail("song_check", f"A song check takes 1 to {MAX_SONGS} songs, each name up to {MAX_FIELD} characters.")
             return _done("song_check", steps, _song_check(ctx, songs, show, steps))
 
-    names = country_names(ctx["storms"], ctx.get("titles"))
     storm_hit, storm_phrase = _storm_by_title(ctx["storms"], norm, [])
     country = find_country(_mask(norm, storm_phrase) if storm_hit else norm, raw, names)
     wants_kit = bool(KIT_WORDS.search(norm))
@@ -1038,6 +1222,12 @@ def answer(question, ctx):
     #    title, then point at this week's breakouts
     m = WHERE_NEXT.match(raw)
     name = m.group("title").strip(" \"'") if m and len(m.group("title")) <= MAX_FIELD else _unknown_title(raw, country)
+    # Only text that asks for a forecast is treated as a Netflix title. A bare name ("Kevin Hart") gets the AFTERSHOCK-tracks
+    # answer; anything else ("best pizza in new york") falls through to the generic help.
+    if name and not (m or country or FORECAST_CUE.search(norm)):
+        if _name_like(name, lower_ok=False):
+            return _unknown_name_answer(ctx, name, steps)
+        name = None
     if name:
         since = ctx["titles"][0]["since"][:4] if ctx.get("titles") else "2024"
         steps.append(_step("understand", None, True, f"Next countries for {name}."))
@@ -1056,6 +1246,11 @@ def answer(question, ctx):
         done = _done("forecast", steps, {"kind": "help", "message": msg, "did_you_mean": mean})
         done["links"] = ([{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []) + links
         return done
+
+    who = WHO_IS.match(raw)
+    who_name = ((who.group("x") or who.group("y")).strip(" \"'") if who else "")
+    if who_name and _name_like(who_name, lower_ok=True):
+        return _unknown_name_answer(ctx, who_name, steps)
 
     # g) fallback: never a dead end; offer the closest feature, or an overview, with example questions
     return _closest_answer(ctx, norm, _closest(_repair(norm), strong_only=False), steps)

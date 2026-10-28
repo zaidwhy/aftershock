@@ -175,9 +175,13 @@ export async function mountGlobe(host, week, onPick) {
     g.polygonCapColor(g.polygonCapColor()).pointColor(g.pointColor());
   }
 
-  function fly(code, altitude) {
+  function fly(code, altitude, besidePanel = false) {
     const p = at(code);
-    if (p) g.pointOfView({ ...p, altitude }, reduced() ? 0 : 1100);
+    if (!p) return;
+    // The panel covers the right third of the globe on wide screens; turning the camera east of the target slides
+    // the target left, clear of it. The turn scales with altitude, since a closer camera sweeps fewer degrees.
+    const shift = besidePanel && innerWidth >= 980 ? altitude * 16 : 0;
+    g.pointOfView({ lat: p.lat, lng: p.lng + shift, altitude }, reduced() ? 0 : 1100);
   }
 
   async function focus(stormId) {
@@ -197,7 +201,7 @@ export async function mountGlobe(host, week, onPick) {
     controls.autoRotate = false;
     repaint();
     const hasCells = focusId && detail && (detail.launch_kit || []).some((k) => k.code === code && k.hotspots?.cells?.length);
-    fly(code, hasCells ? 0.55 : 1.4);
+    fly(code, hasCells ? 0.55 : 1.4, true);
     onPick?.({ code, storm: focusId ? detail : null });
   }
 

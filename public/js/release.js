@@ -1,24 +1,62 @@
 // Plan a release: for a film, series, album or comedy special that has not launched yet (or a tour), Qloo ranks
 // countries by audience affinity, maps the cities, suggests venues and names the local taste to pair with. Worked
 // examples load from static files; a typed title runs live (GET /api/release) and shows every Qloo call it made.
-import { h, add, loading } from "./dom.js";
+import { h, s, add, loading } from "./dom.js";
 import { getReleaseExamples, getReleaseExample, planRelease } from "./api.js";
 import { hotspotMap } from "./charts.js";
 import { failBox } from "./audience.js";
+import { ISO } from "./iso.js";
 
-const KINDS = [["film", "Film"], ["series", "Series"], ["music", "Album, song or music tour"], ["comedy", "Comedy special or tour"]];
+const WORLD_SRC = "vendor/countries-110m.json";
+const KINDS = [["film", "Film"], ["series", "Series"], ["music", "Music"], ["comedy", "Comedy"]];
+const GOALS = [["tour", "Tour or live shows"], ["premiere", "Premiere or screenings"], ["digital", "Streaming or digital only"]];
+const REGIONS = [["any", "Anywhere (24 big markets)"], ["asia", "Asia"], ["europe", "Europe"], ["americas", "The Americas"], ["middle-east-africa", "Middle East and Africa"], ["oceania", "Oceania"]];
 const TASTE = [["tv_show", "Shows"], ["movie", "Films"], ["artist", "Artists"]];
 const VENUE_WORD = { comedy: "Comedy clubs", music: "Live music venues", film: "Cinemas", series: "Cinemas for premieres" };
+// Tiers are relative to the best country checked: Qloo affinity is a relative score, so the map says how close each
+// country comes to the leader, not an absolute demand level.
+const TIERS = [[0.97, "Top", "t1"], [0.9, "Strong", "t2"], [0.8, "Good", "t3"], [0, "Lower", "t4"]];
 const two = (x) => (x == null ? "n/a" : x.toFixed(2));
+const defaultGoal = (kind) => (kind === "music" || kind === "comedy" ? "tour" : "premiere");
+const tierOf = (score, top) => TIERS.find(([cut]) => score / top >= cut);
 
-function countryRows(plan) {
-  const top = Math.max(0.01, ...plan.countries.map((c) => c.score));
-  return h("ol", { class: "rel-countries" }, plan.countries.map((c, i) => h("li", { class: i < 3 ? "rel-top" : null },
-    h("span", { class: "rel-rank mono" }, String(i + 1).padStart(2, "0")),
-    h("span", { class: "rel-c" }, h("strong", null, c.name),
-      h("span", { class: "rel-cities" }, (c.hotspots?.places?.length ? c.hotspots.places : (c.cities || []).map((x) => x.name)).slice(0, 3).join(", "))),
-    h("span", { class: "rel-score" }, h("span", { class: "mono" }, two(c.score)),
-      h("span", { class: "pbar", role: "img", "aria-label": `Qloo affinity ${two(c.score)}` }, h("span", { style: `width:${(c.score / top) * 100}%` }))))));
+/** Every checked country's score: the API's `scores` when present, else the ranked top countries. */
+const allScores = (plan) => (plan.scores?.length ? plan.scores : plan.countries.map((c) => ({ code: c.code, name: c.name, score: c.score })));
+
+let world = null;
+const loadWorld = () => (world ||= fetch(WORLD_SRC).then((r) => { if (!r.ok) throw new Error("atlas"); return r.json(); }));
+
+/** The world coloured by tier, with the ranked list beside it (the shape a content analyst expects). */
+function worldHeat(plan) {
+  const scores = allScores(plan);
+  const top = Math.max(0.01, ...scores.map((x) => x.score));
+  const byNum = new Map(scores.map((x) => [ISO[x.code]?.[0], x]));
+  const mapBox = h("div", { class: "wh-map" });
+  const list = h("ol", { class: "wh-list" }, scores.slice(0, 12).map((x, i) => {
+    const [, label, cls] = tierOf(x.score, top);
+    return h("li", null, h("span", { class: "wh-n mono" }, i + 1), h("span", { class: "wh-code mono" }, x.code),
+      h("span", { class: "wh-name" }, x.name), h("span", { class: "wh-v mono" }, two(x.score)), h("span", { class: `wh-tier ${cls}` }, label));
+  }));
+  const legend = h("div", { class: "wh-legend" }, TIERS.map(([cut, label, cls]) => h("span", { class: `wh-key ${cls}` }, label, h("small", null, cut ? ` ${Math.round(cut * 100)}%+ of the leader` : ""))),
+    h("span", { class: "wh-key t0" }, "Not checked"));
+  loadWorld().then((w) => {
+    if (!window.d3 || !window.topojson) return;
+    const { d3, topojson } = window;
+    const feats = topojson.feature(w, w.objects.countries).features.filter((f) => f.id !== "010");
+    const W = 720, H = 360;
+    const proj = d3.geoNaturalEarth1().fitSize([W, H], { type: "FeatureCollection", features: feats });
+    const path = d3.geoPath(proj);
+    const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "wh-svg", role: "img", "aria-label": `World map: ${scores.length} countries checked, coloured by Qloo affinity relative to ${scores[0]?.name}.` },
+      feats.map((f) => {
+        const x = byNum.get(Number(f.id));
+        const cls = x ? tierOf(x.score, top)[2] : "t0";
+        return s("path", { d: path(f), class: `wh-c ${cls}` }, x ? s("title", null, `${x.name}: Qloo affinity ${two(x.score)}`) : null);
+      }));
+    mapBox.append(svg);
+  }).catch(() => mapBox.append(h("p", { class: "muted" }, "The world map did not load; the ranking beside it is complete.")));
+  return h("div", { class: "wh card" },
+    h("div", { class: "wh-head" }, h("h3", null, "Global heatmap"), h("span", { class: "gp-label mono qloo-mark" }, `Qloo affinity, ${scores.length} countries checked`)),
+    h("div", { class: "wh-body" }, list, mapBox), legend);
 }
 
 function cityMaps(plan) {
@@ -26,18 +64,21 @@ function cityMaps(plan) {
   if (!withCells.length) return null;
   const grid = h("div", { class: "rel-maps" });
   for (const c of withCells) {
-    const fig = h("figure", { class: "card rel-map" }, h("figcaption", null, h("span", { class: "gp-label mono qloo-mark" }, "Qloo heatmap"), h("strong", null, c.name),
-      c.hotspots.places?.length ? h("span", { class: "muted" }, ` - ${c.hotspots.places.join(", ")}`) : null));
+    const cities = c.cities || [];
+    const fig = h("figure", { class: "card rel-map" }, h("figcaption", null, h("span", { class: "gp-label mono qloo-mark" }, "Qloo heatmap"), h("strong", null, c.name)));
     grid.append(fig);
     const pc = c.hotspots.place_cells || [];
     const places = (c.hotspots.places || []).slice(0, pc.length).map((name, i) => ({ name, cell: pc[i] }));
     hotspotMap(c.code, c.hotspots.cells, { places, width: 320, height: 220, label: `Where the audience lives in ${c.name}` })
-      .then((svg) => { if (svg) fig.append(svg); }).catch(() => {});
+      .then((svg) => { if (svg) fig.insertBefore(svg, fig.children[1] || null); }).catch(() => {});
+    if (cities.length) fig.append(h("ol", { class: "rel-city-proof" }, cities.map((x) => h("li", null, h("strong", null, x.name),
+      h("span", { class: "mono muted" }, x.density != null ? ` heatmap ${x.density.toFixed(1)}` : "", x.affinity != null ? `, affinity ${two(x.affinity)}` : "")))));
   }
   return grid;
 }
 
 function venues(plan) {
+  if (plan.goal === "digital") return h("p", { class: "muted" }, "A streaming or digital launch needs no venues, so the plan skipped those calls.");
   const groups = (plan.venues || []).filter((g) => g.venues?.length);
   if (!groups.length) return h("p", { class: "muted" }, "Qloo returned no tagged venues near the top cities for this kind of release.");
   return h("div", { class: "cards cards-3" }, groups.map((g) => h("div", { class: "card" },
@@ -52,6 +93,26 @@ function taste(plan) {
     h("dl", { class: "rel-taste" }, TASTE.filter(([k]) => t[k]?.length).flatMap(([k, label]) => [h("dt", { class: "mono" }, label), h("dd", null, t[k].join(", "))])))));
 }
 
+/** How each number was made, in the order the agent made it, so a reader can check the ranking instead of trusting it. */
+function proof(plan) {
+  const scores = allScores(plan);
+  const [a, b] = scores;
+  const sig = plan.signal?.entities || [];
+  const lead = plan.countries[0];
+  const items = [
+    h("li", null, h("strong", null, "Who the audience is. "), plan.signal?.used === "comparables"
+      ? `Qloo has no entry for "${plan.name}" yet, so the audience is the people who love ${sig.map((e) => e.name).join(" and ")}.`
+      : `Qloo's entry for ${sig[0]?.name} is the audience: everyone whose taste Qloo links to it.`),
+    h("li", null, h("strong", null, "Which countries. "), `One Qloo call per country (${scores.length} in all) scores how closely that country's places match this audience. `,
+      a && b ? `${a.name} leads at ${two(a.score)}, ${b.name} follows at ${two(b.score)}; the full list is on the map above.` : ""),
+    lead?.cities?.length ? h("li", null, h("strong", null, "Which cities. "), "Inside each top country, Qloo's heatmap says where this audience concentrates. ",
+      `In ${lead.name}, ${lead.cities[0].name} holds the densest part of it (heatmap ${lead.cities[0].density?.toFixed(1) ?? "n/a"}${lead.cities[1] ? `, against ${lead.cities[1].density?.toFixed(1) ?? "n/a"} for ${lead.cities[1].name}` : ""}).`) : null,
+    h("li", null, h("strong", null, "What to pair it with. "), "The shows, films and artists are Qloo's own picks for this audience in that country, not an AI's guesses."),
+    h("li", null, h("strong", null, "What it cost. "), `${plan.calls} Qloo calls, every one listed below with its parameters, so anyone with a Qloo key can rerun them.`),
+  ];
+  return h("section", { class: "rel-sec rel-proof card card-qloo" }, h("h2", null, "Why this ranking"), h("ol", null, items));
+}
+
 function callTrail(plan) {
   return h("details", { class: "rel-trail" },
     h("summary", null, `Every Qloo call this plan made (${plan.calls})`),
@@ -62,58 +123,123 @@ function callTrail(plan) {
         st.varies ? h("span", { class: "muted rel-varies" }, ` varies: ${Object.entries(st.varies).map(([k, v]) => `${k} over ${Array.isArray(v) ? v.length : 1}`).join(", ")}`) : null)))));
 }
 
-function result(plan) {
-  if (!plan.resolved) return h("div", { class: "status" }, h("p", null, plan.message || "Qloo did not recognise that title or any comparable."));
+const WEEK = 7 * 864e5;
+// Standard lead times for each kind of launch; they come from how releases are usually run, not from Qloo.
+const SCHEDULES = {
+  tour: [[-12, "Hold venues in the top cities", "venues"], [-8, "Announce in the top three countries with a local partner from the taste list", "taste"], [-4, "Push a clip or single to listeners in the top cities", "cities"], [-1, "Local press and creator posts in each top city", "cities"], [0, "Opening night", null], [1, "Check which city sold best; add a date there", null]],
+  premiere: [[-8, "Book premiere screenings in the top cities", "venues"], [-6, "Trailer aimed at the top three countries", "countries"], [-3, "Co-promotion with a show or artist from the taste list", "taste"], [-1, "Creator screenings and press in the top cities", "cities"], [0, "Release", null], [2, "Watch the next countries on the globe for a breakout", null]],
+  digital: [[-6, "Reach out to partners from the taste list in the top countries", "taste"], [-3, "Trailer and paid social aimed at the top cities", "cities"], [-1, "Localised artwork and subtitles for the top three countries", "countries"], [0, "Release", null], [1, "Watch the next countries on the globe for a breakout", null]],
+};
+function schedule(plan, dateStr) {
+  const d = dateStr ? new Date(`${dateStr}-01T00:00:00`) : null;
+  if (!d || Number.isNaN(d.getTime())) return null;
+  const goal = plan.goal || defaultGoal(plan.kind);
+  const fmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const where = { venues: (plan.venues || []).map((v) => v.city).slice(0, 3).join(", "), cities: plan.countries.flatMap((c) => (c.cities || []).slice(0, 1).map((x) => x.name)).slice(0, 3).join(", "),
+    countries: plan.countries.slice(0, 3).map((c) => c.name).join(", "), taste: (plan.local_taste?.[0]?.artist || plan.local_taste?.[0]?.tv_show || []).slice(0, 2).join(", ") };
+  return h("section", { class: "rel-sec" }, h("h2", null, "A schedule for your date"),
+    h("p", { class: "muted" }, "Built from your release month and standard lead times. The places come from the plan above; the timing is a template, not Qloo data."),
+    h("ol", { class: "rel-sched" }, SCHEDULES[goal].map(([w, what, key]) => h("li", { class: w === 0 ? "now" : null },
+      h("span", { class: "mono rel-when" }, w === 0 ? fmt(d) : `${w > 0 ? "+" : ""}${w} wk, ${fmt(d.getTime() + w * WEEK)}`),
+      h("span", null, what, key && where[key] ? h("span", { class: "muted" }, `: ${where[key]}`) : null)))));
+}
+
+function refusal(plan, focusLike) {
+  return h("div", { class: "status rel-refuse" }, h("p", null, h("strong", null, plan.reason || plan.message || "Qloo did not recognise that title or any comparable.")),
+    plan.try?.length ? h("ul", null, plan.try.map((t) => h("li", null, t))) : null,
+    h("button", { type: "button", class: "btn", onclick: focusLike }, "Add similar titles"));
+}
+
+function result(plan, opts) {
+  if (!plan.resolved) return refusal(plan, opts.focusLike);
+  const sig = plan.signal?.entities || [];
   const used = plan.signal?.used === "comparables"
-    ? `Qloo does not know "${plan.name}" yet, so the audience comes from its comparables: ${plan.signal.entities.map((e) => e.name).join(", ")}.`
-    : `Qloo knows ${plan.signal.entities[0]?.name}, so its own audience is the signal.`;
-  const lead = plan.countries[0];
+    ? `Qloo does not know "${plan.name}" yet, so the audience comes from its comparables: ${sig.map((e) => e.name).join(", ")}.`
+    : `Qloo knows ${sig[0]?.name}, so its own audience is the signal.`;
+  const scope = [plan.region && plan.region !== "any" ? REGIONS.find(([v]) => v === plan.region)?.[1] : null, plan.home ? `${ISO[plan.home]?.[1] || plan.home} left out as the home market` : null].filter(Boolean);
   return h("div", { class: "rel-result" },
     plan.example ? h("p", { class: "tag tag-quiet rel-example" }, plan.example_note) : null,
-    h("p", { class: "rel-signal" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo signal"), used),
-    lead ? h("p", { class: "rel-lead" }, h("span", { class: "gp-num" }, lead.name), lead.summary ? h("span", { class: "muted" }, ` ${lead.summary}`) : null) : null,
-    h("section", { class: "rel-sec" }, h("h2", null, "Where the audience is"),
-      h("p", { class: "muted" }, `Qloo ranked ${plan.countries_checked} countries by how closely their places match this audience (Qloo affinity, 0 to 1, relative, not a forecast).`),
-      countryRows(plan), cityMaps(plan)),
+    h("p", { class: "rel-signal" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo signal"), used, scope.length ? h("span", { class: "muted" }, ` Scope: ${scope.join("; ")}.`) : null),
+    plan.countries[0] ? h("p", { class: "rel-lead" }, h("span", { class: "gp-num" }, plan.countries[0].name), plan.countries[0].summary ? h("span", { class: "muted" }, ` ${plan.countries[0].summary}`) : null) : null,
+    h("section", { class: "rel-sec" }, h("h2", null, "Where the audience is"), worldHeat(plan), cityMaps(plan)),
     h("section", { class: "rel-sec" }, h("h2", null, VENUE_WORD[plan.kind] || "Venues"), venues(plan)),
     h("section", { class: "rel-sec" }, h("h2", null, "Local taste to pair it with"),
       h("p", { class: "muted" }, "Qloo's picks for this audience in each top country: collaborators, co-promotions and playlist or watch-party tie-ins."), taste(plan)),
+    schedule(plan, opts.date),
+    proof(plan),
     callTrail(plan),
     plan.caveats?.length ? h("section", { class: "rel-sec" }, h("h3", null, "What this can't tell you"), h("ul", { class: "muted" }, plan.caveats.map((c) => h("li", null, c)))) : null);
 }
 
+/** A row of toggle buttons that behaves like a radio group. */
+function segmented(label, options, value, onChange) {
+  const btns = options.map(([v, l]) => h("button", { type: "button", class: "seg-b", "aria-pressed": String(v === value), "data-v": v,
+    onclick: () => { btns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === v))); onChange(v); } }, l));
+  return h("div", { class: "seg", role: "group", "aria-label": label }, btns);
+}
+
 export function renderRelease(root, isCurrent, preset = {}) {
   document.title = "Plan a release - AFTERSHOCK";
+  const state = { kind: KINDS.some(([k]) => k === preset.kind) ? preset.kind : "film", goal: GOALS.some(([g]) => g === preset.goal) ? preset.goal : null };
   const out = h("div", { "aria-live": "polite" });
-  const name = h("input", { id: "rel-name", type: "text", maxlength: "120", required: true, value: preset.name || "", placeholder: "Title, artist or comedian" });
-  const kind = h("select", { id: "rel-kind" }, KINDS.map(([v, l]) => h("option", { value: v, selected: v === (preset.kind || "film") }, l)));
-  const like = h("input", { id: "rel-like", type: "text", maxlength: "600", placeholder: "Optional: up to 3 comparables, comma separated" });
+  const name = h("input", { id: "rel-name", type: "text", maxlength: "120", required: true, value: preset.name || "", placeholder: "e.g. Squid Game, BTS, Zakir Khan, or your own title" });
+  const like = h("input", { id: "rel-like", type: "text", maxlength: "600", value: preset.like || "", placeholder: "e.g. Squid Game, Alice in Borderland" });
+  const region = h("select", { id: "rel-region", "aria-label": "Region" }, REGIONS.map(([v, l]) => h("option", { value: v }, l)));
+  const home = h("select", { id: "rel-home", "aria-label": "Home market to leave out" }, h("option", { value: "" }, "Home market: none, include every market"),
+    Object.entries(ISO).sort((a, b) => a[1][1].localeCompare(b[1][1])).map(([code, [, n]]) => h("option", { value: code }, `Leave out ${n}`)));
+  const date = h("input", { id: "rel-date", type: "month", "aria-label": "Release month" });
   const go = h("button", { type: "submit", class: "btn btn-primary" }, "Plan it with Qloo");
   const examples = h("div", { class: "rel-examples" });
+  const goalBox = h("div", null);
+  const drawGoal = () => goalBox.replaceChildren(segmented("Goal", GOALS, state.goal || defaultGoal(state.kind), (v) => { state.goal = v; }));
+  drawGoal();
+  const focusLike = () => { like.focus(); like.scrollIntoView({ block: "center", behavior: "smooth" }); };
 
-  const show = (plan) => { out.replaceChildren(result(plan)); out.scrollIntoView({ block: "start", behavior: "smooth" }); };
+  const show = (plan) => { out.replaceChildren(result(plan, { date: date.value, focusLike })); out.scrollIntoView({ block: "start", behavior: "smooth" }); };
   const runLive = () => {
     const n = name.value.trim();
     if (!n) { name.focus(); return; }
     go.disabled = true;
-    out.replaceChildren(loading("Asking Qloo: 24 countries, the cities, venues and local taste. About 20 seconds.", true));
-    planRelease(n, kind.value, like.value).then((plan) => { if (isCurrent()) show(plan); })
+    const scope = region.value === "any" ? "24 countries" : `every country we check in ${REGIONS.find(([v]) => v === region.value)[1]}`;
+    const opts = { region: region.value, home: home.value, goal: state.goal || defaultGoal(state.kind) };
+    // The plan lives in the address, so a refresh or a shared link reruns the same plan (replaceState fires no hashchange).
+    const q = new URLSearchParams({ name: n, kind: state.kind, ...(like.value.trim() ? { like: like.value.trim() } : {}), ...opts, run: "1" });
+    if (!opts.home) q.delete("home");
+    history.replaceState(null, "", `#/release?${q}`);
+    const stages = ["Finding it in Qloo", `Scoring ${scope} for this audience`, "Reading Qloo's heatmap for the cities", opts.goal === "digital" ? "Skipping venues (digital launch)" : "Looking up venues", "Asking what this audience also loves"];
+    const list = h("ol", { class: "rel-stages" }, stages.map((st) => h("li", null, st)));
+    out.replaceChildren(h("div", { class: "status rel-running", role: "status" }, h("p", null, h("span", { class: "pulse", "aria-hidden": "true" }), "Asking Qloo. 10 to 30 seconds; the stages run in this order:"), list));
+    // The server answers once at the end, so this only paces the visible list; the order is the planner's real order.
+    let at = 0;
+    const tick = setInterval(() => { list.children[at]?.classList.add("done"); at += 1; if (at < stages.length) list.children[at].classList.add("now"); else clearInterval(tick); }, 3000);
+    list.children[0].classList.add("now");
+    planRelease(n, state.kind, like.value, opts)
+      .then((plan) => { if (isCurrent()) show(plan); })
       .catch((err) => { if (isCurrent()) out.replaceChildren(failBox(err, "the release planner")); })
-      .finally(() => { go.disabled = false; });
+      .finally(() => { clearInterval(tick); go.disabled = false; });
   };
+  const field = (n, label, hint, ...control) => h("div", { class: "rel-field" }, h("span", { class: "rel-step mono" }, n),
+    h("div", { class: "rel-field-body" }, h("p", { class: "rel-label" }, label), hint ? h("p", { class: "rel-hint" }, hint) : null, ...control));
 
   add(root,
     h("section", { class: "rel-hero" },
       h("p", { class: "eyebrow mono" }, "Plan a release"),
       h("h1", null, "Releasing something new? ", h("em", null, "Find its audience first.")),
-      h("p", { class: "lede" }, "A new film, series, album or comedy special, or a tour. Qloo's taste graph ranks countries and cities by how closely they match the audience, finds venues there, and names the local shows, films and artists to pair it with. If Qloo has never heard of your title, give it a few comparables."),
+      h("p", { class: "lede" }, "A film, series, album or comedy special, or a tour. Tell us what it is and what you want from it; Qloo's taste graph finds the countries and cities where its audience lives, the venues there, and the local shows, films and artists to pair it with."),
       h("form", { class: "rel-form card", onsubmit: (e) => { e.preventDefault(); runLive(); } },
-        h("label", { for: "rel-name" }, "What are you releasing?"), name,
-        h("label", { for: "rel-kind" }, "Kind"), kind,
-        h("label", { for: "rel-like" }, "Like (for something Qloo doesn't know yet)"), like,
+        field("01", "What are you releasing?", "A title, an artist or a comedian, as Netflix, Spotify or Wikipedia spells it.", name),
+        field("02", "What kind?", null, segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),
+        field("03", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),
+        field("04", "Where?", "Pick a region to look deeper there, and leave out your home market to see where to expand.", h("div", { class: "rel-two" }, region, home)),
+        field("05", "When?", "Optional. Your release month turns the plan into a schedule.", date),
+        field("06", "Similar titles or acts", "Needed if it is not out yet: two or three that share its audience.", like),
         go),
       h("p", { class: "rail-h mono" }, "Or open a worked example"), examples),
     out);
+
+  if (preset.region && REGIONS.some(([v]) => v === preset.region)) region.value = preset.region;
+  if (preset.home && ISO[preset.home]) home.value = preset.home;
+  if (preset.name && preset.run === "1") setTimeout(runLive, 0);
 
   getReleaseExamples().then((idx) => {
     if (!isCurrent()) return;
@@ -121,6 +247,6 @@ export function renderRelease(root, isCurrent, preset = {}) {
       out.replaceChildren(loading("this example"));
       getReleaseExample(x.slug).then((plan) => { if (isCurrent()) show(plan); }).catch((err) => out.replaceChildren(failBox(err, "the example")));
     } }, h("span", null, h("span", { class: "rc-t" }, x.name), h("span", { class: "rc-n mono" }, `${x.headline}: ${x.top_countries.map((c) => c.name).join(", ")}`)))));
-    if (!preset.name && idx.examples[0]) getReleaseExample(idx.examples[0].slug).then((plan) => { if (isCurrent()) out.replaceChildren(result(plan)); }).catch(() => {});
+    if (!preset.name && idx.examples[0]) getReleaseExample(idx.examples[0].slug).then((plan) => { if (isCurrent()) out.replaceChildren(result(plan, { date: "", focusLike })); }).catch(() => {});
   }).catch(() => { examples.replaceChildren(h("p", { class: "muted" }, "Worked examples are not available right now; type a title above.")); });
 }
