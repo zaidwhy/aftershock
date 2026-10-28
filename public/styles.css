@@ -239,6 +239,13 @@ dd { margin: 0; font-size: 1.1rem; }
 .kit-common { color: var(--ink-soft); opacity: 0.6; }
 .kit-spec { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 0 0 6px; }
 .kit-spec strong { color: var(--ink); font-weight: 600; }
+.plan { margin: 10px 0 4px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.plan h4 { font: 500 0.72rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 4px; }
+.plan-sum { font-size: 0.92rem; margin: 0 0 6px; }
+.plan-list { list-style: none; margin: 0; padding: 0; }
+.plan-list li { padding: 3px 0; font-size: 0.95rem; }
+.plan-dom { font: 400 0.72rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+.plan-both { font: 400 0.72rem var(--mono); color: var(--ink-soft); white-space: nowrap; }
 .kit-cap { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 4px 0 0; }
 
 /* ---- scorecard */

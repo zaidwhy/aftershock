@@ -242,6 +242,24 @@ function hotspotBlock(r) {
 
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 
+/** "AI plan, checked by Qloo": names an AI proposed that Qloo places with this audience, in Qloo's order, plus a
+ *  plain count of the rest. Nothing when the row has no plan (the weekly run had no AI key). */
+function planBlock(r) {
+  const plan = r.plan;
+  if (!plan) return null;
+  const { not_placed: np = 0, not_in_qloo: nq = 0 } = plan.dropped || {};
+  const yes = plan.confirmed || [];
+  const total = yes.length + np + nq;
+  if (!total) return null;
+  const groups = Object.keys(KIT_LABELS).map((d) => [d, yes.filter((c) => c.domain === d)]).filter(([, list]) => list.length);
+  return h("div", { class: "plan" },
+    h("h4", null, "AI plan, checked by Qloo"),
+    h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it does not link to these viewers here, ${nq} it does not know.`),
+    groups.length ? h("ul", { class: "plan-list" }, groups.map(([d, list]) => h("li", null,
+      h("span", { class: "plan-dom" }, KIT_LABELS[d]), " ",
+      list.flatMap((c, i) => [i ? ", " : null, c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null);
+}
+
 /** "Copy launch brief": clipboard write inside the click; if it is refused, show the text selected in a box. */
 function briefControl(st, rows) {
   const status = h("span", { class: "muted", role: "status" });
@@ -291,7 +309,7 @@ function kitSection(st) {
       h("h3", null, countryName(r.code)), specific(r),
       h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", { class: d === "brand" ? "kit-minor" : null },
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
-      hotspotBlock(r)))),
+      planBlock(r), hotspotBlock(r)))),
     rows.some((r) => r.hotspots?.cells?.length || r.hotspots?.places?.length)
       ? h("p", { class: "hs-credit" }, "Hotspots: Qloo heatmap; place names © OpenStreetMap contributors.") : null);
 }
