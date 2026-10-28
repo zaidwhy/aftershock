@@ -911,7 +911,7 @@ def _meta(ctx, raw, norm):
         return _guide("audience", steps, msg, [_flink("plan"), _flink("release")])
     if WHO_MADE.search(norm) or norm in ("about", "about aftershock team"):
         steps = [_step("understand", None, True, "Who made AFTERSHOCK.")]
-        return _guide("about", steps, "The team behind AFTERSHOCK is on the About page.", [{"label": "About the team", "href": "#/about"}])
+        return _guide("about", steps, "AFTERSHOCK is built by Team Solstine (Zaid Ali Syed, Hasnat, Shravni and Farhan) for the Qloo hackathon. Contact: sidzaid72@gmail.com. More on the About page.", [{"label": "About the team", "href": "#/about"}])
     names = country_names(ctx["storms"], ctx.get("titles"))
     key = _feature_for(ctx, _repair(norm), names)
     if key:

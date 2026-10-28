@@ -210,7 +210,7 @@ export function renderStorm(root, id, isCurrent) {
       mockNote(),
       h("section", { "aria-labelledby": "map-h" },
         h("h2", { id: "map-h" }, `Where it charts next (${st.spillover?.horizon_weeks ?? "?"} week horizon)`),
-        h("p", { class: "follow-link" }, h("a", { href: `#/?follow=${encodeURIComponent(st.id)}` }, "Follow it on the world map")),
+        h("p", { class: "follow-link" }, h("a", { href: `#/?follow=${encodeURIComponent(st.id)}` }, "Follow it on the globe")),
         mapBox,
         h("p", { class: "legend" }, h("span", { class: "key key-origin" }), "Origin countries (outlined)", h("span", { class: "key key-ramp" }), "Darker = higher probability"),
         fc.length ? forecastTable(fc) : h("p", { class: "status" }, "No forecast rows for this title.")),
