@@ -73,6 +73,12 @@ nav { display: flex; flex-wrap: wrap; gap: 4px 18px; }
 nav a { color: var(--ink); text-decoration: none; padding: 10px 0; min-height: 40px; display: inline-flex; align-items: center; border-bottom: 2px solid transparent; font-weight: 500; font-size: 0.95rem; }
 nav a:hover { border-bottom-color: var(--rule); }
 nav a[aria-current="page"] { border-bottom-color: var(--accent); }
+.nav-more { position: relative; }
+.nav-more summary { cursor: pointer; padding: 10px 0; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.95rem; border-bottom: 2px solid transparent; list-style: none; }
+.nav-more summary::-webkit-details-marker { display: none; }
+.nav-more summary::after { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+.nav-more.is-current summary { border-bottom-color: var(--accent); }
+.nav-more-list { position: absolute; right: 0; top: 100%; z-index: 20; display: flex; flex-direction: column; min-width: 170px; padding: 6px 14px; background: var(--paper); border: 1px solid var(--rule); }
 .site-foot { border-top: 1px solid var(--rule); padding: 18px 16px; color: var(--ink-soft); font-size: 0.85rem; max-width: 1080px; width: 100%; margin: 0 auto; }
 .site-foot p { margin: 0; }
 
@@ -208,7 +214,7 @@ dd { margin: 0; font-size: 1.1rem; }
   main { padding-top: 16px; }
   .site-head { padding: 10px 16px; }
   nav { gap: 0 6px; width: 100%; justify-content: space-between; }
-  nav a { font-size: 0.82rem; }
+  nav a, .nav-more summary { font-size: 0.82rem; }
   .storm-title { font-size: 1.45rem; }
 }
 

@@ -41,9 +41,12 @@ function route() {
   }
   document.querySelectorAll("nav [data-nav]").forEach((a) => {
     const key = a.dataset.nav;
-    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "plan" && hash.startsWith("#/plan/")) || (key === "scorecard" && hash === "#/ledger");
+    const on = (key === "home" && (hash === "#/" || hash === "#" || hash.startsWith("#/?") || hash.startsWith("#/storm/") || hash.startsWith("#/ripple/"))) || hash === `#/${key}` || (key === "plan" && hash.startsWith("#/plan/"));
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
+  // The secondary pages live under "More": close it after a pick and mark it when one of them is open.
+  const more = document.querySelector(".nav-more");
+  if (more) { more.open = false; more.classList.toggle("is-current", !!more.querySelector("[aria-current]")); }
   app.replaceChildren();
   view(app, isCurrent);
   const h1 = app.querySelector("h1");
