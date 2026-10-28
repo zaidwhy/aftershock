@@ -1,0 +1,529 @@
+{
+  "registered": "docs/EXPERIMENT_KITS.md",
+  "model": "gemini-3.5-flash",
+  "pairs": 81,
+  "complete_pairs": 81,
+  "scored_pairs": 81,
+  "title_specificity": {
+    "qloo": 0.617,
+    "llm": 0.812,
+    "mean_diff_qloo_minus_llm": -0.195,
+    "p_qloo_greater": 1.0,
+    "p_llm_greater": 9.999000099990002e-05,
+    "verdict": "LLM more title-specific"
+  },
+  "title_specificity_grounded_llm_only": {
+    "pairs": 51,
+    "qloo": 0.575,
+    "llm_grounded": 0.831,
+    "mean_diff": -0.257
+  },
+  "cross_title_distinctness": {
+    "qloo": 0.852,
+    "llm": 0.804,
+    "title_pairs": 62
+  },
+  "llm_grounding": {
+    "share_resolving_in_qloo": 0.662,
+    "picks_checked": 1620,
+    "distinct_searches": 1212
+  },
+  "generic_kits": {
+    "rule": "overlap with Qloo country-only kit >= 0.6",
+    "count": 33,
+    "of": 81
+  },
+  "calls": {
+    "qloo_live": 1198,
+    "llm_live": 1,
+    "llm_cached": 6
+  },
+  "per_pair": [
+    {
+      "storm": "a-long-goodbye",
+      "code": "TW",
+      "spec_qloo": 0.938,
+      "spec_llm": 0.636
+    },
+    {
+      "storm": "a-long-goodbye",
+      "code": "HK",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.938
+    },
+    {
+      "storm": "a-long-goodbye",
+      "code": "MY",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.715
+    },
+    {
+      "storm": "black-showman",
+      "code": "TW",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.865
+    },
+    {
+      "storm": "black-showman",
+      "code": "HK",
+      "spec_qloo": 0.25,
+      "spec_llm": 1.0
+    },
+    {
+      "storm": "black-showman",
+      "code": "MY",
+      "spec_qloo": 0.188,
+      "spec_llm": 0.972
+    },
+    {
+      "storm": "brooklyn",
+      "code": "LU",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.75
+    },
+    {
+      "storm": "brooklyn",
+      "code": "IS",
+      "spec_qloo": 0.865,
+      "spec_llm": 0.661
+    },
+    {
+      "storm": "brooklyn",
+      "code": "ZA",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.819
+    },
+    {
+      "storm": "cada-d-a-nace-un-listo",
+      "code": "UY",
+      "spec_qloo": 0.222,
+      "spec_llm": 0.625
+    },
+    {
+      "storm": "cada-d-a-nace-un-listo",
+      "code": "PT",
+      "spec_qloo": 0.222,
+      "spec_llm": 0.723
+    },
+    {
+      "storm": "cada-d-a-nace-un-listo",
+      "code": "AR",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.557
+    },
+    {
+      "storm": "evil-eye",
+      "code": "VN",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.847
+    },
+    {
+      "storm": "evil-eye",
+      "code": "PH",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.723
+    },
+    {
+      "storm": "evil-eye",
+      "code": "MV",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "extrawurst",
+      "code": "LU",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.661
+    },
+    {
+      "storm": "extrawurst",
+      "code": "CH",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.73
+    },
+    {
+      "storm": "extrawurst",
+      "code": "FR",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.715
+    },
+    {
+      "storm": "fukrey-returns",
+      "code": "BD",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.715
+    },
+    {
+      "storm": "fukrey-returns",
+      "code": "MV",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "fukrey-returns",
+      "code": "IN",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "hellraiser",
+      "code": "KE",
+      "spec_qloo": 0.938,
+      "spec_llm": 0.865
+    },
+    {
+      "storm": "hellraiser",
+      "code": "JM",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.944
+    },
+    {
+      "storm": "hellraiser",
+      "code": "BS",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.944
+    },
+    {
+      "storm": "hollywood-arts-hollywood-arts-season-1",
+      "code": "TT",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.938
+    },
+    {
+      "storm": "hollywood-arts-hollywood-arts-season-1",
+      "code": "DO",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.972
+    },
+    {
+      "storm": "hollywood-arts-hollywood-arts-season-1",
+      "code": "SI",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.972
+    },
+    {
+      "storm": "housefull",
+      "code": "NG",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.632
+    },
+    {
+      "storm": "housefull",
+      "code": "LK",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.771
+    },
+    {
+      "storm": "housefull",
+      "code": "VN",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.865
+    },
+    {
+      "storm": "lembayung",
+      "code": "VN",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.837
+    },
+    {
+      "storm": "lembayung",
+      "code": "PH",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.83
+    },
+    {
+      "storm": "lembayung",
+      "code": "MV",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "manok",
+      "code": "SG",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.758
+    },
+    {
+      "storm": "manok",
+      "code": "TW",
+      "spec_qloo": 0.222,
+      "spec_llm": 0.557
+    },
+    {
+      "storm": "manok",
+      "code": "MY",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.681
+    },
+    {
+      "storm": "marsupilami",
+      "code": "NC",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.972
+    },
+    {
+      "storm": "marsupilami",
+      "code": "RE",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.972
+    },
+    {
+      "storm": "marsupilami",
+      "code": "FR",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "michael-che-shot-in-minnesota",
+      "code": "NZ",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.854
+    },
+    {
+      "storm": "michael-che-shot-in-minnesota",
+      "code": "AU",
+      "spec_qloo": 0.0,
+      "spec_llm": 1.0
+    },
+    {
+      "storm": "michael-che-shot-in-minnesota",
+      "code": "IS",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.972
+    },
+    {
+      "storm": "mo-money",
+      "code": "JM",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.83
+    },
+    {
+      "storm": "mo-money",
+      "code": "KE",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.83
+    },
+    {
+      "storm": "mo-money",
+      "code": "DO",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.944
+    },
+    {
+      "storm": "money-trap-money-trap-the-karun-treasure",
+      "code": "BG",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.819
+    },
+    {
+      "storm": "money-trap-money-trap-the-karun-treasure",
+      "code": "MA",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.854
+    },
+    {
+      "storm": "money-trap-money-trap-the-karun-treasure",
+      "code": "SA",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.616
+    },
+    {
+      "storm": "money-trap",
+      "code": "BG",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "money-trap",
+      "code": "MA",
+      "spec_qloo": 1.0,
+      "spec_llm": 1.0
+    },
+    {
+      "storm": "money-trap",
+      "code": "SA",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.917
+    },
+    {
+      "storm": "mumun",
+      "code": "MY",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.854
+    },
+    {
+      "storm": "mumun",
+      "code": "SG",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.681
+    },
+    {
+      "storm": "mumun",
+      "code": "PH",
+      "spec_qloo": 0.893,
+      "spec_llm": 0.723
+    },
+    {
+      "storm": "nightwatch-demons-are-forever",
+      "code": "NO",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.695
+    },
+    {
+      "storm": "nightwatch-demons-are-forever",
+      "code": "SE",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.636
+    },
+    {
+      "storm": "nightwatch-demons-are-forever",
+      "code": "FI",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.778
+    },
+    {
+      "storm": "primate",
+      "code": "TT",
+      "spec_qloo": 0.188,
+      "spec_llm": 0.518
+    },
+    {
+      "storm": "primate",
+      "code": "BS",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.74
+    },
+    {
+      "storm": "primate",
+      "code": "DO",
+      "spec_qloo": 0.188,
+      "spec_llm": 0.695
+    },
+    {
+      "storm": "relatives",
+      "code": "HU",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.837
+    },
+    {
+      "storm": "relatives",
+      "code": "LT",
+      "spec_qloo": 0.91,
+      "spec_llm": 0.705
+    },
+    {
+      "storm": "relatives",
+      "code": "RO",
+      "spec_qloo": 0.893,
+      "spec_llm": 0.664
+    },
+    {
+      "storm": "terry-mcmillan-presents-preach-pray-love",
+      "code": "NZ",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.557
+    },
+    {
+      "storm": "terry-mcmillan-presents-preach-pray-love",
+      "code": "AU",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.812
+    },
+    {
+      "storm": "terry-mcmillan-presents-preach-pray-love",
+      "code": "IS",
+      "spec_qloo": 0.0,
+      "spec_llm": 0.705
+    },
+    {
+      "storm": "the-bachelor-the-bachelor-season-15",
+      "code": "HU",
+      "spec_qloo": 0.938,
+      "spec_llm": 1.0
+    },
+    {
+      "storm": "the-bachelor-the-bachelor-season-15",
+      "code": "LT",
+      "spec_qloo": 1.0,
+      "spec_llm": 1.0
+    },
+    {
+      "storm": "the-bachelor-the-bachelor-season-15",
+      "code": "RO",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.944
+    },
+    {
+      "storm": "the-master-cutter-the-master-cutter-season-2",
+      "code": "QA",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.865
+    },
+    {
+      "storm": "the-master-cutter-the-master-cutter-season-2",
+      "code": "AE",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.803
+    },
+    {
+      "storm": "the-master-cutter-the-master-cutter-season-2",
+      "code": "VN",
+      "spec_qloo": 0.25,
+      "spec_llm": 0.837
+    },
+    {
+      "storm": "too-young-to-die",
+      "code": "TW",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.812
+    },
+    {
+      "storm": "too-young-to-die",
+      "code": "HK",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.893
+    },
+    {
+      "storm": "too-young-to-die",
+      "code": "MY",
+      "spec_qloo": 0.972,
+      "spec_llm": 0.865
+    },
+    {
+      "storm": "underworld-evolution",
+      "code": "JM",
+      "spec_qloo": 0.938,
+      "spec_llm": 0.636
+    },
+    {
+      "storm": "underworld-evolution",
+      "code": "BS",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.847
+    },
+    {
+      "storm": "underworld-evolution",
+      "code": "MU",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.847
+    },
+    {
+      "storm": "wwe-smackdown-wwe-smackdown-october-16-2026",
+      "code": "PE",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.785
+    },
+    {
+      "storm": "wwe-smackdown-wwe-smackdown-october-16-2026",
+      "code": "BS",
+      "spec_qloo": 0.944,
+      "spec_llm": 0.91
+    },
+    {
+      "storm": "wwe-smackdown-wwe-smackdown-october-16-2026",
+      "code": "JM",
+      "spec_qloo": 1.0,
+      "spec_llm": 0.882
+    }
+  ]
+}
