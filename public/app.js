@@ -16,6 +16,7 @@ import { renderRelease } from "./js/release.js";
 import { renderAbout } from "./js/about.js";
 import { mountChat } from "./js/chat.js";
 import { startTour, maybeAutoTour } from "./js/tour.js";
+import { startMotion } from "./js/motion.js";
 
 setConfig(CONFIG);
 
@@ -57,6 +58,9 @@ function route() {
   const more = document.querySelector(".nav-more");
   if (more) { more.open = false; more.classList.toggle("is-current", !!more.querySelector("[aria-current]")); }
   app.replaceChildren();
+  app.classList.remove("route-in");
+  void app.offsetWidth;
+  app.classList.add("route-in");
   view(app, isCurrent);
   const h1 = app.querySelector("h1");
   if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
@@ -79,4 +83,5 @@ themeBtn?.addEventListener("click", () => {
 showTheme();
 route();
 mountChat();
+startMotion(app);
 maybeAutoTour();

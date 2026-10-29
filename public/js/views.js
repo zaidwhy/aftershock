@@ -51,6 +51,37 @@ function load(container, what, isCurrent, fetcher, render, notFound) {
 // The rail favours this-or-recent releases, then the likeliest to spread, so the first chip is a title worth following.
 const RAIL = 10;
 
+// Left alone, the globe walks once through the week's top breakouts and then rests on the whole week. Any touch,
+// key or scroll stops the walk for good; the tour and an open chat keep it from starting.
+const IDLE_TITLES = 4;
+const IDLE_START_MS = 10000;
+const IDLE_STEP_MS = 6500;
+
+function idleWalk(ids, pick, host, isCurrent) {
+  if (!ids.length || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  let timer = null, done = false;
+  const busy = () => document.querySelector(".tour-card, .tour-veil") || !document.querySelector(".chat")?.hidden;
+  const inView = () => { const r = host.getBoundingClientRect(); return r.bottom > 80 && r.top < innerHeight * 0.6; };
+  const quit = () => {
+    clearTimeout(timer);
+    done = true;
+    ["pointerdown", "keydown", "wheel", "touchstart"].forEach((t) => removeEventListener(t, quit, true));
+  };
+  const walk = (k) => {
+    if (done || !isCurrent()) return quit();
+    if (k >= ids.length) { pick(null); return quit(); }
+    pick(ids[k]);
+    timer = setTimeout(() => walk(k + 1), IDLE_STEP_MS);
+  };
+  const wait = () => {
+    if (done || !isCurrent()) return quit();
+    if (busy() || !inView()) { timer = setTimeout(wait, IDLE_START_MS); return; }
+    walk(0);
+  };
+  ["pointerdown", "keydown", "wheel", "touchstart"].forEach((t) => addEventListener(t, quit, { capture: true, passive: true }));
+  timer = setTimeout(wait, IDLE_START_MS);
+}
+
 export function renderHome(root, isCurrent, followId = null) {
   setTitle("");
   const stormBox = h("div", null);
@@ -200,6 +231,7 @@ export function renderHome(root, isCurrent, followId = null) {
       const stop = () => { if (!isCurrent()) { g.destroy(); window.removeEventListener("hashchange", stop); window.removeEventListener("aftershock:globe-reset", reset); } };
       window.addEventListener("hashchange", stop);
       if (followId) pick(followId);
+      else idleWalk(ranked.slice(0, IDLE_TITLES).map((x) => x.id), pick, globeHost, isCurrent);
     }).catch(() => {
       // No WebGL (old phone, locked-down browser): the flat map still answers the same question.
       if (!isCurrent()) return;
