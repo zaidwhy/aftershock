@@ -7,6 +7,7 @@ import { rejectedList } from "./rejected.js";
 import { artistName } from "./artists.js";
 import { checkBox } from "./check.js";
 import { rankLabel } from "./format.js";
+import { downloadWord, printPdf } from "./export.js";
 
 const STEP_MS = 450;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -149,7 +150,8 @@ const BACKTEST = { model: "9.8%", baseline: "4.1%", times: "2.4", spread: "113",
 const pctOf = (p) => (p == null ? "n/a" : `${Math.round(p * 100)}%`);
 
 /** What decision the brief supports, and for each claim the signal behind it and what is still unproven. */
-function evidenceTable(st, b, row) {
+/** [claim, what supports it, what is still missing] for each claim in the brief; the page and the files share it. */
+function evidenceRows(st, b, row) {
   const fc = (st.spillover?.forecasts || []).find((r) => r.code === b.code);
   const confirmed = row?.plan?.confirmed?.length ?? 0;
   const dropped = row?.plan?.dropped || {};
@@ -169,6 +171,11 @@ function evidenceTable(st, b, row) {
   if ((b.event_ideas || []).length) rows.push(["Quick-turn activations",
     "An artist's five strongest heatmap cells sit within 30 km of a title hotspot.",
     "Audience overlap is not ticket demand; venue dates are unknown."]);
+  return rows;
+}
+
+function evidenceTable(st, b, row) {
+  const rows = evidenceRows(st, b, row);
   return h("section", { class: "plan-evidence", "aria-labelledby": "bs-ev" },
     h("h3", { id: "bs-ev" }, "Evidence behind each claim"),
     h("div", { class: "table-wrap" }, h("table", { class: "plain ev-table" },
@@ -176,9 +183,36 @@ function evidenceTable(st, b, row) {
       h("tbody", null, rows.map(([c, e, m]) => h("tr", null, h("td", null, h("strong", null, c)), h("td", null, e), h("td", { class: "ev-gap" }, m)))))));
 }
 
+const decisionText = (b) => `Is ${b.country} worth a week of ${b.title} promotion, and where should it start? Read this as a shortlist for further research, a predicted opportunity, not a confirmed business one.`;
+
 function decisionLine(b) {
-  return h("div", { class: "plan-decision-box" }, h("p", { class: "gp-label mono" }, "The decision this supports"),
-    h("p", null, `Is ${b.country} worth a week of ${b.title} promotion, and where should it start? Read this as a shortlist for further research, a predicted opportunity, not a confirmed business one.`));
+  return h("div", { class: "plan-decision-box" }, h("p", { class: "gp-label mono" }, "The decision this supports"), h("p", null, decisionText(b)));
+}
+
+/** The brief as a report for the Word and PDF files: the same sections as the page, in the same order. */
+function briefReport(st, b, row) {
+  const kitFirst = b.partner_basis === "qloo_kit_first";
+  const mark = (p) => (p.source === "ai_confirmed" ? (kitFirst ? " (also confirmed by Qloo from the AI's suggestions)" : " (AI pick confirmed by Qloo)") : " (Qloo's kit)");
+  const { partners, watches } = splitPartners(b.partners);
+  const groupRows = (gs) => gs.map((g) => [g.label, g.picks.map((p) => p.name + mark(p)).join(", ")]);
+  return {
+    title: `Launch brief: ${b.title} in ${b.country}`,
+    lead: b.headline,
+    source: location.href,
+    blocks: [
+      { heading: "The decision this supports", decision: decisionText(b) },
+      { text: [b.window, b.scale].filter(Boolean) },
+      { heading: "Summary", text: b.summary, note: b.summary_source === "template" ? "Template summary; no AI wrote it." : "Written by AI from this brief; every name and number in it checked against the brief." },
+      (b.moves || []).length ? { heading: "This week's moves", table: { head: ["Who", "Move"], rows: b.moves.map((m) => [m.buyer, m.text]) }, note: "Steps doable within about a week, not promised results." } : null,
+      { heading: "Where to start", list: b.cities.length ? b.cities : ["Qloo returned no named places for this country."] },
+      (b.event_ideas || []).length ? { heading: "Quick-turn activation ideas", list: b.event_ideas.map((e) => e.text) } : null,
+      partners.length ? { heading: "Partners to approach", text: b.kit_lead || null, table: { head: ["Kind", "Names"], rows: groupRows(partners) } } : null,
+      watches.length ? { heading: "This audience also watches", table: { head: ["Kind", "Titles"], rows: groupRows(watches) } } : null,
+      { heading: "Evidence behind each claim", table: { head: ["Claim", "What supports it", "What is still missing"], rows: evidenceRows(st, b, row), gapColumn: 2 } },
+      { heading: "What not to claim", list: b.avoid },
+      { heading: "Evidence", list: b.evidence },
+    ],
+  };
 }
 
 function briefCard(st, made, row) {
@@ -235,8 +269,11 @@ function controls(st, made) {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
     flash("Downloaded");
   });
-  const print = h("button", { type: "button", class: "btn btn-small", onclick: () => window.print() }, "Print");
-  return h("div", { class: "plan-actions no-print" }, copy, download, print, status);
+  const row = (st.launch_kit || []).find((k) => k.code === made.brief.code);
+  const pdf = h("button", { type: "button", class: "btn btn-small btn-primary", onclick: () => { printPdf(briefReport(st, made.brief, row)); flash("Choose \"Save as PDF\" in the print dialog"); } }, "Download PDF");
+  const word = h("button", { type: "button", class: "btn btn-small", onclick: () => { downloadWord(briefReport(st, made.brief, row)); flash("Word file downloaded"); } }, "Download Word");
+  download.textContent = "Markdown";
+  return h("div", { class: "plan-actions no-print" }, pdf, word, download, copy, status);
 }
 
 function pickers(storms, st, code) {

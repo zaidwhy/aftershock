@@ -6,6 +6,7 @@ import { getReleaseExamples, getReleaseExample, planRelease } from "./api.js";
 import { hotspotMap } from "./charts.js";
 import { failBox } from "./audience.js";
 import { ISO } from "./iso.js";
+import { downloadWord, printPdf } from "./export.js";
 
 const WORLD_SRC = "vendor/countries-110m.json";
 const KINDS = [["film", "Film"], ["series", "Series"], ["music", "Music"], ["comedy", "Comedy"]];
@@ -150,6 +151,44 @@ function refusal(plan, focusLike) {
     h("button", { type: "button", class: "btn", onclick: focusLike }, "Add similar titles"));
 }
 
+/** The plan as a report for the Word and PDF files, in the page's order. */
+function releaseReport(plan, dateStr) {
+  const scores = allScores(plan);
+  const sig = plan.signal?.entities || [];
+  const top = Math.max(0.01, ...scores.map((x) => x.score));
+  const goal = plan.goal || defaultGoal(plan.kind);
+  const sched = SCHEDULES[goal] && dateStr ? (() => {
+    const d = new Date(`${dateStr}-01T00:00:00`);
+    const fmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    return SCHEDULES[goal].map(([w, what]) => [w === 0 ? fmt(d) : `${w > 0 ? "+" : ""}${w} wk, ${fmt(d.getTime() + w * WEEK)}`, what]);
+  })() : null;
+  return {
+    title: `Release plan: ${plan.name}`,
+    lead: plan.countries[0]?.summary || "",
+    source: location.href,
+    blocks: [
+      { heading: "The decision this supports", decision: "Which countries and cities to research first for this release, which venues to approach, and what local taste to pair it with. A shortlist for further research, not a forecast of tickets or streams." },
+      { heading: "Who the audience is", text: plan.signal?.used === "comparables" ? `Qloo does not know "${plan.name}" yet, so the audience is the people who love ${sig.map((e) => e.name).join(" and ")}.` : `Qloo's entry for ${sig[0]?.name} is the audience.` },
+      { heading: "Where the audience is", table: { head: ["#", "Country", "Qloo affinity", "Tier", "Cities"], rows: scores.map((x, i) => {
+        const c = plan.countries.find((k) => k.code === x.code);
+        return [String(i + 1), x.name, two(x.score), tierOf(x.score, top)[1], (c?.cities || []).map((k) => k.name).join(", ")];
+      }) }, note: "Qloo affinity is a relative score (0 to 1) for how closely a country's places match this audience; tiers are relative to the best country checked." },
+      goal === "digital" ? { heading: VENUE_WORD[plan.kind] || "Venues", text: "A streaming or digital launch needs no venues." }
+        : { heading: VENUE_WORD[plan.kind] || "Venues", table: { head: ["City", "Venues"], rows: (plan.venues || []).filter((g) => g.venues?.length).map((g) => [`${g.city}, ${g.country}`, g.venues.slice(0, 5).map((v) => v.name).join(", ")]) } },
+      { heading: "Local taste to pair it with", table: { head: ["Country", "Shows", "Films", "Artists"], rows: (plan.local_taste || []).map((t) => [t.country, (t.tv_show || []).join(", "), (t.movie || []).join(", "), (t.artist || []).join(", ")]) } },
+      sched ? { heading: "A schedule for your date", table: { head: ["When", "What"], rows: sched }, note: "Standard lead times, not Qloo data." } : null,
+      { heading: "How it was made", text: `${plan.calls} Qloo calls, each listed with its parameters on the page.` },
+      plan.caveats?.length ? { heading: "What this can't tell you", list: plan.caveats } : null,
+    ],
+  };
+}
+
+function exportBar(plan, opts) {
+  return h("div", { class: "plan-actions rel-export" },
+    h("button", { type: "button", class: "btn btn-small btn-primary", onclick: () => printPdf(releaseReport(plan, opts.date)) }, "Download PDF"),
+    h("button", { type: "button", class: "btn btn-small", onclick: () => downloadWord(releaseReport(plan, opts.date)) }, "Download Word"));
+}
+
 function result(plan, opts) {
   if (!plan.resolved) return refusal(plan, opts.focusLike);
   const sig = plan.signal?.entities || [];
@@ -159,6 +198,7 @@ function result(plan, opts) {
   const scope = [plan.region && plan.region !== "any" ? REGIONS.find(([v]) => v === plan.region)?.[1] : null, plan.home ? `${ISO[plan.home]?.[1] || plan.home} left out as the home market` : null].filter(Boolean);
   return h("div", { class: "rel-result" },
     plan.example ? h("p", { class: "tag tag-quiet rel-example" }, plan.example_note) : null,
+    exportBar(plan, opts),
     h("p", { class: "rel-signal" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo signal"), used, scope.length ? h("span", { class: "muted" }, ` Scope: ${scope.join("; ")}.`) : null),
     plan.countries[0] ? h("p", { class: "rel-lead" }, h("span", { class: "gp-num" }, plan.countries[0].name), plan.countries[0].summary ? h("span", { class: "muted" }, ` ${plan.countries[0].summary}`) : null) : null,
     h("section", { class: "rel-sec" }, h("h2", null, "Where the audience is"), worldHeat(plan), cityMaps(plan)),
