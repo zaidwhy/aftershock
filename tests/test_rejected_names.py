@@ -60,7 +60,7 @@ def test_check_box_verdicts_render_in_words():
     yes, no, unknown = run_js(body)
     assert "Confirmed by Qloo: </strong><span>A</span>" in yes and "<s>" not in yes
     assert "<s>B</s>" in no and "not in Qloo's picks for these viewers here" in no
-    assert "<s>" not in unknown and "No Qloo data yet, so check these yourself: </span><span>C</span>" in unknown
+    assert "<s>" not in unknown and "No Qloo data yet, so check this yourself: </span><span>C</span>" in unknown
 
 
 def test_catalog_tag_rule():
