@@ -611,11 +611,11 @@ function leadChart(lt) {
 function caseStudy(c) {
   const [title, season] = c.title;
   const shown = season && season !== "N/A" && !season.startsWith(title) ? `${title}: ${season}` : title;
-  const picks = c.top3.map((p) => `${COUNTRY(p.country)} (${Math.round(p.probability * 100)}%${p.charted_after_weeks == null ? ", did not chart" : `, charted ${weeks(p.charted_after_weeks)} later`})`);
+  const picks = c.top3.map((p) => `${COUNTRY(p.country)} (${Math.round(p.probability * 100)}%${p.charted_after_weeks == null ? ", did not reach the Top 10" : `, reached the Top 10 ${weeks(p.charted_after_weeks)} later`})`);
   const hit = c.top3.some((p) => p.charted_after_weeks != null);
-  const others = c.all_countries_charted_within_horizon.length ? `Within 4 weeks it charted in ${c.all_countries_charted_within_horizon.map(COUNTRY).join(", ")}.` : "Within 4 weeks it charted nowhere else.";
+  const others = c.all_countries_charted_within_horizon.length ? `Within 4 weeks it reached the Top 10 in ${c.all_countries_charted_within_horizon.map(COUNTRY).join(", ")}.` : "Within 4 weeks it reached no other Top 10.";
   return h("li", null,
-    h("strong", null, shown), ` (${c.category === "Films" ? "film" : "series"}, broke out ${dayLabel(c.breakout_week)} in ${c.origin_countries.map(COUNTRY).join(", ")}). `,
+    h("strong", null, shown), ` (${c.category === "Films" ? "film" : "series"}, popular from ${dayLabel(c.breakout_week)} in ${c.origin_countries.map(COUNTRY).join(", ")}). `,
     h("span", { class: "mono" }, hit ? "Hit. " : "Miss. "), `Our top 3: ${picks.join("; ")}. ${others}`);
 }
 
@@ -626,17 +626,17 @@ function warningSection(sc) {
   const m = lt.model, b = lt.baseline, spread = lt.breakouts_that_spread_at_all;
   return h("section", { "aria-labelledby": "warning-h" },
     h("h2", { id: "warning-h" }, "How much warning it gives"),
-    h("p", null, `In ${whole(m.breakouts)} breakouts the model had not seen, at least one of its top ${lt.top_k} countries charted the title within ${lt.horizon_weeks} weeks `,
-      h("strong", { class: "mono" }, `${share1(m.hit_rate)} of the time`), ` (${m.hit_breakouts} breakouts), against ${share1(b.hit_rate)} (${b.hit_breakouts}) for the ${lt.top_k} countries that chart the most titles. `,
+    h("p", null, `In ${whole(m.breakouts)} past cases the model had not seen, at least one of its top ${lt.top_k} countries had the show in its Top 10 within ${lt.horizon_weeks} weeks `,
+      h("strong", { class: "mono" }, `${share1(m.hit_rate)} of the time`), ` (${m.hit_breakouts} cases), against ${share1(b.hit_rate)} (${b.hit_breakouts}) for the obvious guess, the ${lt.top_k} countries where the most shows chart. `,
       `Of the ${whole(m.picks)} top-${lt.top_k} picks, ${share1(m.per_pick_precision)} charted (${share1(b.per_pick_precision)} for the baseline).`),
-    spread != null ? h("p", null, `Most breakouts do not spread at all: only ${spread} of ${whole(m.breakouts)} charted in any other country within ${lt.horizon_weeks} weeks. The top ${lt.top_k} caught ${m.hit_breakouts} of those ${spread}; the baseline caught ${b.hit_breakouts}.`) : null,
-    m.lead_weeks.median != null ? h("p", null, "When a pick did chart, it did so a median of ", h("strong", { class: "mono" }, weeks(m.lead_weeks.median)),
-      ` after the breakout week (mean ${m.lead_weeks.mean.toFixed(1)}). That is the warning a distributor or promoter would have had.`) : null,
+    spread != null ? h("p", null, `Most shows do not spread at all: only ${spread} of ${whole(m.breakouts)} reached any other country's Top 10 within ${lt.horizon_weeks} weeks. Our top ${lt.top_k} caught ${m.hit_breakouts} of those ${spread}; the obvious guess caught ${b.hit_breakouts}.`) : null,
+    m.lead_weeks.median != null ? h("p", null, "When a predicted country did pick the show up, it did so a median of ", h("strong", { class: "mono" }, weeks(m.lead_weeks.median)),
+      ` after the show got popular (mean ${m.lead_weeks.mean.toFixed(1)}). That is the warning a brand, a distributor or a promoter would have had.`) : null,
     m.lead_weeks.median != null ? leadChart(lt) : null,
     h("h3", null, "Three cases, chosen by a rule fixed before looking"),
-    h("p", { class: "muted" }, `The rule: ${lt.case_study_rule}. Misses are included.`),
+    h("p", { class: "muted" }, `The rule: ${lt.case_study_rule.replace("held-out breakouts", "past cases the model never saw").replace("top-1 forecast probability", "chance for their most likely country").replace("then title", "then name")}. Misses are included.`),
     h("ul", { class: "kit-examples" }, lt.case_studies.map(caseStudy)),
-    h("p", { class: "muted" }, "A backtest on history-only forecasts (no Qloo data), March to October 2026: each forecast made from the breakout week using only earlier breakouts. It is not the live ledger."));
+    h("p", { class: "muted" }, "Tested on past data with Netflix history only (no Qloo data), March to October 2026: each prediction made from the week the show got popular, using only earlier shows. It is not the prediction history."));
 }
 
 /** One explanation of the LLM-names numbers, from the counts in grounded_plan.json: of N proposed names, the share Qloo
@@ -658,7 +658,7 @@ function llmSection(sc) {
   const ex = sc.kit_experiment;
   const slot = ex
     ? h("div", { class: "kit-exp" },
-      h("p", null, h("strong", null, ex.verdict ? ex.verdict.replace(/^LLM/, "The AI's list was").replace("title-specific", "specific to the show") : "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} show-and-country pairs.` : "."),
+      h("p", null, h("strong", null, ex.verdict ? ex.verdict.replace(/^LLM /, "The AI's list was ").replace("title-specific", "specific to the show") : "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} show-and-country pairs.` : "."),
       h("p", null, `How much each list changes once the show is named, against the same source's list for the country alone (higher means more about this show): Qloo ${share(ex.qloo)}, AI ${share(ex.llm)}.`),
       h("p", null, `Only ${share(ex.grounding_share)} of the AI's picks are names Qloo knows as the right kind of thing (the same figure as above, before checking audience), so some are not audience taste at all.`,
         ex.grounded_pairs ? ` Counting only those, the AI still leads (${share(ex.grounded_llm)} against Qloo's ${share(ex.grounded_qloo)} on ${ex.grounded_pairs} pairs).` : ""),
@@ -735,8 +735,8 @@ export function renderScorecard(root, isCurrent) {
         h("h2", { id: "bt-h" }, "Where a show goes next: tested on past cases"),
         scored == null ? h("p", { class: "muted" }, "The backtest has not been generated yet.")
           : h("p", null, h("strong", null, `Ranks a country that went on to chart above one that did not ${Math.round(scored * 100)}% of the time`), ` (ROC AUC ${plain2(scored)}), on ${whole(bs.test_breakouts)} past breakouts.`),
-        h("p", { class: "muted" }, "Netflix history only: how often each country followed past breakouts from the same origins. Mar-Oct 2026 breakouts the model had not seen. The country forecast uses no Qloo data."),
-        tableOf("Country backtest", row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)))),
+        h("p", { class: "muted" }, "Netflix history only: how often each country followed earlier shows from the same countries. March to October 2026 cases the model had not seen. The next-country prediction uses no Qloo data."),
+        tableOf("Next-country test", row(`Next country: ROC AUC with Netflix history only (${bs.test_breakouts ?? "n/a"} past cases)`, auc4(bs.history_auc)))),
       h("section", { "aria-labelledby": "ledger-h" },
         h("h2", { id: "ledger-h" }, "Prediction history"),
         sc.top_pick?.breakouts > 0 ? h("div", { class: "score-block", "aria-label": "Early read" },
@@ -750,10 +750,10 @@ export function renderScorecard(root, isCurrent) {
           sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null)),
       h("section", { "aria-labelledby": "dnw-h" },
         h("h2", { id: "dnw-h" }, "What did not work"),
-        h("h3", null, "Qloo added nothing to the country forecast"),
+        h("h3", null, "Qloo added nothing to the next-country prediction"),
         tableOf("No lift from Qloo", [
-          row(`Same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
-          row(`Same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc))]),
+          row(`Same ${bs.subset_breakouts ?? "n/a"} cases, Netflix history only`, auc4(bs.history_auc_same_subset)),
+          row(`Same ${bs.subset_breakouts ?? "n/a"}, history plus Qloo`, auc4(bs.qloo_auc))]),
         h("details", { class: "fold" }, h("summary", null, "The song tests"),
         h("p", null, `No Qloo signal predicted which soundtrack songs spike on Wikipedia: ${br.n_artists ?? "n/a"} artists in ${br.n_shows ?? "n/a"} shows were scored, and on 2024+ releases the Qloo age gap beat a placebo spike measured before release at p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])}.`),
         h("p", { class: "muted" }, "The song tables and the placebo check are in ", h("a", { href: GITHUB_README_3, rel: "noopener" }, "README section 3"), "."))),
@@ -761,14 +761,14 @@ export function renderScorecard(root, isCurrent) {
         h("h2", { id: "dne-h" }, "What this does not establish"),
         h("ul", { class: "more-list caveat-list" },
           h("li", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do."),
-          h("li", null, "Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right."),
-          h("li", null, "The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset)."),
-          h("li", null, "The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes."),
+          h("li", null, "Predictions are chances, so a 20% prediction that does not happen was not wrong, and one that does was not proven right."),
+          h("li", null, "The next-country test shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-case subset)."),
+          h("li", null, "The next-country prediction uses no Qloo data, and Qloo's picks have not been tested against real results."),
           h("li", null, "The song test collected 490 songs from 34 soundtracks; 229 artists in 24 of those shows (4 released 2024 or later) had enough Qloo audience profiles to be scored, where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases."),
           h("li", null, "No Qloo signal predicted which songs spike."),
-          h("li", null, "Many new 2026 titles have no Qloo audience profile yet."),
+          h("li", null, "Many new 2026 shows have no Qloo audience profile yet."),
           h("li", null, "The model would not have picked Running Up That Hill for Stranger Things 4."),
-          h("li", null, "The live ledger, where each forecast is locked before its outcome exists, is the real test."))));
+          h("li", null, "The prediction history, where each prediction is recorded before Netflix publishes the result, is the real test."))));
     if (wantWarning) { wantWarning = false; document.getElementById("warning-h")?.scrollIntoView(); }
   });
 }
