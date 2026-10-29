@@ -193,13 +193,13 @@ function result(plan, opts) {
   if (!plan.resolved) return refusal(plan, opts.focusLike);
   const sig = plan.signal?.entities || [];
   const used = plan.signal?.used === "comparables"
-    ? `Qloo does not know "${plan.name}" yet, so the audience comes from its comparables: ${sig.map((e) => e.name).join(", ")}.`
-    : `Qloo knows ${sig[0]?.name}, so its own audience is the signal.`;
+    ? `Qloo does not know "${plan.name}" yet, so we use the people who love similar titles: ${sig.map((e) => e.name).join(", ")}.`
+    : `Qloo knows ${sig[0]?.name}, so we use the people who love it.`;
   const scope = [plan.region && plan.region !== "any" ? REGIONS.find(([v]) => v === plan.region)?.[1] : null, plan.home ? `${ISO[plan.home]?.[1] || plan.home} left out as the home market` : null].filter(Boolean);
   return h("div", { class: "rel-result" },
     plan.example ? h("p", { class: "tag tag-quiet rel-example" }, plan.example_note) : null,
     exportBar(plan, opts),
-    h("p", { class: "rel-signal" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo signal"), used, scope.length ? h("span", { class: "muted" }, ` Scope: ${scope.join("; ")}.`) : null),
+    h("p", { class: "rel-signal" }, h("span", { class: "gp-label mono qloo-mark" }, "Whose audience"), used, scope.length ? h("span", { class: "muted" }, ` Scope: ${scope.join("; ")}.`) : null),
     plan.countries[0] ? h("p", { class: "rel-lead" }, h("span", { class: "gp-num" }, plan.countries[0].name), plan.countries[0].summary ? h("span", { class: "muted" }, ` ${plan.countries[0].summary}`) : null) : null,
     h("section", { class: "rel-sec" }, h("h2", null, "Where the audience is"), worldHeat(plan), cityMaps(plan)),
     h("section", { class: "rel-sec" }, h("h2", null, VENUE_WORD[plan.kind] || "Venues"), venues(plan)),
@@ -263,7 +263,7 @@ export function renderRelease(root, isCurrent, preset = {}) {
 
   add(root,
     h("section", { class: "rel-hero" },
-      h("p", { class: "eyebrow mono" }, "Plan a release"),
+      h("p", { class: "eyebrow mono" }, "Plan my release"),
       h("h1", null, "Releasing something new? ", h("em", null, "Find its audience first.")),
       h("p", { class: "lede" }, "A film, series, album, special or tour. Qloo finds the countries, cities and venues where its audience lives, and what to pair it with."),
       h("form", { class: "rel-form card", onsubmit: (e) => { e.preventDefault(); runLive(); } },

@@ -27,5 +27,6 @@ export const BANDS = [
  *  "12 of 67 shows popular first in Denmark later reached Norway's Top 10 too". Unknown shapes pass through. */
 export const plainWhy = (why) => {
   const m = /^(.+?) joined (\d+) of (\d+) past breakouts that started in (.+)$/.exec(why || "");
-  return m ? `${m[2]} of ${m[3]} shows popular first in ${m[4]} later reached ${m[1]}'s Top 10 too` : why || "";
+  const owner = m && (m[1].endsWith("s") ? `${m[1]}'` : `${m[1]}'s`);
+  return m ? `${m[2]} of ${m[3]} shows popular first in ${m[4]} later reached ${owner} Top 10 too` : why || "";
 };

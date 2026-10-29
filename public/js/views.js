@@ -339,7 +339,7 @@ export function renderHome(root, isCurrent, followId = null) {
           h("span", { class: "storm-main" },
             h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
             h("span", { class: "storm-meta" }, s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-facts" }, yearGenres(s.meta.year, s.meta.genres)) : null,
-              `Popular in ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "older show") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Launch plan: general taste" : "Launch plan ready") : null)),
+              `Popular in ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "older show") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Plan ready (general picks)" : "Plan ready") : null)),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
@@ -404,7 +404,7 @@ function titleHead(st) {
   const text = h("div", { class: "title-text" },
     facts ? h("p", { class: "meta title-facts" }, facts) : null,
     m.blurb ? h("p", { class: "title-blurb" }, m.blurb) : null,
-    h("p", { class: "meta" }, `${st.category || "Show"} | week of ${st.origin_week} | popular in `, h("strong", null, origins(st.origin_countries))));
+    h("p", { class: "meta" }, `${/tv/i.test(st.category || "") ? "Series" : st.category ? "Film" : "Show"} | week of ${st.origin_week} | popular in `, h("strong", null, origins(st.origin_countries))));
   if (!m.image) return text;
   return h("div", { class: "title-head" },
     h("img", { class: "poster", src: m.image, alt: `Poster or still for ${st.title}`, loading: "lazy", width: "84", height: "126", referrerpolicy: "no-referrer",
@@ -446,7 +446,7 @@ function eventsBlock(r) {
 
 const KIT_LABELS = { artist: "Artists", tv_show: "TV shows", movie: "Films", brand: "Brands" };
 
-/** "AI plan, checked by Qloo": names an AI proposed that Qloo places with this audience, in Qloo's order, plus a
+/** "AI ideas, checked by Qloo": names an AI proposed that Qloo places with this audience, in Qloo's order, plus a
  *  plain count of the rest. Nothing when the row has no plan (the weekly run had no AI key). */
 function planBlock(r) {
   const plan = r.plan;
@@ -457,7 +457,7 @@ function planBlock(r) {
   if (!total) return null;
   const groups = Object.keys(KIT_LABELS).map((d) => [d, yes.filter((c) => c.domain === d)]).filter(([, list]) => list.length);
   return h("div", { class: "plan" },
-    h("h4", null, "AI plan, checked by Qloo"),
+    h("h4", null, "AI ideas, checked by Qloo"),
     h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it knows but does not place with these viewers here, ${nq} it has no data on.`),
     groups.length ? h("ul", { class: "plan-list" }, groups.map(([d, list]) => h("li", null,
       h("span", { class: "plan-dom" }, KIT_LABELS[d]), " ",
@@ -512,7 +512,7 @@ function kitSection(st) {
     anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "Greyed out"), ": popular across the whole country anyway, not specific to this show") : null,
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
       h("h3", null, countryName(r.code)),
-      r.brief ? h("p", { class: "plan-link" }, h("a", { href: `#/plan/${encodeURIComponent(st.id)}/${encodeURIComponent(r.code)}` }, "Plan a launch here")) : null,
+      r.brief ? h("p", { class: "plan-link" }, h("a", { href: `#/plan/${encodeURIComponent(st.id)}/${encodeURIComponent(r.code)}` }, "See the launch plan here")) : null,
       specific(r),
       h("dl", { class: "kit-list" }, Object.keys(KIT_LABELS).filter((d) => r.kit[d]?.length).map((d) => h("div", { class: d === "brand" ? "kit-minor" : null },
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
@@ -576,7 +576,7 @@ function kitCheckSection(sc) {
   return h("section", { "aria-labelledby": "kitcheck-h" },
     h("h2", { id: "kitcheck-h" }, "What Qloo adds: are its picks about the show?"),
     h("p", null, h("strong", { class: "mono" }, `${kc.specific} of ${kc.kits}`), ` sets of Qloo picks this week are specific to their show; ${kc.generic} mostly match the whole country's taste. On average they are `,
-      h("span", { class: "mono" }, `${Math.round(kc.mean_specificity * 100)}%`), "."),
+      h("span", { class: "mono" }, `${Math.round(kc.mean_specificity * 100)}%`), " specific to their show."),
     h("p", { class: "muted" }, "For every set of picks we also ask Qloo what the whole country likes, with no show named. A set counts as whole-country taste when most of its picks repeat that list, and as specific to the show when they do not."),
     h("ul", { class: "kit-examples" }, example("Specific to the show", kc.example_specific), example("Whole-country taste", kc.example_generic)));
 }
@@ -658,7 +658,7 @@ function llmSection(sc) {
   const ex = sc.kit_experiment;
   const slot = ex
     ? h("div", { class: "kit-exp" },
-      h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} show-and-country pairs.` : "."),
+      h("p", null, h("strong", null, ex.verdict ? ex.verdict.replace(/^LLM/, "The AI's list was").replace("title-specific", "specific to the show") : "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} show-and-country pairs.` : "."),
       h("p", null, `How much each list changes once the show is named, against the same source's list for the country alone (higher means more about this show): Qloo ${share(ex.qloo)}, AI ${share(ex.llm)}.`),
       h("p", null, `Only ${share(ex.grounding_share)} of the AI's picks are names Qloo knows as the right kind of thing (the same figure as above, before checking audience), so some are not audience taste at all.`,
         ex.grounded_pairs ? ` Counting only those, the AI still leads (${share(ex.grounded_llm)} against Qloo's ${share(ex.grounded_qloo)} on ${ex.grounded_pairs} pairs).` : ""),
@@ -670,17 +670,17 @@ function llmSection(sc) {
   if (gp?.unbacked_share == null) return h("section", { "aria-labelledby": "llm-h" }, h("h2", { id: "llm-h" }, "Qloo versus an AI (pre-registered)"), slot);
   // Lead with the result that shapes the product; the registered test stays below it in full.
   return h("section", { "aria-labelledby": "llm-h" },
-    h("h2", { id: "llm-h" }, `An LLM alone: Qloo could not back ${share(gp.unbacked_share)} of what it named`),
+    h("h2", { id: "llm-h" }, `An AI alone: Qloo's data did not support ${share(gp.unbacked_share)} of what it suggested`),
     ex && ex.qloo != null && ex.llm != null && gp.specificity_plan != null ? h("div", { class: "kit-cmp" },
-      h("p", { class: "hero-cmp-h" }, "How specific to the title are the picks? (0 to 1, higher is more specific)"),
-      h("p", { class: "hero-cmp" }, [[ex.qloo, "Qloo alone"], [ex.llm, "LLM alone"], [gp.specificity_plan, "LLM checked by Qloo (exploratory)"]].map(([v, l]) =>
+      h("p", { class: "hero-cmp-h" }, "How specific to the show are the picks? (0 to 1, higher is more specific)"),
+      h("p", { class: "hero-cmp" }, [[ex.qloo, "Qloo alone"], [ex.llm, "AI alone"], [gp.specificity_plan, "AI checked by Qloo (exploratory)"]].map(([v, l]) =>
         h("span", { class: "hero-cmp-i" }, h("strong", null, v.toFixed(2)), " ", l))),
-      h("p", null, `${share(gp.unbacked_share)} of the LLM's names are not backed by Qloo.`)) : null,
+      h("p", null, `${share(gp.unbacked_share)} of the AI's names are not supported by Qloo's data.`)) : null,
     gp.counts ? numbersExplained(gp) : h("p", null, `Across ${gp.pairs} title-country pairs an LLM named ${whole(gp.picks_checked)} artists, brands, films and shows for the audience. Qloo placed ${share(1 - gp.unbacked_share)} of them with that audience; the rest it either does not know or does not link to these viewers. Only the confirmed names go into a launch brief.`),
-    gp.specificity_plan != null ? h("p", null, `The combined plan (the LLM's names, kept only when Qloo confirms them) is `, h("strong", null, `${gp.specificity_plan.toFixed(2)} title-specific`),
-      `, against ${gp.specificity_llm.toFixed(2)} for the LLM's raw picks, on ${gp.specificity_pairs} pairs.`) : null,
-    h("p", { class: "muted" }, "Exploratory: designed after the registered result below, on the same pairs and cached LLM answers. It is not pre-registered."),
-    h("h3", { id: "llm-reg-h" }, "The registered test: which list is more title-specific"),
+    gp.specificity_plan != null ? h("p", null, `The combined plan (the AI's names, kept only when Qloo supports them) is `, h("strong", null, `${gp.specificity_plan.toFixed(2)} specific to the show`),
+      `, against ${gp.specificity_llm.toFixed(2)} for the AI's raw picks, on ${gp.specificity_pairs} pairs.`) : null,
+    h("p", { class: "muted" }, "Exploratory: designed after the registered result below, on the same pairs and cached AI answers. It is not pre-registered."),
+    h("h3", { id: "llm-reg-h" }, "The registered test: which list is more specific to the show"),
     slot);
 }
 

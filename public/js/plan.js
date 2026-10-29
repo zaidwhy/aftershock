@@ -58,7 +58,7 @@ export function briefMarkdown(b, url) {
     `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this plan; every name and number in it checked against the plan"}.*`, "",
     ...((b.moves || []).length ? ["## This week's moves", ...(b.moves || []).map((m) => `- **${m.buyer}:** ${m.text}`), ""] : []),
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
-    ...((b.event_ideas || []).length ? ["## Quick-turn activation ideas", "Tours are booked months ahead; these are short activations where both audiences already live.", "", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
+    ...((b.event_ideas || []).length ? ["## Quick event ideas", "Tours are booked months ahead; these are short events where both audiences already live.", "", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
     "## Partners to approach", ...(b.kit_lead ? [b.kit_lead, ""] : []), ...group(partners),
     ...(watches.length ? ["## This audience also watches (for creative and ad targeting)", ...group(watches)] : []),
     "## What not to claim", ...list(b.avoid), "",
@@ -83,13 +83,13 @@ function statTiles(b, row) {
   const proposed = (plan.confirmed?.length ?? 0) + (dropped.not_placed ?? 0) + (dropped.not_in_qloo ?? 0);
   const ideas = (b.event_ideas || []).length;
   const checked = b.partner_basis !== "qloo_kit"
-    ? [`${plan.confirmed.length} of ${proposed}`, "AI picks confirmed by Qloo"]
+    ? [`${plan.confirmed.length} of ${proposed}`, "AI ideas supported by Qloo"]
     : ["Qloo's own picks", "fewer than 3 AI picks confirmed"];
   const tiles = [
     [`${b.rank} of ${b.of_countries}`, rankLabel(b.rank, b.of_countries).toLowerCase()],
-    [b.chance_label, `chance to chart in ${b.horizon_weeks} weeks`],
+    [b.chance_label, `chance to reach the Top 10 in ${b.horizon_weeks} weeks`],
     checked,
-    [String(ideas), ideas === 1 ? "quick activation idea" : "quick activation ideas"],
+    [String(ideas), ideas === 1 ? "quick event idea" : "quick event ideas"],
   ];
   return h("div", { class: "proof plan-tiles", role: "group", "aria-label": "The plan at a glance" },
     tiles.map(([v, n]) => h("div", { class: "proof-item" }, h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, n))));
@@ -110,7 +110,7 @@ function cityMap(b, row) {
   const box = h("div", { class: "plan-map" });
   hotspotMap(b.code, cells, { places, width: 440, height: 360, label: summary }).then((svg) => { if (svg) { svg.classList.add("hs-map-brief"); box.prepend(svg); } }).catch(() => {});
   box.append(h("p", { class: "plan-note mono" }, "Numbered dots: ", h("strong", null, names.map((n, i) => `${i + 1} ${n}`).join(", ")), ". ",
-    ringed.length ? ["Ring means a quick activation idea: ", h("strong", null, ringed.join("; ")), "."] : "No activation idea in these cities."));
+    ringed.length ? ["Ring means a quick event idea: ", h("strong", null, ringed.join("; ")), "."] : "No quick event idea in these cities."));
   return box;
 }
 
@@ -123,7 +123,7 @@ function partnerList(groups, kitFirst) {
       h("dt", null, g.label),
       h("dd", null, lead.flatMap((p, i) => [i ? ", " : null, name(g, p),
         !kitFirst && p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's picks)") : null]),
-        extra.length ? h("span", { class: "plan-ai-extra" }, h("span", { class: "plan-both" }, "Also confirmed by Qloo from the AI's suggestions: "),
+        extra.length ? h("span", { class: "plan-ai-extra" }, h("span", { class: "plan-both" }, "Also supported by Qloo from the AI's suggestions: "),
           extra.flatMap((p, i) => [i ? ", " : null, name(g, p)])) : null));
   }));
 }
@@ -168,7 +168,7 @@ function evidenceRows(st, b, row) {
       "Qloo's map of this show's audience in the country peaks there.",
       "The map shows where the audience lives, not where it will buy."],
   ];
-  if ((b.event_ideas || []).length) rows.push(["Quick activation ideas",
+  if ((b.event_ideas || []).length) rows.push(["Quick event ideas",
     "An artist's fans and this show's fans live within 30 km of each other there.",
     "Audience overlap is not ticket demand; venue dates are unknown."]);
   return rows;
@@ -205,7 +205,7 @@ function briefReport(st, b, row) {
       { heading: "Summary", text: b.summary, note: b.summary_source === "template" ? "Template summary; no AI wrote it." : "Written by AI from this plan; every name and number in it checked against the plan." },
       (b.moves || []).length ? { heading: "This week's moves", table: { head: ["Who", "Move"], rows: b.moves.map((m) => [m.buyer, m.text]) }, note: "Steps doable within about a week, not promised results." } : null,
       { heading: "Where to start", list: b.cities.length ? b.cities : ["Qloo returned no named places for this country."] },
-      (b.event_ideas || []).length ? { heading: "Quick-turn activation ideas", list: b.event_ideas.map((e) => e.text) } : null,
+      (b.event_ideas || []).length ? { heading: "Quick event ideas", list: b.event_ideas.map((e) => e.text) } : null,
       partners.length ? { heading: "Partners to approach", text: b.kit_lead || null, table: { head: ["Kind", "Names"], rows: groupRows(partners) } } : null,
       watches.length ? { heading: "This audience also watches", table: { head: ["Kind", "Titles"], rows: groupRows(watches) } } : null,
       { heading: "Evidence behind each claim", table: { head: ["Claim", "What supports it", "What is still missing"], rows: evidenceRows(st, b, row), gapColumn: 2 } },
@@ -237,8 +237,8 @@ function briefCard(st, made, row) {
       b.cities.length ? h("ul", null, b.cities.map((c) => h("li", null, c))) : h("p", null, "Qloo returned no named places for this country."),
       cityMap(b, row)),
     (b.event_ideas || []).length ? h("section", { "aria-labelledby": "bs-events" },
-      h("h3", { id: "bs-events" }, "Quick-turn activation ideas"),
-      h("p", { class: "plan-note mono" }, "Things doable within about a week, such as a club night, a screening party, a DJ set, a sponsor activation or a playlist push, in cities where Qloo's map of the show's audience and of the artist's audience overlap. Tours are booked months ahead; these are short activations where both audiences already live."),
+      h("h3", { id: "bs-events" }, "Quick event ideas"),
+      h("p", { class: "plan-note mono" }, "Things doable within about a week, such as a club night, a screening party, a DJ set, a sponsor activation or a playlist push, in cities where Qloo's map of the show's audience and of the artist's audience overlap. Tours are booked months ahead; these are short events where both audiences already live."),
       h("ul", null, b.event_ideas.map((e) => h("li", null, artistName(e.artist), ` in ${joinList(e.cities)}: both audiences concentrate there.`)))) : null,
     partnerSection(b),
     evidenceTable(st, b, row),
