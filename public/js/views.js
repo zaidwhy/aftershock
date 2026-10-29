@@ -68,7 +68,8 @@ function idleWalk(ids, pick, host, isCurrent) {
     ["pointerdown", "keydown", "wheel", "touchstart"].forEach((t) => removeEventListener(t, quit, true));
   };
   const walk = (k) => {
-    if (done || !isCurrent()) return quit();
+    // The tour or the chat taking over mid-walk ends it, or the walk would fight the tour for the globe.
+    if (done || !isCurrent() || busy()) return quit();
     if (k >= ids.length) { pick(null); return quit(); }
     pick(ids[k]);
     timer = setTimeout(() => walk(k + 1), IDLE_STEP_MS);

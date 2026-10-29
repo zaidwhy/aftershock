@@ -71,9 +71,17 @@ function seismograph() {
     const quake = Math.exp(-(((x - 210) / 34) ** 2)) * 58 + Math.exp(-(((x - 360) / 26) ** 2)) * 26 + Math.exp(-(((x - 470) / 20) ** 2)) * 12;
     pts.push(`${x},${(60 + Math.sin(x * 1.7) * (2 + quake)).toFixed(1)}`);
   }
+  const d = `M${pts.join(" L")}`;
+  // The pen rides the trace at the same pace and easing as the stroke that draws it.
+  const pen = s("circle", { class: "tour-pen", r: 4.5 },
+    s("animateMotion", { dur: "1.8s", begin: "0.2s", fill: "freeze", calcMode: "spline", keyTimes: "0;1", keySplines: ".4 0 .2 1", path: d }));
   return s("svg", { class: "tour-seismo", viewBox: "0 0 600 120", "aria-hidden": "true" },
-    s("path", { d: `M${pts.join(" L")}`, pathLength: 1 }));
+    s("line", { class: "tour-base", x1: 0, y1: 60, x2: 600, y2: 60 }),
+    s("path", { d, pathLength: 1 }), pen);
 }
+
+/** Three shock rings, one per tremor on the trace, each softer than the last. */
+const shockRings = () => h("div", { class: "tour-rings", "aria-hidden": "true" }, h("span"), h("span"), h("span"));
 
 let active = null;
 
@@ -94,12 +102,14 @@ export function startTour() {
   const leave = () => { veil.remove(); active = null; removeEventListener("keydown", introKeys); };
   const go = h("button", { type: "button", class: "btn btn-primary" }, "Show me");
   veil.append(h("div", { class: "tour-intro", role: "dialog", "aria-modal": "true", "aria-label": "Welcome" },
+    shockRings(),
     seismograph(),
     h("p", { class: "tour-step mono" }, "A 60-second tour"),
     h("h2", null, "Every hit has an ", h("em", null, "aftershock.")),
     h("p", null, "Watch one travel, see Qloo check the plan, and ask the agent anything."),
     h("div", { class: "tour-intro-actions" }, go,
-      h("button", { type: "button", class: "btn btn-ghost", onclick: () => { leave(); remember(); } }, "I'll explore"))));
+      h("button", { type: "button", class: "btn btn-ghost", onclick: () => { leave(); remember(); } }, "I'll explore")),
+    h("p", { class: "tour-keys mono" }, h("kbd", null, "Enter"), " to start, ", h("kbd", null, "Esc"), " to skip")));
   go.addEventListener("click", () => { leave(); run(); });
   document.body.append(veil);
   addEventListener("keydown", introKeys);
@@ -108,6 +118,8 @@ export function startTour() {
 }
 
 function run() {
+  // Step 1 is the whole week, whatever the globe was showing before.
+  window.dispatchEvent(new CustomEvent("aftershock:globe-reset"));
   const blur = h("div", { class: "tour-blur" });
   const hole = h("div", { class: "tour-hole" });
   const cursor = h("div", { class: "tour-cursor" }, cursorIcon());

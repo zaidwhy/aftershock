@@ -4,7 +4,8 @@
 
 const COUNT = ".stat-v, .qp-v, .fc-v, .plan-tiles .proof-v, .wh-v";
 const REVEAL = "main > section:not(.stage), .rel-sec, .card, .quake li, .storm-list li, .plan-brief";
-const NUMBER = /^(\D*)(\d[\d,]*(?:\.\d+)?)(.*)$/;
+const FILL = ".qp-bar, .fc-card";
+const NUMBER =/^(\D*)(\d[\d,]*(?:\.\d+)?)(.*)$/;
 
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -41,11 +42,11 @@ function watch(el) {
 
 function scan(node) {
   if (!(node instanceof Element)) return;
-  for (const sel of [COUNT, REVEAL]) {
+  // The node itself counts too: a view can append a bar or a card on its own, after its section is already in.
+  for (const sel of [COUNT, REVEAL, FILL]) {
     if (node.matches(sel)) watch(node);
     node.querySelectorAll(sel).forEach(watch);
   }
-  node.querySelectorAll(".qp-bar, .fc-card").forEach(watch);
 }
 
 /** Watch the app for content as views render it, and animate each piece the first time it is seen. */

@@ -46,7 +46,7 @@ async function countries() {
 
 // Chance tints run from the sea colour to the shock colour; a country with no forecast stays plain land.
 const tint = (chance) => {
-  if (chance == null) return "rgba(120,132,150,0.16)";
+  if (chance == null) return document.documentElement.dataset.theme === "light" ? "rgba(118,100,78,0.20)" : "rgba(120,132,150,0.16)";
   const a = 0.22 + Math.min(1, chance / 0.5) * 0.68;
   return `rgba(255,90,54,${a.toFixed(2)})`;
 };
@@ -68,6 +68,7 @@ export async function mountGlobe(host, week, onPick) {
   let detail = null;
   let hover = null;
 
+  const light = () => document.documentElement.dataset.theme === "light";
   const g = Globe({ animateIn: !reduced() })(host)
     .backgroundColor("rgba(0,0,0,0)")
     .showAtmosphere(true).atmosphereColor(SHOCK).atmosphereAltitude(0.16)
@@ -82,7 +83,7 @@ export async function mountGlobe(host, week, onPick) {
     .onPolygonClick((f) => f.code && select(f.code))
     .pointsData(markers)
     .pointLat("lat").pointLng("lng")
-    .pointColor((m) => (m.code === picked ? SHOCK : originSet.has(m.code) ? "#ffc478" : chanceBy.has(m.code) ? "#ff8a6a" : "rgba(200,210,225,0.5)"))
+    .pointColor((m) => (m.code === picked ? SHOCK : originSet.has(m.code) ? "#ffc478" : chanceBy.has(m.code) ? "#ff8a6a" : light() ? "rgba(118,100,78,0.45)" : "rgba(200,210,225,0.5)"))
     .pointAltitude(0.02).pointRadius(0.45)
     .pointLabel((m) => label(m.code))
     .onPointClick((m) => select(m.code))
@@ -102,14 +103,16 @@ export async function mountGlobe(host, week, onPick) {
     .labelLat("lat").labelLng("lng").labelText("text").labelSize(0.9).labelDotRadius(0.35)
     .labelColor(() => "rgba(255,240,230,0.92)").labelResolution(2);
 
-  const light = () => document.documentElement.dataset.theme === "light";
   const paintSea = () => {
     g.globeMaterial().color.set(getComputedStyle(document.documentElement).getPropertyValue("--globe-sea").trim() || "#0d1320");
-    g.globeMaterial().emissive?.set(light() ? "#9aa6b5" : "#05070c");
-    g.polygonStrokeColor(() => (light() ? "rgba(20,24,30,0.18)" : "rgba(255,255,255,0.10)"));
+    // Light paper gets a warm off-white sea with a soft rim, so the globe reads as part of the page, not a lamp on it.
+    g.globeMaterial().emissive?.set(light() ? "#9c927f" : "#05070c");
+    g.polygonStrokeColor(() => (light() ? "rgba(80,64,44,0.22)" : "rgba(255,255,255,0.10)"));
+    g.atmosphereColor(light() ? "#e9a184" : SHOCK).atmosphereAltitude(light() ? 0.11 : 0.16);
+    g.labelColor(() => (light() ? "rgba(30,24,18,0.9)" : "rgba(255,240,230,0.92)"));
   };
   paintSea();
-  const onTheme = () => { paintSea(); g.polygonCapColor(g.polygonCapColor()); };
+  const onTheme = () => { paintSea(); g.polygonCapColor(g.polygonCapColor()).pointColor(g.pointColor()); };
   window.addEventListener("aftershock:theme", onTheme);
   g.renderer().setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   const controls = g.controls();

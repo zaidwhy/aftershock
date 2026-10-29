@@ -36,14 +36,14 @@
   --paper-2: #FFFFFF;
   --panel: rgba(255, 255, 255, 0.86);
   --ink: #15181D;
-  --ink-soft: #5A616C;
+  --ink-soft: #535A65;
   --rule: #E2DED5;
   --accent: #E8462A;
-  --accent-ink: #C83A20;
+  --accent-ink: #B8341A;
   --on-accent: #FFFFFF;
-  --qloo: #0E9C72;
-  --qloo-soft: rgba(14, 156, 114, 0.10);
-  --amber: #B5670A;
+  --qloo: #0A7A58;
+  --qloo-soft: rgba(10, 122, 88, 0.10);
+  --amber: #94560A;
   --map-base: #E6E1D6;
   --map-sea: #EFEBE3;
   --grid: rgba(21, 24, 29, 0.045);
@@ -53,7 +53,7 @@
   --head-bg: rgba(245, 243, 238, 0.8);
   --tip-bg: rgba(255, 255, 255, 0.96);
   --wh-none: #E3E1DB;
-  --globe-sea: #DCE3EC;
+  --globe-sea: #E8E0D0;
   --shadow: rgba(30, 30, 40, 0.14);
 }
 
@@ -146,7 +146,7 @@ nav a[aria-current="page"] { border-bottom-color: var(--accent); }
 @media (min-width: 720px) {
   .storm-link { grid-template-columns: 1.4fr 1fr 1fr; align-items: baseline; }
 }
-.tag { font: 500 0.7rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+.tag { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
 .tag-pending { color: var(--ink-soft); }
 .tag-graded { color: var(--accent-ink); }
 
@@ -253,10 +253,10 @@ dd { margin: 0; font-size: 1.1rem; }
 
 .proof-item { padding: 12px 0 10px; border-bottom: 1px solid var(--rule); }
 .proof-item p { margin: 0; }
-.proof-k { font: 500 0.72rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.proof-k { font: 500 0.75rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
 .proof-v { font: 400 clamp(2.4rem, 5vw, 3.4rem)/1 var(--serif); letter-spacing: -0.01em; margin: 4px 0 2px; }
 .proof-n { font: 400 0.78rem var(--mono); color: var(--ink-soft); }
-.tag-kit { color: var(--accent-ink); font-size: 0.65rem; padding: 1px 6px; }
+.tag-kit { color: var(--accent-ink); font-size: 0.75rem; padding: 1px 6px; }
 .pbar { flex: none; width: 110px; height: 4px; background: var(--rule); }
 .pbar span { display: block; height: 100%; background: var(--accent); }
 
@@ -274,12 +274,12 @@ dd { margin: 0; font-size: 1.1rem; }
 .kit-spec { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 0 0 6px; }
 .kit-spec strong { color: var(--ink); font-weight: 600; }
 .plan { margin: 10px 0 4px; padding-top: 8px; border-top: 1px solid var(--rule); }
-.plan h4 { font: 500 0.72rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 4px; }
+.plan h4 { font: 500 0.75rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 4px; }
 .plan-sum { font-size: 0.92rem; margin: 0 0 6px; }
 .plan-list { list-style: none; margin: 0; padding: 0; }
 .plan-list li { padding: 3px 0; font-size: 0.95rem; }
-.plan-dom { font: 400 0.72rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
-.plan-both { font: 400 0.72rem var(--mono); color: var(--ink-soft); white-space: nowrap; }
+.plan-dom { font: 400 0.75rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+.plan-both { font: 400 0.75rem var(--mono); color: var(--ink-soft); white-space: nowrap; }
 .kit-cap { font: 400 0.78rem var(--mono); color: var(--ink-soft); margin: 4px 0 0; }
 
 /* ---- scorecard */
@@ -290,7 +290,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .db-zero { stroke: var(--ink); stroke-width: 1.2; }
 .db-label { fill: var(--ink); font: 500 0.8rem var(--mono); letter-spacing: 0.02em; }
 .db-vals { fill: var(--ink-soft); font: 400 0.75rem var(--mono); }
-.db-tick { font-size: 0.7rem; }
+.db-tick { font-size: 0.75rem; }
 .db-link { stroke: var(--ink-soft); stroke-width: 1.5; }
 .db-real { fill: var(--accent); stroke: var(--ink); stroke-width: 1; }
 .db-placebo { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
@@ -301,7 +301,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .state { font-size: 1.05rem; }
 .ledger-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 24px 0 0; }
 .ledger-row .muted { font-size: 0.9rem; }
-.early-note { font: 400 0.72rem var(--mono); color: var(--ink-soft); }
+.early-note { font: 400 0.75rem var(--mono); color: var(--ink-soft); }
 .db-wrap { position: relative; overflow: hidden; min-width: 0; }
 .db-svg { width: 100%; min-width: 0; overflow: hidden; }
 
@@ -312,7 +312,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .hs-dot { fill: var(--accent); stroke: none; }
 .hs-places { font: 400 0.78rem/1.5 var(--mono); color: var(--ink-soft); margin: 0 0 6px; }
 .hs-places strong { color: var(--ink); font-weight: 500; }
-.hs-credit { font: 400 0.72rem var(--mono); color: var(--ink-soft); margin: 14px 0 0; }
+.hs-credit { font: 400 0.75rem var(--mono); color: var(--ink-soft); margin: 14px 0 0; }
 
 /* ---- home: buyer line and worked example */
 .buyer { font-size: 0.8rem; letter-spacing: 0.02em; color: var(--ink-soft); max-width: 70ch; margin: 24px 0 0; }
@@ -322,7 +322,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .ex-step { padding: 8px 0; border-top: 1px solid var(--rule); }
 .ex-step:first-child { border-top: 0; }
 .ex-step p { margin: 0 0 4px; max-width: none; font-size: 0.95rem; }
-.ex-step .ex-k { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
+.ex-step .ex-k { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
 .ex-step .ex-why { font-size: 0.8rem; color: var(--ink-soft); }
 .ex-link { margin: 8px 0 0; }
 /* The worked example sits in the hero's right column so it is in the first screen; the evidence
@@ -357,7 +357,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .honest { margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 0.8rem; color: var(--ink-soft); max-width: 68ch; }
 .not-found .btn-small { margin-top: 6px; }
 .band-strip { display: grid; grid-template-columns: minmax(5.5rem, 8.5rem) repeat(6, minmax(0, 1fr)); gap: 3px; max-width: 460px; align-items: center; }
-.bs-head { font-size: 0.65rem; color: var(--ink-soft); text-align: center; }
+.bs-head { font-size: 0.75rem; color: var(--ink-soft); text-align: center; }
 .bs-label { font-size: 0.75rem; color: var(--ink); line-height: 1.2; overflow-wrap: anywhere; }
 .bs-cell { height: 14px; background: var(--paper-2); border: 1px solid var(--rule); }
 .bs-cell.on-show { background: var(--accent); border-color: var(--accent); }
@@ -404,12 +404,12 @@ dd { margin: 0; font-size: 1.1rem; }
 .title-facts { font-weight: 500; }
 
 /* Launch kit: brands are the lightest line */
-.kit-list .kit-minor dt { font-size: 0.68rem; color: var(--ink-soft); }
+.kit-list .kit-minor dt { font-size: 0.75rem; color: var(--ink-soft); }
 .kit-list .kit-minor dd { font-size: 0.88rem; color: var(--ink-soft); }
 
 /* Ledger page */
 .ledger-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 24px; margin: 16px 0; padding: 0; }
-.ledger-stats dt { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.ledger-stats dt { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
 .ledger-stats dd { margin: 2px 0 0; font-size: 1rem; }
 .ledger-raw { margin: 8px 0 20px; }
 
@@ -448,7 +448,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .ask-steps { margin-top: 18px; max-width: 760px; }
 .ask-steps h3 { font: 500 0.75rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
 .ask-steps .steps { margin-bottom: 0; font-size: 0.92rem; }
-.ask-tool { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+.ask-tool { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
 .step-no .step-n { color: var(--ink-soft); }
 .ask-links { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 12px 0 0; }
 .ask-out .song-head { flex-wrap: wrap; }
@@ -485,10 +485,10 @@ dd { margin: 0; font-size: 1.1rem; }
 .plan-steps { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 12px; max-width: 760px; }
 .plan-step { border: 1.5px solid var(--rule); background: var(--paper-2); padding: 12px 16px; animation: plan-in 0.3s ease-out; }
 .plan-step h3 { font: 600 1.05rem var(--sans); margin: 0 0 4px; }
-.plan-step-n { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 2px; }
+.plan-step-n { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 2px; }
 .plan-found { margin: 0 0 6px; }
 .plan-decision { margin: 8px 0 0; padding: 6px 0 0 12px; border-left: 3px solid var(--accent); font-size: 0.95rem; }
-.plan-rule { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
+.plan-rule { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
 .plan-brief { border: 2px solid var(--ink); background: var(--paper); padding: 20px 20px 8px; max-width: 760px; animation: plan-in 0.3s ease-out; }
 .plan-brief h2 { margin-top: 0; }
 .plan-brief h3 { font: 500 0.75rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 18px 0 6px; padding-top: 10px; border-top: 1px solid var(--rule); }
@@ -499,7 +499,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .plan-partners > div { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 4px 12px; padding: 4px 0; }
 .plan-partners dt { font: 400 0.75rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding-top: 3px; }
 .plan-partners dd { margin: 0; }
-.plan-both { font: 400 0.72rem var(--mono); color: var(--ink-soft); }
+.plan-both { font: 400 0.75rem var(--mono); color: var(--ink-soft); }
 .plan-tiles { margin: 14px 0 16px; }
 .plan-tiles .proof-v { font-size: clamp(1.4rem, 2.6vw, 1.9rem); overflow-wrap: anywhere; }
 .plan-map { margin: 8px 0 12px; }
@@ -546,7 +546,7 @@ dd { margin: 0; font-size: 1.1rem; }
 .hero-fact strong { display: block; font-size: 1.12rem; margin-bottom: 4px; }
 .num-explained ul { margin: 6px 0 10px; padding-left: 1.2em; }
 .num-explained li { margin: 3px 0; }
-.tag-quiet { color: var(--ink-soft); font-size: 0.65rem; padding: 1px 6px; }
+.tag-quiet { color: var(--ink-soft); font-size: 0.75rem; padding: 1px 6px; }
 .unknown-line { margin: 6px 0 2px; }
 .plan-check { border-style: dashed; }
 .check-form { align-items: flex-end; }
