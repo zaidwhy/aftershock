@@ -44,7 +44,7 @@ KIT_WORDS = re.compile(r"\b(pair|pairs|pairing|partner|partners|brand|brands|art
 SONGS_FOR = re.compile(r"\b(?:songs?|artists?|music|musicians?|tracks?|soundtrack|singers?)\s+(?:for|to go with|to pair with"
                        r"|that fit|that suit|that match|suited to)\s+(?P<show>.+)$", re.I)
 SONG_CHECK = re.compile(r"^(?:(?:check|score|compare|try|test|rate)\s+)?(?P<songs>.+?\s+by\s+.+?)\s+(?:for|in)\s+(?P<show>.+)$", re.I)
-HELP = ("I can answer: where a title goes next (\"Where will {title_example} go next?\"), what to pair a breakout with in a "
+HELP = ("I can answer: where a show goes next (\"Where will {title_example} go next?\"), what to pair a show with in a "
         "country (\"What should {kit_example} pair with in {kit_country}?\"), artists for a show (\"Find songs for Stranger "
         "Things\"), whether a song reaches a new crowd (\"Running Up That Hill by Kate Bush for Stranger Things\"), and "
         "what is heading to a country (\"What is heading to Brazil?\").")

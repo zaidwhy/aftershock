@@ -9,13 +9,13 @@ const STARTERS = ["What can you do?", "Why isn't Squid Game here?", "Where shoul
 
 export function mountChat() {
   const log = h("div", { class: "chat-log", "aria-live": "polite" });
-  const input = h("input", { type: "text", maxlength: "200", autocomplete: "off", placeholder: "Ask about a title, a country or a feature", "aria-label": "Your question" });
+  const input = h("input", { type: "text", maxlength: "200", autocomplete: "off", placeholder: "Ask about a show, a country or a page", "aria-label": "Your question" });
   const send = h("button", { type: "submit", class: "btn btn-primary" }, "Ask");
   const sugg = h("div", { class: "chat-sugg" });
   const fab = h("button", { type: "button", class: "chat-fab", "aria-expanded": "false", "data-tour": "chat" }, h("span", { class: "dot", "aria-hidden": "true" }), "Ask AFTERSHOCK");
   const panel = h("section", { class: "chat", role: "dialog", "aria-label": "Ask AFTERSHOCK", hidden: true },
     h("header", { class: "chat-head" },
-      h("div", null, h("h2", null, "Ask AFTERSHOCK"), h("p", null, "Answers from this week's run and the site's own tools. Every step shown.")),
+      h("div", null, h("h2", null, "Ask AFTERSHOCK"), h("p", null, "Answers from this week's predictions and the site's own tools, with every step shown.")),
       h("button", { type: "button", class: "gp-close", "aria-label": "Close chat", onclick: () => toggle(false) }, "×")),
     log, sugg,
     h("form", { class: "chat-form", onsubmit: (e) => { e.preventDefault(); ask(input.value); } }, input, send));
@@ -59,12 +59,12 @@ export function mountChat() {
   panel.addEventListener("keydown", (e) => { if (e.key === "Escape") toggle(false); });
   window.addEventListener("aftershock:chat", (e) => { toggle(true); if (e.detail) ask(e.detail); });
 
-  say("bot", h("p", null, "Hi. Ask me where a breakout goes next, why it is breaking in a country, why a title is missing, or what any part of this site does."));
+  say("bot", h("p", null, "Hi. Ask me where a trending show goes next, why it is heading to a country, why a show is missing, or what any page of this site does."));
   chips(STARTERS);
   // The first starter names a title that is really breaking out this week, so it always has an answer.
   getStorms().then((st) => {
     const top = topBreakout(st.storms);
-    if (top?.top_forecast) chips([`Why is ${top.title} breaking in ${top.top_forecast.name}?`, ...STARTERS]);
+    if (top?.top_forecast) chips([`Why is ${top.title} heading to ${top.top_forecast.name}?`, ...STARTERS]);
   }).catch(() => {});
   document.body.append(fab, panel);
 }
