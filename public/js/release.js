@@ -269,10 +269,12 @@ export function renderRelease(root, isCurrent, preset = {}) {
       h("form", { class: "rel-form card", onsubmit: (e) => { e.preventDefault(); runLive(); } },
         field("01", "What are you releasing?", "A title, an artist or a comedian, as Netflix, Spotify or Wikipedia spells it.", name),
         field("02", "What kind?", null, segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),
-        field("03", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),
-        field("04", "Where?", "Pick a region to look deeper there, and leave out your home market to see where to expand.", h("div", { class: "rel-two" }, region, home)),
-        field("05", "When?", "Optional. Your release month turns the plan into a schedule.", date),
-        field("06", "Similar titles or acts", "Needed if it is not out yet: two or three that share its audience.", like),
+        field("03", "Similar titles or acts", "Only if it is not out yet: two or three that share its audience.", like),
+        // Everything below has a sensible default, so it waits behind one click instead of lengthening the form.
+        h("details", { class: "rel-more", open: !!(preset.goal || preset.region || preset.home) }, h("summary", null, "More options: goal, region, release month"),
+          field("04", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),
+          field("05", "Where?", "Pick a region to look deeper there, and leave out your home market to see where to expand.", h("div", { class: "rel-two" }, region, home)),
+          field("06", "When?", "Your release month turns the plan into a schedule.", date)),
         go),
       h("p", { class: "rail-h mono" }, "Or open a worked example"), examples),
     out);

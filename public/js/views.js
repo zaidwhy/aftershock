@@ -98,6 +98,12 @@ const USES = [
   ["A promoter", "Which cities to research for a tour or a one-off show", "Plan a release: countries and cities by Qloo affinity, venues of the right type", "Ticket demand or open dates"],
   ["A brand's local marketing", "Whether to run local ads next to a breakout this week", "The brands Qloo links to this audience in the country, checked one by one", "That the ad converts"],
 ];
+// Recent releases before catalog titles, then titles whose Qloo kit was made for that title's own audience before
+// countrywide ones (Qloo's picks for the whole country, which say less about the title), then forecast chance.
+const kitRank = (s) => (s.has_kit ? (s.kit_specific === false ? 1 : 0) : 2);
+const breakoutOrder = (dataYear) => (a, b) =>
+  isCatalogTitle(a.meta?.year, dataYear) - isCatalogTitle(b.meta?.year, dataYear) || kitRank(a) - kitRank(b)
+  || (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1);
 // The week's list opens on the likeliest movers; the long tail folds away.
 const STORMS_SHOWN = 8;
 
@@ -172,13 +178,13 @@ export function renderHome(root, isCurrent, followId = null) {
   getScorecard().then((sc) => {
     if (!isCurrent()) return;
     const gc = sc.grounded_plan?.counts;
-    const auc = sc.backtest?.spillover?.history_auc;
+    const lift = sc.lead_time?.baseline?.hit_rate ? sc.lead_time.model.hit_rate / sc.lead_time.baseline.hit_rate : null;
     const locked = (sc.spillover?.locked ?? 0) + (sc.ripple?.locked ?? 0);
     const n = gc ? gc.confirmed + gc.not_placed + gc.not_in_qloo : 0;
     const p = (x) => `${Math.round((x / n) * 100)}%`;
     const tiles = [
       gc ? [p(gc.not_placed + gc.not_in_qloo), `of an AI's ${whole(n)} launch names Qloo could not back`] : null,
-      auc != null ? [plain2(auc), `forecast AUC on ${whole(sc.backtest.spillover.test_breakouts)} breakouts it never saw`] : null,
+      lift ? [`${lift.toFixed(1)}x`, `better than guessing the busiest countries, on ${whole(sc.lead_time.model.breakouts)} past breakouts`] : null,
       locked ? [whole(locked), "forecasts locked before Netflix published the outcome; graded from 15 Nov"] : null,
     ].filter(Boolean);
     stats.replaceChildren(...tiles.map(([v, k]) => h("div", { class: "stat" }, h("span", { class: "stat-v" }, v), h("span", { class: "stat-k" }, k))));
@@ -237,9 +243,7 @@ export function renderHome(root, isCurrent, followId = null) {
   stormsP.then((week) => {
     if (!isCurrent()) return;
     const dataYear = Number(String(week.week).slice(0, 4));
-    const ranked = [...week.storms].filter((s) => s.top_forecast)
-      .sort((a, b) => isCatalogTitle(a.meta?.year, dataYear) - isCatalogTitle(b.meta?.year, dataYear) || b.top_forecast.probability - a.top_forecast.probability)
-      .slice(0, RAIL);
+    const ranked = [...week.storms].filter((s) => s.top_forecast).sort(breakoutOrder(dataYear)).slice(0, RAIL);
     const chips = [];
     const pick = async (id) => {
       chips.forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.id === (id || ""))));
@@ -253,7 +257,7 @@ export function renderHome(root, isCurrent, followId = null) {
     chips.push(h("button", { type: "button", class: "rail-chip", "data-id": "", "aria-pressed": String(!followId), onclick: () => pick(null) }, "Whole week"));
     for (const s of ranked) chips.push(h("button", { type: "button", class: "rail-chip", "data-id": s.id, "aria-pressed": "false", onclick: () => pick(s.id) },
       s.meta?.image ? h("img", { src: s.meta.image, alt: "", loading: "lazy", width: 28, height: 40 }) : null,
-      h("span", null, h("span", { class: "rc-t" }, s.title), h("span", { class: "rc-n mono" }, `${s.origin_countries.map((o) => o.code).join("/")} → ${s.top_forecast.code} ${pct(s.top_forecast.probability)}`))));
+      h("span", null, h("span", { class: "rc-t" }, s.title), h("span", { class: "rc-n" }, `Next: ${s.top_forecast.name} ${pct(s.top_forecast.probability)}`))));
     rail.replaceChildren(h("span", { class: "rail-h mono" }, "Follow a breakout"), ...chips);
     // Paint first, then pull in the 2 MB WebGL library.
     requestAnimationFrame(() => mountGlobe(globeHost, week, (sel) => showPanel(sel, week)).then((g) => {
@@ -274,12 +278,11 @@ export function renderHome(root, isCurrent, followId = null) {
     }));
   }).catch(() => {});
 
-  load(stormBox, "this week's storms", isCurrent, () => stormsP.catch(() => getStorms()), ({ week, storms }) => {
+  load(stormBox, "this week's breakouts", isCurrent, () => stormsP.catch(() => getStorms()), ({ week, storms }) => {
     if (!storms.length) { add(stormBox, h("p", { class: "status" }, `No title entered the Top 10 in only 1 to 3 countries in the week of ${week}.`)); return; }
     const dataYear = Number(String(week).slice(0, 4));
     const catalog = (s) => isCatalogTitle(s.meta?.year, dataYear);
-    const byChance = [...storms].sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
-    const ranked = [...byChance.filter((s) => !catalog(s)), ...byChance.filter(catalog)];
+    const ranked = [...storms].sort(breakoutOrder(dataYear));
     const maxP = Math.max(0.0001, ...ranked.map((s) => s.top_forecast?.probability ?? 0));
     const stormRow = (s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
@@ -287,7 +290,7 @@ export function renderHome(root, isCurrent, followId = null) {
           h("span", { class: "storm-main" },
             h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
             h("span", { class: "storm-meta" }, s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-facts" }, yearGenres(s.meta.year, s.meta.genres)) : null,
-              `From ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "catalog title") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo kit (countrywide)" : "Qloo kit") : null)),
+              `From ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "catalog title") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Qloo picks: whole country" : "Qloo picks: this title") : null)),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
@@ -304,13 +307,13 @@ export function renderHome(root, isCurrent, followId = null) {
 
 /* ------------------------------------------------------------------ storm */
 export function renderStorm(root, id, isCurrent) {
-  setTitle("Storm");
-  load(root, "this storm", isCurrent, () => getStorm(id), (st) => {
+  setTitle("Breakout");
+  load(root, "this breakout", isCurrent, () => getStorm(id), (st) => {
     setTitle(st.title);
     const fc = st.spillover?.forecasts || [];
     const mapBox = h("div", { class: "map-box" }, loading("the map"));
     add(root, 
-      h("p", { class: "crumb" }, h("a", { href: "#/" }, "All storms")),
+      h("p", { class: "crumb" }, h("a", { href: "#/" }, "All breakouts")),
       archivedBanner(st.archived_week),
       h("h1", null, st.title, st.season ? h("span", { class: "h1-sub" }, ` ${st.season}`) : null),
       titleHead(st),
@@ -368,7 +371,7 @@ function answerLine(st, fc) {
   return h("p", { class: "answer" },
     top ? h("span", null, "Most likely next: ", h("strong", null, top.name), " ", h("span", { class: "mono" }, `(${pct(top.probability)})`)) : null,
     top && n ? h("span", { class: "answer-sep", "aria-hidden": "true" }, "|") : null,
-    n ? h("a", { href: "#/", onclick: scrollTo("par-h") }, `Qloo launch kit for ${n} ${n === 1 ? "country" : "countries"} below`) : null);
+    n ? h("a", { href: "#/", onclick: scrollTo("par-h") }, `Qloo's launch picks for ${n} ${n === 1 ? "country" : "countries"} below`) : null);
 }
 
 /** Hotspot map and place names for one kit country; nothing when the data is missing. */
@@ -409,7 +412,7 @@ function planBlock(r) {
     h("p", { class: "plan-sum" }, `Of ${total} names an AI suggested for this audience, Qloo confirmed ${yes.length}; ${np} it knows but does not place with these viewers here, ${nq} it has no data on.`),
     groups.length ? h("ul", { class: "plan-list" }, groups.map(([d, list]) => h("li", null,
       h("span", { class: "plan-dom" }, KIT_LABELS[d]), " ",
-      list.flatMap((c, i) => [i ? ", " : null, d === "artist" ? artistName(c.name) : c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null])))) : null,
+      list.flatMap((c, i) => [i ? ", " : null, d === "artist" ? artistName(c.name) : c.name, c.both ? h("span", { class: "plan-both" }, " (also in Qloo's picks)") : null])))) : null,
     rejectedList(plan.rejected));
 }
 
@@ -452,9 +455,9 @@ function kitSection(st) {
   const names = (r, d) => r.kit[d].flatMap((e, i) => [i ? ", " : null,
     common(r, d).has(key(e.name)) ? h("span", { class: "kit-common" }, e.name) : e.name]);
   const specific = (r) => (r.specificity == null ? null : h("p", { class: "kit-spec" },
-    h("strong", null, r.generic ? "Mostly countrywide taste" : "Title-specific"), `: ${Math.round(r.specificity * 100)}%`));
+    h("strong", null, r.generic ? "Mostly the whole country's taste" : "Title-specific"), `: ${Math.round(r.specificity * 100)}%`));
   return h("section", { "aria-labelledby": "par-h" },
-    h("h2", { id: "par-h" }, "Launch kit: what this audience loves there"),
+    h("h2", { id: "par-h" }, "Qloo's picks: what this audience loves there"),
     h("p", { class: "muted" }, "From Qloo: what the title's audience over-indexes on in each forecast country, as a starting point for a local launch. Netflix history says where; this says what to do there. It does not change the probabilities."),
     briefControl(st, rows),
     anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "Greyed out"), ": popular across the whole country anyway, not specific to this title") : null,
@@ -474,9 +477,9 @@ const earlyRead = (x) => (x.early_ratio == null ? "n/a" : `${x.early_ratio.toFix
 
 export function renderRipple(root) {
   setTitle("Song forecasts");
-  add(root, h("p", { class: "crumb" }, h("a", { href: "#/" }, "All storms")),
+  add(root, h("p", { class: "crumb" }, h("a", { href: "#/" }, "All breakouts")),
     h("h1", null, "No song forecasts yet"),
-    h("p", null, "Song forecasts are not published right now. The storms and the scorecard are."));
+    h("p", null, "Song forecasts are not published right now. The breakouts and the scorecard are."));
 }
 
 function songTable(r, songs) {

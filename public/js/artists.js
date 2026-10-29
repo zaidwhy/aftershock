@@ -60,7 +60,7 @@ function card(name, b) {
     b.in_qloo_kit ? "Qloo's own list also named you." : null].filter(Boolean).join(" ");
   return h("li", { class: "plan-step" },
     b.countrywide ? h("p", { class: "plan-note" }, h("span", { class: "tag tag-quiet" }, "country-wide taste"),
-      " This title's kit in this country mostly repeats what the whole country likes, so the link to this title is weak.") : null,
+      " Qloo's picks for this title here mostly repeat what the whole country likes, so the link to this title is weak.") : null,
     h("p", null, `Viewers of ${b.title} (breaking out from ${b.origin} into ${b.country}, ${b.chance_label} chance to chart there within ${b.horizon_weeks} weeks) over-index on this artist's music, according to Qloo.`),
     b.cities.length ? h("p", null, `Both audiences concentrate in ${join(b.cities)}.`) : null,
     b.cities.length ? h("p", { class: "plan-decision" }, h("span", { class: "plan-rule mono" }, "This week's move"), " ",

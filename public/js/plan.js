@@ -50,8 +50,8 @@ export function briefMarkdown(b, url) {
   const list = (items) => items.map((x) => `- ${x}`);
   const kitFirst = b.partner_basis === "qloo_kit_first";
   const mark = (p) => (p.source === "ai_confirmed"
-    ? (kitFirst ? " (also confirmed by Qloo from the AI's suggestions)" : p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's kit)" : " (AI pick confirmed by Qloo)")
-    : " (Qloo's kit)");
+    ? (kitFirst ? " (also confirmed by Qloo from the AI's suggestions)" : p.also_in_qloo_kit ? " (AI pick confirmed by Qloo; also in Qloo's picks)" : " (AI pick confirmed by Qloo)")
+    : " (Qloo's pick)");
   const group = (gs) => gs.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) => p.name + mark(p))), ""]);
   const { partners, watches } = splitPartners(b.partners);
   return [`# Launch brief: ${b.title} in ${b.country}`, "", ...(b.window ? [`*${b.window}.*`, ""] : []), b.headline, "", ...(b.scale ? [b.scale, ""] : []),
@@ -84,7 +84,7 @@ function statTiles(b, row) {
   const ideas = (b.event_ideas || []).length;
   const checked = b.partner_basis !== "qloo_kit"
     ? [`${plan.confirmed.length} of ${proposed}`, "AI picks confirmed by Qloo"]
-    : ["Qloo's own kit", "fewer than 3 AI picks confirmed"];
+    : ["Qloo's own picks", "fewer than 3 AI picks confirmed"];
   const tiles = [
     [`${b.rank} of ${b.of_countries}`, rankLabel(b.rank, b.of_countries).toLowerCase()],
     [b.chance_label, `chance to chart in ${b.horizon_weeks} weeks`],
@@ -122,7 +122,7 @@ function partnerList(groups, kitFirst) {
     return h("div", null,
       h("dt", null, g.label),
       h("dd", null, lead.flatMap((p, i) => [i ? ", " : null, name(g, p),
-        !kitFirst && p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's kit)") : null]),
+        !kitFirst && p.source === "ai_confirmed" && p.also_in_qloo_kit ? h("span", { class: "plan-both" }, " (also in Qloo's picks)") : null]),
         extra.length ? h("span", { class: "plan-ai-extra" }, h("span", { class: "plan-both" }, "Also confirmed by Qloo from the AI's suggestions: "),
           extra.flatMap((p, i) => [i ? ", " : null, name(g, p)])) : null));
   }));
@@ -136,8 +136,8 @@ function partnerSection(b) {
     h("section", { "aria-labelledby": "bs-partners" },
       h("h3", { id: "bs-partners" }, "Partners to approach"),
       b.kit_lead ? h("p", { class: "plan-kit-lead" }, b.kit_lead) : null,
-      h("p", { class: "plan-note mono" }, b.partner_basis === "qloo_kit_first" ? "Qloo's own kit for this title and country leads; AI picks that Qloo also confirmed follow."
-        : b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own kit for this title and country."),
+      h("p", { class: "plan-note mono" }, b.partner_basis === "qloo_kit_first" ? "Qloo's own picks for this title and country come first; AI picks that Qloo also confirmed follow."
+        : b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own picks for this title and country."),
       partnerList(partners, kitFirst)),
     watches.length ? h("section", { "aria-labelledby": "bs-watches" },
       h("h3", { id: "bs-watches" }, "This audience also watches (for creative and ad targeting)"),
@@ -192,7 +192,7 @@ function decisionLine(b) {
 /** The brief as a report for the Word and PDF files: the same sections as the page, in the same order. */
 function briefReport(st, b, row) {
   const kitFirst = b.partner_basis === "qloo_kit_first";
-  const mark = (p) => (p.source === "ai_confirmed" ? (kitFirst ? " (also confirmed by Qloo from the AI's suggestions)" : " (AI pick confirmed by Qloo)") : " (Qloo's kit)");
+  const mark = (p) => (p.source === "ai_confirmed" ? (kitFirst ? " (also confirmed by Qloo from the AI's suggestions)" : " (AI pick confirmed by Qloo)") : " (Qloo's pick)");
   const { partners, watches } = splitPartners(b.partners);
   const groupRows = (gs) => gs.map((g) => [g.label, g.picks.map((p) => p.name + mark(p)).join(", ")]);
   return {
@@ -301,7 +301,7 @@ export function renderPlan(root, isCurrent, id, code) {
   add(root,
     h("div", { class: "no-print" },
       h("h1", null, "Plan a launch"),
-      h("p", { class: "pitch" }, "Pick a breakout title and a country. The agent shows each step it takes, from the forecast to Qloo's taste data, and ends with a brief you can hand to a local partner.")),
+      h("p", { class: "pitch" }, "Pick a title and a country. You get a launch brief to hand to a local partner, and every step the agent took to build it.")),
     body);
   const fail = (err) => { if (isCurrent()) body.replaceChildren(errorBox("the launch planner", err)); };
 
@@ -309,7 +309,7 @@ export function renderPlan(root, isCurrent, id, code) {
     defaultPlan().then((d) => {
       if (!isCurrent()) return;
       if (d) location.replace(planHref(d.id, d.code));
-      else body.replaceChildren(h("p", { class: "status" }, "No title has a Qloo launch kit this week."));
+      else body.replaceChildren(h("p", { class: "status" }, "No title has Qloo launch picks this week."));
     }).catch(fail);
     return;
   }
@@ -329,13 +329,12 @@ export function renderPlan(root, isCurrent, id, code) {
     const region = h("div", { class: "plan-steps-region", "aria-live": "polite", "aria-label": "The agent's steps" });
     const list = h("ol", { class: "plan-steps no-print" });
     region.append(list);
-    add(body, h("h2", { class: "plan-run-h no-print" }, `The agent's steps: ${st.title} in ${row.brief.brief.country}`),
-      h("p", { class: "plan-note mono no-print" }, `These steps ran in this week's automatic run (week of ${st.archived_week ?? week}) and are replayed one by one here; the check box below asks Qloo live.`),
+    // The brief is what a visitor came for, so it comes first; the agent's steps replay underneath as the proof.
+    add(body, briefCard(st, made, row), controls(st, made),
+      h("h2", { class: "plan-run-h no-print" }, "How the agent built it"),
+      h("p", { class: "plan-note mono no-print" }, `From this week's automatic run (week of ${st.archived_week ?? week}), replayed step by step. The box below asks Qloo live.`),
       region);
-    const finish = () => {
-      if (!isCurrent()) return;
-      add(body, briefCard(st, made, row), controls(st, made));
-    };
+    const finish = () => {};
     let shown = 0;
     const next = () => {
       if (!isCurrent()) return;

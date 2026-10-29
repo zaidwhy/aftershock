@@ -1,6 +1,21 @@
+**In three lines.** When a show breaks out in one country, AFTERSHOCK forecasts the next country it charts in, from Netflix's own history. An AI proposes launch partners for that audience, and Qloo decides which ones stay. The result is a Launch Brief a label, promoter or brand can act on inside the one-week window.
+
+| The old way | With AFTERSHOCK |
+|---|---|
+| A label notices a breakout after the peak | The breakout is caught the week it enters one country's Top 10 |
+| The next market is a gut call | The next country is ranked from Netflix's own history, with the reason shown |
+| Partners come from a brainstorm or a chatbot | An AI proposes; Qloo keeps only the names it backs for that audience in that country |
+| Cities and venues are researched by hand | Qloo's heatmap and places name the cities and the venues |
+
+Parrot Analytics measures how much a country wants a show; Chartmetric tracks which artists and songs are rising. Neither is built to say who to partner with, in which city, this week.
+
+*Numbers are as of submission (Netflix week of 18 Oct 2026).*
+
 ## Inspiration
 
-On 26 May 2022, the Wikipedia page for Kate Bush's *Running Up That Hill* got **349** views. Five days later, after *Stranger Things 4* dropped, it got **43,521**. A 37-year-old song had just been struck by lightning.
+We hid 829 past breakouts from the model and took the three it was most sure about, by a fixed rule. One was an Arabic series, *دروب أريكة*, that broke out in Kuwait in the week of 26 Apr 2026: AFTERSHOCK's top two picks, Saudi Arabia (30%) and Oman (19%), both charted the next week. The other two never left their home country. That is the honest shape of the problem: most breakouts never spread, and when one does, the forecast usually names where.
+
+Why speed matters: on 26 May 2022, the Wikipedia page for Kate Bush's *Running Up That Hill* got **349** views. Five days later, after *Stranger Things 4* dropped, it got **43,521**. A 37-year-old song had just been struck by lightning.
 
 Here is the part that bugged us: the people who could have done something with that wave (a label, an artist's team, a promoter, a local brand) mostly found out *after* the peak. By the time the playlist pitch is written, the moment has passed.
 
@@ -46,7 +61,7 @@ $$\text{lift} = \frac{\text{AFTERSHOCK's hit rate}}{\text{obvious guess}} = \fra
 ## Accomplishments that we're proud of
 
 - **We kept the result that went against us.** We registered our main experiment in the public repo before running it. The LLM's lists came out *more* title-specific than Qloo's (0.81 against 0.62). We published that, and it changed the design: the LLM proposes for specificity, Qloo verifies for grounding. The combined plan scored highest, 0.86 (labelled exploratory, because we designed it after seeing the result).
-- **We threw away our best-looking result.** An early song test looked significant. Then we read the terms of the site we had collected it from, deleted every byte, rebuilt the data from MusicBrainz and reran. The effect didn't replicate. The site says so.
+- **We threw away our best-looking result.** An early song test looked significant. Then we read the terms of the site we had collected it from, removed that data from the product and the current repo (older commits still hold it, and the README says so), rebuilt the data from MusicBrainz and reran. The effect didn't replicate. The site says so.
 - **Every forecast is on the record.** 3,240 forecasts, locked in a public ledger before Netflix published the weeks they are graded on. No quiet edits.
 - **One real hit from the backtest that we love:** an Arabic series broke out in Kuwait in April 2026. AFTERSHOCK's top two picks, Saudi Arabia (30%) and Oman (19%), both charted the very next week.
 

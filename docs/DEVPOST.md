@@ -6,10 +6,12 @@
 
 ### Results at a glance
 
+*As of submission (Netflix week of 18 Oct 2026).*
+
 | Question | Result |
 |---|---|
 | Qloo alone, an LLM alone, an LLM checked by Qloo | How specific to the title the picks are (0 to 1, same 81 title-country pairs): Qloo alone 0.62, LLM alone 0.81, LLM checked by Qloo 0.86 (exploratory, not pre-registered). Of 1,615 names an AI proposed, Qloo could back 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not backed, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not place with that audience. Only confirmed names ship in a plan. |
-| Forecast backtest (829 held-out breakouts) | Counting all 829: its top 3 named a next country for 9.8% of breakouts against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. For scale, a typical country charts a given breakout about 1% of the time (758 of 76,760 held-out pairs), so the featured 14% for Sweden is about 14 times that. A case where it worked: an Arabic series broke out in Kuwait in April 2026; its top two forecasts, Saudi Arabia (30%) and Oman (19%), both charted one week later. |
+| Forecast backtest (829 held-out breakouts) | Counting all 829: its top 3 named a next country for 9.8% of breakouts against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. For scale, a typical country charts a given breakout about 1% of the time (758 of 76,760 held-out pairs), so the featured 14% for Sweden is about 14 times that. Of the three held-out breakouts it was most sure about (a fixed rule), one hit: an Arabic series broke out in Kuwait in April 2026, and its top two forecasts, Saudi Arabia (30%) and Oman (19%), both charted one week later. The other two did not spread. |
 | Forecasts locked in public | 3,240 so far, each locked before Netflix published the week it is graded on; grading starts 15 Nov 2026. |
 
 ## Why it needs Qloo
@@ -75,7 +77,7 @@ What each output does not prove is written next to it: the Launch Brief has an "
 - **Qloo against an LLM (pre-registered in `docs/EXPERIMENT_KITS.md` before any data):** on 81 title-country pairs the LLM's kits were more title-specific than Qloo's (0.812 against 0.617, permutation p below 0.001), and it still led when only picks Qloo could resolve were counted. We report it as registered. Qloo's lists differed more between titles. The consequence is the design above: the LLM proposes, Qloo decides. The checked plan is the most title-specific of the three (0.86, exploratory: designed after the registered result).
 - **Where next:** Netflix history alone reaches ROC AUC 0.817 on 829 held-out breakouts. Adding Qloo's in-country affinity gave no lift (0.8182 against 0.8188 on a 200-breakout subset), so the probability is history-only.
 - **How much warning:** most breakouts never spread (113 of 829 did). When a pick did chart, the median lead was one week.
-- **A result we threw away:** soundtrack-song spikes were not predicted by any Qloo signal on 229 artists (age gap p 0.14 against a placebo window). An earlier version built on Tunefind placements looked significant; when we read Tunefind's terms we deleted that data, rebuilt the ground truth from MusicBrainz and reran. The effect did not replicate, and the site says so.
+- **A result we threw away:** soundtrack-song spikes were not predicted by any Qloo signal on 229 artists (age gap p 0.14 against a placebo window). An earlier version built on Tunefind placements looked significant; when we read Tunefind's terms we removed that data from the product and the current repo (older commits still hold it, as the README states), rebuilt the ground truth from MusicBrainz and reran. The effect did not replicate, and the site says so.
 
 ## Data rights
 

@@ -19,9 +19,9 @@ function countryLine(st, row) {
     .map(([lead, names]) => lead + names.join(", "));
   const loves = artists.length || rest.length
     ? `Audience here loves: ${[artists.length ? artists.join(", ") : "no title-specific artists", ...rest].join("; ")}. `
-    : "Nothing in the kit goes beyond what the whole country already likes. ";
+    : "Nothing in Qloo's picks goes beyond what the whole country already likes. ";
   const places = row.hotspots?.places?.length ? `Start in: ${row.hotspots.places.join(", ")}. ` : "";
-  const kind = row.specificity == null ? "" : `Kit is ${row.generic ? "mostly countrywide" : "title-specific"}.`;
+  const kind = row.specificity == null ? "" : `Qloo's picks are ${row.generic ? "mostly the whole country's taste" : "specific to this title"}.`;
   return `${name}: ${chance}${loves}${places}${kind}`.trim();
 }
 

@@ -511,3 +511,9 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .storm-more > .storm-list { margin: 0 12px 12px; }
 .roadmap + .card { margin-top: 28px; }
 .caveat-list li { margin: 6px 0; }
+.rel-more { border-top: 1px solid var(--rule); padding-top: 4px; }
+.rel-more > summary { cursor: pointer; padding: 12px 0; color: var(--ink-soft); font-weight: 500; list-style: none; display: flex; align-items: center; gap: 10px; }
+.rel-more > summary::-webkit-details-marker { display: none; }
+.rel-more > summary::before { content: ""; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .2s; }
+.rel-more[open] > summary::before { transform: rotate(45deg); }
+.rel-more > summary:hover { color: var(--ink); }
