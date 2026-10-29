@@ -2,6 +2,10 @@
 
 Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (Discord says keys live to 16 Nov); top 3 present on air 5 Nov.
 
+## Latest (29 Oct, 23:05 IST): see HANDOFF-2026-10-29-2305.md
+
+Refinement, globe lag fix, tour fixes and click shield, splash, top-down content, teammate audit v2, and the Netflix pause (watcher killed, forecast.yml disabled, all texts say runs and grading are paused until Netflix permits). All deployed and verified live; 436 tests. Left for Zaid: Devpost paste, video link, roles, submit.
+
 ## Final pass (29 Oct, ~04:00 IST): NOT YET DEPLOYED
 
 Sweep of 15 routes x desktop/phone on the live site: 0 page errors, 0 failed requests, 0 horizontal overflow. Chat sweep of 20 judge questions: fixed "does the forecast work" (was read as a title) and the ledger wording; 433 tests. These two chat commits are pushed but NOT deployed: first thing, run `vercel deploy --prod --yes --scope syzayds-projects` from this folder. Then start the Netflix watcher in a separate terminal: `bash C:/Users/Asus/projects/aftershock-team/netflix_watch.sh`.
