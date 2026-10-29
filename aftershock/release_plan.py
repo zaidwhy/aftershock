@@ -413,14 +413,14 @@ def _country_lines(ranked, asked):
     lead = ranked[0]
     for i, country in enumerate(ranked):
         if i == 0:
-            text = (f"{country['name']} leads: Qloo's destination affinity {country['score']:.2f}, the highest of "
+            text = (f"{country['name']} is the best match: Qloo match score {country['score']:.2f}, the highest of "
                     f"the {asked} countries checked.")
         else:
-            text = (f"{country['name']}: Qloo's destination affinity {country['score']:.2f}, "
+            text = (f"{country['name']}: Qloo match score {country['score']:.2f}, "
                     f"{lead['score'] - country['score']:.2f} below {lead['name']}.")
         places = (country.get("hotspots") or {}).get("places") or []
         if places:
-            text += f" Qloo's audience map peaks around {_join(places)}."
+            text += f" Its fans are concentrated around {_join(places)}."
         country["summary"] = text
 
 
@@ -762,12 +762,12 @@ def plan_release(client, name, kind, like=(), countries=None, n_countries=8, geo
                        f"{', '.join(r['country'] for r in taste) or 'the top countries'}, leaving out the signal itself.",
                        ok=bool(taste)))
 
-    caveats = ["Qloo affinity is a relative score for how closely a place's taste matches the signal, not a "
-               "probability and not a forecast of ticket or stream numbers.",
-               "Countries are ranked by destination affinity, which is travel-flavoured and is a country's single best "
-               "destination, so a small country with one strong destination can outrank a large one. The cities "
-               "inside a country are Qloo destinations ranked by how much of Qloo's audience heatmap lies within "
-               f"{DENSITY_KM} km; a country the heatmap barely touches shows few or odd cities."]
+    caveats = ["The Qloo match score (0 to 1) says how closely a place's taste fits this audience. It is not a "
+               "probability and not a prediction of ticket or stream numbers.",
+               "Each country is ranked by its single best-matching destination in Qloo (a travel-flavoured score), so "
+               "a small country with one strong destination can outrank a large one. The cities inside a country are "
+               f"ranked by how much of the audience Qloo maps within {DENSITY_KM} km of them; a country the map barely "
+               "touches shows few or odd cities."]
     if goal != "digital":
         caveats.append(VENUE_NOTE + (CINEMA_NOTE if goal == "premiere" else ""))
     if goal_note:

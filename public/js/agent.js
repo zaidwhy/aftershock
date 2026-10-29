@@ -12,7 +12,7 @@ export function agentLine(box, isCurrent) {
   getAgentRun().then((run) => {
     if (!isCurrent() || !run?.summary) return;
     const s = run.summary;
-    box.append(`The agent last ran on ${day(run.finished)}: ${whole(s.breakouts)} breakouts, ${whole(s.forecasts_locked)} forecasts locked, ${whole(s.launch_kits)} launch kits. `,
+    box.append(`Last updated ${day(run.finished)} by our automatic weekly run: ${whole(s.breakouts)} trending shows, ${whole(s.launch_kits)} launch plans. `,
       h("a", { href: "#/agent" }, "See what it did"), ".");
     box.hidden = false;
   }).catch(() => {});

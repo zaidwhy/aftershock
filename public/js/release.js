@@ -51,12 +51,12 @@ function worldHeat(plan) {
       feats.map((f) => {
         const x = byNum.get(Number(f.id));
         const cls = x ? tierOf(x.score, top)[2] : "t0";
-        return s("path", { d: path(f), class: `wh-c ${cls}` }, x ? s("title", null, `${x.name}: Qloo affinity ${two(x.score)}`) : null);
+        return s("path", { d: path(f), class: `wh-c ${cls}` }, x ? s("title", null, `${x.name}: Qloo match score ${two(x.score)}`) : null);
       }));
     mapBox.append(svg);
   }).catch(() => mapBox.append(h("p", { class: "muted" }, "The world map did not load; the ranking beside it is complete.")));
   return h("div", { class: "wh card" },
-    h("div", { class: "wh-head" }, h("h3", null, "Global heatmap"), h("span", { class: "gp-label mono qloo-mark" }, `Qloo affinity, ${scores.length} countries checked`)),
+    h("div", { class: "wh-head" }, h("h3", null, "How well each country matches"), h("span", { class: "gp-label mono qloo-mark" }, `Qloo match score, ${scores.length} countries checked`)),
     h("div", { class: "wh-body" }, list, mapBox), legend);
 }
 
@@ -73,7 +73,7 @@ function cityMaps(plan) {
     hotspotMap(c.code, c.hotspots.cells, { places, width: 320, height: 220, label: `Where the audience lives in ${c.name}` })
       .then((svg) => { if (svg) fig.insertBefore(svg, fig.children[1] || null); }).catch(() => {});
     if (cities.length) fig.append(h("ol", { class: "rel-city-proof" }, cities.map((x) => h("li", null, h("strong", null, x.name),
-      h("span", { class: "mono muted" }, x.density != null ? ` heatmap ${x.density.toFixed(1)}` : "", x.affinity != null ? `, affinity ${two(x.affinity)}` : "")))));
+      h("span", { class: "mono muted" }, x.density != null ? ` fan density ${x.density.toFixed(1)}` : "", x.affinity != null ? `, match ${two(x.affinity)}` : "")))));
   }
   return grid;
 }
@@ -106,8 +106,8 @@ function proof(plan) {
       : `Qloo's entry for ${sig[0]?.name} is the audience: everyone whose taste Qloo links to it.`),
     h("li", null, h("strong", null, "Which countries. "), `One Qloo call per country (${scores.length} in all) scores how closely that country's places match this audience. `,
       a && b ? `${a.name} leads at ${two(a.score)}, ${b.name} follows at ${two(b.score)}; the full list is on the map above.` : ""),
-    lead?.cities?.length ? h("li", null, h("strong", null, "Which cities. "), "Inside each top country, Qloo's heatmap says where this audience concentrates. ",
-      `In ${lead.name}, ${lead.cities[0].name} holds the densest part of it (heatmap ${lead.cities[0].density?.toFixed(1) ?? "n/a"}${lead.cities[1] ? `, against ${lead.cities[1].density?.toFixed(1) ?? "n/a"} for ${lead.cities[1].name}` : ""}).`) : null,
+    lead?.cities?.length ? h("li", null, h("strong", null, "Which cities. "), "Inside each top country, Qloo's map shows where this audience lives. ",
+      `In ${lead.name}, ${lead.cities[0].name} holds the densest part of it (fan density ${lead.cities[0].density?.toFixed(1) ?? "n/a"}${lead.cities[1] ? `, against ${lead.cities[1].density?.toFixed(1) ?? "n/a"} for ${lead.cities[1].name}` : ""}).`) : null,
     h("li", null, h("strong", null, "What to pair it with. "), "The shows, films and artists are Qloo's own picks for this audience in that country, not an AI's guesses."),
     h("li", null, h("strong", null, "What it cost. "), `${plan.calls} Qloo calls, every one listed below with its parameters, so anyone with a Qloo key can rerun them.`),
   ];
@@ -172,7 +172,7 @@ function releaseReport(plan, dateStr) {
       { heading: "Where the audience is", table: { head: ["#", "Country", "Qloo affinity", "Tier", "Cities"], rows: scores.map((x, i) => {
         const c = plan.countries.find((k) => k.code === x.code);
         return [String(i + 1), x.name, two(x.score), tierOf(x.score, top)[1], (c?.cities || []).map((k) => k.name).join(", ")];
-      }) }, note: "Qloo affinity is a relative score (0 to 1) for how closely a country's places match this audience; tiers are relative to the best country checked." },
+      }) }, note: "The Qloo match score (0 to 1) says how closely a country's taste fits this audience; the tiers compare each country with the best one." },
       goal === "digital" ? { heading: VENUE_WORD[plan.kind] || "Venues", text: "A streaming or digital launch needs no venues." }
         : { heading: VENUE_WORD[plan.kind] || "Venues", table: { head: ["City", "Venues"], rows: (plan.venues || []).filter((g) => g.venues?.length).map((g) => [`${g.city}, ${g.country}`, g.venues.slice(0, 5).map((v) => v.name).join(", ")]) } },
       { heading: "Local taste to pair it with", table: { head: ["Country", "Shows", "Films", "Artists"], rows: (plan.local_taste || []).map((t) => [t.country, (t.tv_show || []).join(", "), (t.movie || []).join(", "), (t.artist || []).join(", ")]) } },
@@ -267,9 +267,9 @@ export function renderRelease(root, isCurrent, preset = {}) {
       h("h1", null, "Releasing something new? ", h("em", null, "Find its audience first.")),
       h("p", { class: "lede" }, "A film, series, album, special or tour. Qloo finds the countries, cities and venues where its audience lives, and what to pair it with."),
       h("form", { class: "rel-form card", onsubmit: (e) => { e.preventDefault(); runLive(); } },
-        field("01", "What are you releasing?", "A title, an artist or a comedian, as Netflix, Spotify or Wikipedia spells it.", name),
+        field("01", "What are you releasing?", "A film, a series, an album, an artist or a comedian, spelled the way Netflix, Spotify or Wikipedia spells it.", name),
         field("02", "What kind?", null, segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),
-        field("03", "Similar titles or acts", "Only if it is not out yet: two or three that share its audience.", like),
+        field("03", "Similar shows, films or artists", "Only if it is not out yet: two or three that share its audience.", like),
         // Everything below has a sensible default, so it waits behind one click instead of lengthening the form.
         h("details", { class: "rel-more", open: !!(preset.goal || preset.region || preset.home) }, h("summary", null, "More options: goal, region, release month"),
           field("04", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),

@@ -44,18 +44,18 @@ def test_title_specific_kit_leads_the_partners_and_ai_picks_follow():
     assert keys(made) == ["forecast", "qloo_kit", "ai_proposals", "qloo_check", "cities", "events", "brief"]
     by = {s["key"]: s for s in made["steps"]}
     assert "21% chance" in by["forecast"]["found"] and "the most likely next country (of 3)" in by["forecast"]["found"]
-    assert "title-specific" in by["qloo_kit"]["found"] and "decision" not in by["qloo_kit"]
-    assert "proposed 11 names" in by["ai_proposals"]["found"]
-    assert by["qloo_check"]["found"].startswith("5 confirmed by Qloo") and "4 known to Qloo" in by["qloo_check"]["found"]
-    assert "80% different" in by["qloo_check"]["decision"] and "leads with it" in by["qloo_check"]["decision"]
+    assert "picks made for this show" in by["qloo_kit"]["found"] and "decision" not in by["qloo_kit"]
+    assert "suggested 11 names" in by["ai_proposals"]["found"]
+    assert by["qloo_check"]["found"].startswith("5 supported by Qloo") and "4 known to Qloo" in by["qloo_check"]["found"]
+    assert "80% different" in by["qloo_check"]["decision"] and "leads with them" in by["qloo_check"]["decision"]
     b = made["brief"]
     assert b["partner_basis"] == "qloo_kit_first" and b["cities"] == ["Seoul", "Busan", "Daegu"]
     artists = next(g for g in b["partners"] if g["domain"] == "artist")["picks"]
     assert [p["name"] for p in artists[:3]] == ["K artist 0", "K artist 1", "K artist 2"]
     assert {p["source"] for p in artists[:3]} == {"qloo_kit"}
     assert artists[3] == {"name": "Pick0", "source": "ai_confirmed", "also_in_qloo_kit": True}
-    assert b["kit_lead"] == "Qloo's kit for this audience is led by K tv_show 0, K tv_show 1 and K tv_show 2."
-    assert b["window"].startswith("Window: about one week (117 of the 131 forecast countries that charted")
+    assert b["kit_lead"] == "Qloo's top picks for this audience start with K tv_show 0, K tv_show 1 and K tv_show 2."
+    assert b["window"].startswith("Window: about one week (117 of the 131 predicted countries a show reached")
     assert b["summary_source"] == "template" and "Seoul" in b["summary"]
     assert not any("distinctive" in a for a in b["avoid"])
 
@@ -74,7 +74,7 @@ def test_kit_below_the_specificity_bar_keeps_ai_picks_first():
     made = launch_brief.brief(detail([row]), "KR")
     assert made["brief"]["partner_basis"] == "ai_confirmed" and made["brief"]["kit_lead"] is None
     artists = next(g for g in made["brief"]["partners"] if g["domain"] == "artist")["picks"]
-    assert artists[0]["name"] == "Pick0" and "puts the AI picks ahead" in made["steps"][3]["decision"]
+    assert artists[0]["name"] == "Pick0" and "puts the AI ideas ahead" in made["steps"][3]["decision"]
 
 
 def test_platform_brands_are_dropped_from_partners_and_moves():
@@ -109,9 +109,9 @@ def test_countrywide_kit_leans_on_confirmed_ai_picks_and_warns():
     row = specific_row() | {"generic": True, "specificity": 0.25}
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
-    assert by["qloo_kit"]["decision"].startswith("A countrywide kit")
-    assert by["qloo_check"]["decision"] == ("The kit mostly matches the country's general taste, so the brief leans on "
-                                            "the AI picks Qloo confirmed.")
+    assert by["qloo_kit"]["decision"].startswith("Picks that match the whole country")
+    assert by["qloo_check"]["decision"] == ("Qloo's picks mostly match the country's general taste, so the plan leans on "
+                                            "the AI ideas Qloo supported.")
     assert made["brief"]["kit_scope"] == "countrywide" and made["brief"]["partner_basis"] == "ai_confirmed"
     assert any("Do not say this audience is distinctive" in a for a in made["brief"]["avoid"])
 
@@ -120,7 +120,7 @@ def test_few_confirmed_picks_fall_back_to_qloo_kit():
     row = specific_row()
     row["plan"]["confirmed"] = _confirmed(2)
     made = launch_brief.brief(detail([row]), "KR")
-    assert made["steps"][3]["decision"] == "Qloo confirmed fewer than 3 AI picks, so the brief uses Qloo's own kit."
+    assert made["steps"][3]["decision"] == "Qloo supported fewer than 3 AI ideas, so the plan uses Qloo's own picks."
     assert made["brief"]["kit_lead"]  # a specific kit still has its lead line
     picks = [p for g in made["brief"]["partners"] for p in g["picks"]]
     assert made["brief"]["partner_basis"] == "qloo_kit" and {p["source"] for p in picks} == {"qloo_kit"}
@@ -133,7 +133,7 @@ def test_row_without_a_plan_uses_qloo_kit_and_no_cities_is_stated():
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
     assert "No AI picks were made" in by["ai_proposals"]["found"]
-    assert by["qloo_check"]["decision"].startswith("There is no AI plan")
+    assert by["qloo_check"]["decision"].startswith("There are no AI ideas")
     assert made["brief"]["cities"] == [] and "does not suggest cities" in by["cities"]["decision"]
     assert made["brief"]["partner_basis"] == "qloo_kit"
     assert "Start in" not in made["brief"]["summary"]
@@ -211,12 +211,12 @@ def test_event_ideas_step_section_caveat_and_validator():
                                        {"artist": "Pick4", "cities": ["Seoul"]}], "events_checked": 3}
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
-    assert by["events"]["title"] == "Match artists to cities for quick activations"
-    assert by["events"]["found"] == "Qloo's audience maps for 3 artists overlap this title's audience in 2 cities."
+    assert by["events"]["title"] == "Find cities for quick events with artists"
+    assert by["events"]["found"] == "The fans of 3 artists (from Qloo) overlap this show's fans in 2 cities."
     assert "decision" not in by["events"]
     b = made["brief"]
     assert b["event_ideas"][0]["text"] == "Pick0 in Seoul and Busan: both audiences concentrate there."
-    assert "Activation ideas are where audiences overlap, not ticket-demand forecasts." in b["avoid"]
+    assert "Event ideas show where audiences overlap, not how many tickets would sell." in b["avoid"]
     assert launch_brief.validate_summary("Start in Busan with Pick0, who is strong in Seoul.", b)
     assert not launch_brief.validate_summary("Start in Osaka with Pick0.", b)
 
@@ -225,8 +225,8 @@ def test_no_overlap_states_the_decision_and_adds_no_caveat():
     row = specific_row() | {"events": [], "events_checked": 3}
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
-    assert by["events"]["decision"] == ("No artist's audience overlaps the title's cities, so the brief lists no "
-                                        "quick-turn activation idea.")
+    assert by["events"]["decision"] == ("No artist's fans live in this show's cities, so the plan lists no "
+                                        "quick event idea.")
     assert made["brief"]["event_ideas"] == []
     assert not any("Activation ideas" in a for a in made["brief"]["avoid"])
 

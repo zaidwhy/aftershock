@@ -24,5 +24,8 @@ export const BANDS = [
 ];
 
 /** The forecast's reason in plain words: "Norway joined 12 of 67 past breakouts that started in Denmark" reads
- *  "Norway also charted for 12 of 67 shows that were popular first in Denmark". Unknown shapes pass through. */
-export const plainWhy = (why) => (why || "").replace(" joined ", " also charted for ").replace("past breakouts that started in", "shows that were popular first in");
+ *  "12 of 67 shows popular first in Denmark later reached Norway's Top 10 too". Unknown shapes pass through. */
+export const plainWhy = (why) => {
+  const m = /^(.+?) joined (\d+) of (\d+) past breakouts that started in (.+)$/.exec(why || "");
+  return m ? `${m[2]} of ${m[3]} shows popular first in ${m[4]} later reached ${m[1]}'s Top 10 too` : why || "";
+};

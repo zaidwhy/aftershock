@@ -27,10 +27,10 @@ export function artistName(name) {
 export const artistNames = (names) => names.flatMap((n, i) => [i ? ", " : null, artistName(n)]);
 
 export function renderArtists(root, isCurrent) {
-  document.title = "For artists - AFTERSHOCK";
+  document.title = "For music artists - AFTERSHOCK";
   const body = h("div", null, loading("this week's artists"));
   add(root, h("h1", null, "For artists"),
-    h("p", { class: "pitch" }, "Where new fans may be this week. Qloo links each artist below to the audience of a title that is breaking out in a new country. Find your name, or browse by how many breakouts mention you."),
+    h("p", { class: "pitch" }, "Where new fans may be this week. Each artist below is loved, according to Qloo, by the viewers of a Netflix show that is spreading to a new country. Find your name, or browse by how many shows link to you."),
     body);
   getArtists().then((data) => {
     if (!isCurrent()) return;
@@ -42,7 +42,7 @@ export function renderArtists(root, isCurrent) {
       const hits = data.artists.filter((a) => !q || key(a.name).includes(q));
       list.replaceChildren(...hits.map((a) => h("li", null,
         h("a", { href: artistHref(a.slug) }, a.name), " ",
-        h("span", { class: "muted" }, `${a.breakouts} ${a.breakouts === 1 ? "breakout" : "breakouts"}: ${a.countries.join(", ")}`),
+        h("span", { class: "muted" }, `${a.breakouts} ${a.breakouts === 1 ? "show" : "shows"}: ${a.countries.join(", ")}`),
         a.countrywide_only ? [" ", h("span", { class: "tag tag-quiet" }, "country-wide taste")] : null)));
       status.textContent = `${hits.length} of ${data.artists.length} artists`;
     };
@@ -51,7 +51,7 @@ export function renderArtists(root, isCurrent) {
     body.replaceChildren(
       h("div", { class: "field" }, h("label", { for: "artist-q" }, "Search by name"), input),
       status, list,
-      h("p", { class: "plan-note" }, `Based on Qloo audience data for the week of ${data.week}; this is where audiences overlap, not a forecast of streams or ticket sales.`));
+      h("p", { class: "plan-note" }, `Based on Qloo audience data for the week of ${data.week}; this shows where audiences overlap, not a prediction of streams or ticket sales.`));
   }).catch((err) => { if (isCurrent()) body.replaceChildren(errorBox("the artist list", err)); });
 }
 
@@ -61,10 +61,10 @@ function card(name, b) {
   return h("li", { class: "plan-step" },
     b.countrywide ? h("p", { class: "plan-note" }, h("span", { class: "tag tag-quiet" }, "country-wide taste"),
       " Qloo's picks for this title here mostly repeat what the whole country likes, so the link to this title is weak.") : null,
-    h("p", null, `Viewers of ${b.title} (breaking out from ${b.origin} into ${b.country}, ${b.chance_label} chance to chart there within ${b.horizon_weeks} weeks) over-index on this artist's music, according to Qloo.`),
+    h("p", null, `Viewers of ${b.title} (popular in ${b.origin}, with a ${b.chance_label} chance to reach the Top 10 in ${b.country} within ${b.horizon_weeks} weeks) like this artist's music far more than average, according to Qloo.`),
     b.cities.length ? h("p", null, `Both audiences concentrate in ${join(b.cities)}.`) : null,
     b.cities.length ? h("p", { class: "plan-decision" }, h("span", { class: "plan-rule mono" }, "This week's move"), " ",
-      `A post, a DJ set or a playlist push aimed at ${join(b.cities)}, doable within about a week while the title is charting. Tours are booked months ahead; this is a short activation where both audiences already live.`) : null,
+      `A post, a DJ set or a playlist push aimed at ${join(b.cities)}, doable within about a week while the show is in the Top 10 there. Tours are booked months ahead; this is a quick idea where both audiences already live.`) : null,
     h("p", { class: "plan-note" }, kit),
     h("p", { class: "plan-link" }, h("a", { href: planHref(b.storm_id, b.code) }, `See the plan for ${b.title} in ${b.country}`)));
 }
@@ -79,7 +79,7 @@ export function renderArtist(root, slug, isCurrent) {
     body.replaceChildren(
       h("h1", null, `${a.name}: where new fans are this week`),
       h("ul", { class: "plan-steps" }, a.breakouts.map((b) => card(a.name, b))),
-      h("p", { class: "plan-note" }, `Based on Qloo audience data for the week of ${a.week}; this is where audiences overlap, not a forecast of streams or ticket sales.`));
+      h("p", { class: "plan-note" }, `Based on Qloo audience data for the week of ${a.week}; this shows where audiences overlap, not a prediction of streams or ticket sales.`));
     const h1 = root.querySelector("h1");
     if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
   }).catch((err) => {

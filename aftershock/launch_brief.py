@@ -59,8 +59,8 @@ def scale_line(probability):
     base = BASE_CHARTED / BASE_PAIRS
     if probability < 2 * base:
         return None
-    return (f"For scale: a typical country charts a given breakout about {_pct(base)} of the time "
-            f"({BASE_CHARTED:,} of {BASE_PAIRS:,} held-out country-breakout pairs), so {_pct(probability)} is about "
+    return (f"For scale: a typical country picks up a given trending show about {_pct(base)} of the time "
+            f"({BASE_CHARTED:,} of {BASE_PAIRS:,} past show-and-country pairs), so {_pct(probability)} is about "
             f"{round(probability / base)} times that.")
 
 
@@ -90,12 +90,12 @@ def kit_first(row):
 
 
 def kit_lead(row):
-    """"Qloo's kit for this audience is led by A, B and C." from the first three TV shows, films or artists in
+    """"Qloo's top picks for this audience start with A, B and C." from the first three TV shows, films or artists in
     Qloo's order (shows first); None when the kit is not led by title-specific names."""
     if not kit_first(row):
         return None
     names = [e["name"] for d in KIT_LEAD_DOMAINS for e in (row["kit"].get(d) or []) if e.get("name")][:3]
-    return f"Qloo's kit for this audience is led by {_join(names)}." if names else None
+    return f"Qloo's top picks for this audience start with {_join(names)}." if names else None
 
 
 _PLATFORM_KEYS = {name_key(n) for n in PLATFORM_BRANDS}
@@ -160,7 +160,7 @@ def template_summary(b):
     where = f" Start in {_join(b['cities'])}." if b["cities"] else ""
     pair = f" Approach {_join(partners[:3])}." if partners else ""
     return (f"{b['country']} is {rank_phrase(b['rank'], b['of_countries'])} for {b['title']}: a {b['chance_label']} "
-            f"chance of charting within {b['horizon_weeks']} weeks.{where}{pair}")
+            f"chance of reaching the Top 10 there within {b['horizon_weeks']} weeks.{where}{pair}")
 
 
 def _moves(title, country, chance_label, horizon, cities, partners, event_ideas, lead_kit=False):
@@ -182,16 +182,16 @@ def _moves(title, country, chance_label, horizon, cities, partners, event_ideas,
     if event_ideas:
         idea = event_ideas[0]
         moves.append({"buyer": "Artist", "text": f"{idea['artist']}: a post, a DJ set or a playlist push aimed at "
-                      f"{_join(idea['cities'])} this week, while {title} is charting; Qloo's maps show your audience "
-                      "and this title's overlap there."})
+                      f"{_join(idea['cities'])} this week, while {title} is in the Top 10 there; Qloo's maps show your fans "
+                      "and this show's fans overlap there."})
     brands = next((g["picks"] for g in partners if g["domain"] == "brand"), [])
     brand = next((p["name"] for p in brands if p["source"] == "ai_confirmed" or lead_kit), None)
     if brand and cities:
         moves.append({"buyer": "Brand marketer", "text": f"Run local ads in {_join(cities)} next to {title} while it "
-                      f"charts; Qloo's data for this audience {'lists' if lead_kit else 'confirms'} {brand}."})
+                      f"is popular there; Qloo's data for this audience {'lists' if lead_kit else 'confirms'} {brand}."})
     moves.append({"buyer": "Distributor", "text": f"Prepare {country} promotion "
-                  f"now: {chance_label} chance it charts there within {horizon} weeks; in our backtest, {LEAD_ONE_WEEK} of "
-                  f"the {LEAD_CHARTED} forecast picks that charted did so one week after the breakout week."})
+                  f"now: {chance_label} chance it reaches the Top 10 there within {horizon} weeks; in our tests on past shows, {LEAD_ONE_WEEK} of "
+                  f"the {LEAD_CHARTED} predicted countries that it reached did so one week after the show got popular."})
     return moves
 
 
@@ -209,13 +209,13 @@ def brief(detail, code):
     horizon = detail["spillover"].get("horizon_weeks", 4)
     rank = forecasts.index(fc) + 1
     origins = _join([o["name"] for o in detail.get("origin_countries") or []]) or "its home markets"
-    steps = [{"key": "forecast", "title": "Forecast where it goes next",
-              "found": f"{title} is breaking out in {origins}; Netflix history makes {country} "
-                       f"{rank_phrase(rank, len(forecasts))}, with a {_pct(fc['probability'])} chance of charting "
-                       f"it within {horizon} weeks.",
-              "note": "The country ranking comes from where past breakouts from the same origin spread (Netflix "
-                          "history only), so titles from the same origin get similar rankings. Qloo is what makes "
-                          "the plan specific to this title."}]
+    steps = [{"key": "forecast", "title": "Predict where it goes next",
+              "found": f"{title} is popular in {origins}; Netflix history makes {country} "
+                       f"{rank_phrase(rank, len(forecasts))}, with a {_pct(fc['probability'])} chance of reaching "
+                       f"the Top 10 there within {horizon} weeks.",
+              "note": "The ranking comes from where earlier shows popular in the same country went next (Netflix "
+                          "history only), so shows from the same country get similar rankings. Qloo is what makes "
+                          "the plan specific to this show."}]
 
     kit = row["kit"]
     names = sum(len(v) for v in kit.values())
@@ -224,13 +224,13 @@ def brief(detail, code):
     spec_text = "" if spec is None else f" ({round(spec * 100)}% different from what the whole country likes)"
     if generic:
         found = (f"Qloo lists {names} names across {domains} domains for this audience in {country}, but the list "
-                 f"mostly matches what people there like in general{spec_text}: a countrywide kit.")
+                 f"mostly matches what people there like in general{spec_text}: picks for the whole country, not this show.")
     else:
-        found = (f"Qloo lists {names} names across {domains} domains that this title's audience in {country} "
-                 f"over-indexes on, and the list differs from the country's general taste{spec_text}: a title-specific kit.")
+        found = (f"Qloo lists {names} names across {domains} kinds (artists, shows, films, brands) that this show's viewers in {country} "
+                 f"like far more than average, and the list differs from the country's general taste{spec_text}: picks made for this show.")
     kit_step = {"key": "qloo_kit", "title": "Ask Qloo what this audience likes", "found": found}
     if generic:
-        kit_step["decision"] = "A countrywide kit cannot show this title is special here, so the brief says so."
+        kit_step["decision"] = "Picks that match the whole country cannot show this show is special here, so the plan says so."
     steps.append(kit_step)
 
     plan = row.get("plan")
@@ -239,83 +239,83 @@ def brief(detail, code):
     n_conf, not_placed, unknown = len(confirmed), dropped.get("not_placed", 0), dropped.get("not_in_qloo", 0)
     use_plan = uses_plan(row)
     if plan:
-        steps.append({"key": "ai_proposals", "title": "Let an AI propose more names",
-                      "found": f"{plan.get('model') or 'The model'} proposed {n_conf + not_placed + unknown} names for "
+        steps.append({"key": "ai_proposals", "title": "Ask an AI for more ideas",
+                      "found": f"{plan.get('model') or 'The model'} suggested {n_conf + not_placed + unknown} names for "
                                f"this audience in {country}."})
-        check = {"key": "qloo_check", "title": "Check each AI name against Qloo",
-                 "found": f"{n_conf} confirmed by Qloo for this audience, {not_placed} known to Qloo but not among "
-                          f"its picks for these viewers here, {unknown} with no Qloo data yet."}
+        check = {"key": "qloo_check", "title": "Check each AI idea with Qloo",
+                 "found": f"{n_conf} supported by Qloo for this audience, {not_placed} known to Qloo but not linked "
+                          f"to these viewers here, {unknown} with no Qloo data yet."}
     else:
-        steps.append({"key": "ai_proposals", "title": "Let an AI propose more names",
+        steps.append({"key": "ai_proposals", "title": "Ask an AI for more ideas",
                       "found": f"No AI picks were made for {country} this week."})
-        check = {"key": "qloo_check", "title": "Check each AI name against Qloo", "found": "There was nothing to check."}
+        check = {"key": "qloo_check", "title": "Check each AI idea with Qloo", "found": "There was nothing to check."}
     if (plan or {}).get("rejected"):
         check["rejected"] = [dict(r) for r in plan["rejected"]]
     if not plan:
-        check["decision"] = "There is no AI plan for this country, so the brief uses Qloo's own kit."
+        check["decision"] = "There are no AI ideas for this country, so the plan uses Qloo's own picks."
     elif not use_plan:
-        check["decision"] = f"Qloo confirmed fewer than {MIN_CONFIRMED} AI picks, so the brief uses Qloo's own kit."
+        check["decision"] = f"Qloo supported fewer than {MIN_CONFIRMED} AI ideas, so the plan uses Qloo's own picks."
     elif kit_first(row):
-        check["decision"] = (f"Qloo's own kit is {round(spec * 100)}% different from the country's general taste, so the "
-                             f"brief leads with it; the {n_conf} AI picks Qloo confirmed follow as extra names.")
+        check["decision"] = (f"Qloo's own picks are {round(spec * 100)}% different from the country's general taste, so the "
+                             f"plan leads with them; the {n_conf} AI ideas Qloo supported follow as extra names.")
     elif generic:
-        check["decision"] = ("The kit mostly matches the country's general taste, so the brief leans on the AI "
-                             "picks Qloo confirmed.")
+        check["decision"] = ("Qloo's picks mostly match the country's general taste, so the plan leans on the AI "
+                             "ideas Qloo supported.")
     else:
-        check["decision"] = (f"Qloo confirmed {n_conf} AI picks and the kit is not clearly title-specific "
+        check["decision"] = (f"Qloo supported {n_conf} AI ideas and its own picks are not clearly about this show "
                              f"(under {round(KIT_FIRST_SPECIFICITY * 100)}% different from the country's taste), so the "
-                             "brief puts the AI picks ahead of Qloo's own kit.")
+                             "plan puts the AI ideas ahead of Qloo's own picks.")
     steps.append(check)
 
     cities = list((row.get("hotspots") or {}).get("places") or [])[:CITIES]
-    city_step = {"key": "cities", "title": "Find where the audience lives",
-                 "found": (f"Qloo's audience map for this title in {country} peaks around {_join(cities)}." if cities
-                           else f"Qloo returned no named places for this title in {country}.")}
+    city_step = {"key": "cities", "title": "Find where the fans live",
+                 "found": (f"Qloo's map of this show's fans in {country} peaks around {_join(cities)}." if cities
+                           else f"Qloo returned no named places for this show in {country}.")}
     if not cities:
-        city_step["decision"] = "With no named places, the brief does not suggest cities."
+        city_step["decision"] = "With no named places, the plan does not suggest cities."
     steps.append(city_step)
 
     events = [e for e in row.get("events") or [] if e.get("artist") and e.get("cities")]
     checked = row.get("events_checked") or 0
     event_cities = list(dict.fromkeys(c for e in events for c in e["cities"]))
-    event_step = {"key": "events", "title": "Match artists to cities for quick activations"}
+    event_step = {"key": "events", "title": "Find cities for quick events with artists"}
     if events:
-        event_step["found"] = (f"Qloo's audience maps for {checked} {'artist' if checked == 1 else 'artists'} overlap this "
-                               f"title's audience in {len(event_cities)} {'city' if len(event_cities) == 1 else 'cities'}.")
+        event_step["found"] = (f"The fans of {checked} {'artist' if checked == 1 else 'artists'} (from Qloo) overlap this "
+                               f"show's fans in {len(event_cities)} {'city' if len(event_cities) == 1 else 'cities'}.")
     else:
-        event_step["found"] = (f"Qloo's audience maps for {checked} {'artist' if checked == 1 else 'artists'} were "
-                               "compared with this title's audience." if checked else
-                               "No artist audience maps were compared with this title's audience.")
-        event_step["decision"] = "No artist's audience overlaps the title's cities, so the brief lists no quick-turn activation idea."
+        event_step["found"] = (f"The fans of {checked} {'artist' if checked == 1 else 'artists'} (from Qloo) were "
+                               "compared with this show's fans." if checked else
+                               "No artist's fans were compared with this show's fans.")
+        event_step["decision"] = "No artist's fans live in this show's cities, so the plan lists no quick event idea."
     steps.append(event_step)
 
     avoid = []
     if generic:
-        avoid.append(f"Do not say this audience is distinctive in {country}: the kit mostly matches the country's "
+        avoid.append(f"Do not say this audience is distinctive in {country}: Qloo's picks mostly match the country's "
                      "general taste.")
-    avoid.append(f"Do not present the {_pct(fc['probability'])} as a promise: it is a history-only estimate.")
+    avoid.append(f"Do not present the {_pct(fc['probability'])} as a promise: it is an estimate from Netflix history only.")
     avoid.append("This week's moves are steps that fit in a week, not predictions that they will work.")
     if not use_plan:
-        avoid.append("Do not call the partners AI-checked: this brief uses Qloo's own kit.")
+        avoid.append("Do not call the partners AI-checked: this plan uses Qloo's own picks.")
     if events:
-        avoid.append("Activation ideas are where audiences overlap, not ticket-demand forecasts.")
-    evidence = [f"The forecast uses Netflix history only; its backtest ROC AUC is {BACKTEST_AUC}.",
-                "The kits have not been validated against outcomes: nothing shows these partners change viewing."]
+        avoid.append("Event ideas show where audiences overlap, not how many tickets would sell.")
+    evidence = [f"The prediction uses Netflix history only; tested on past shows it scores a ROC AUC of {BACKTEST_AUC} (1.0 is perfect, 0.5 is a coin flip).",
+                "Qloo's picks have not been tested against real results: nothing shows these partners change viewing."]
     if use_plan:
-        evidence.append("AI picks are checked only for whether Qloo links them to this audience, not for sales or views.")
+        evidence.append("AI ideas are checked only for whether Qloo links them to this audience, not for sales or views.")
     partners = _partners(row, use_plan)
     lead = kit_first(row)
     out = {"title": title, "country": country, "code": code, "storm_id": detail.get("id"), "rank": rank,
            "of_countries": len(forecasts), "chance": fc["probability"], "chance_label": _pct(fc["probability"]),
            "horizon_weeks": horizon,
            "headline": f"{country} is {rank_phrase(rank, len(forecasts))} for {title}: a {_pct(fc['probability'])} "
-                       f"chance of charting within {horizon} weeks.",
+                       f"chance of reaching the Top 10 there within {horizon} weeks.",
            "scale": scale_line(fc["probability"]),
            "kit_scope": "countrywide" if generic else "title-specific",
            "partner_basis": "qloo_kit_first" if lead and use_plan else "ai_confirmed" if use_plan else "qloo_kit",
            "kit_lead": kit_lead(row),
-           "window": (f"Window: about one week ({LEAD_ONE_WEEK} of the {LEAD_CHARTED} forecast countries that charted "
-                      "did so one week after the breakout)"),
+           "window": (f"Window: about one week ({LEAD_ONE_WEEK} of the {LEAD_CHARTED} predicted countries a show reached "
+                      "were reached one week after it got popular)"),
            "cities": cities, "partners": partners,
            "event_ideas": [{"artist": e["artist"], "cities": list(e["cities"]),
                             "text": f"{e['artist']} in {_join(e['cities'])}: both audiences concentrate there."}
@@ -328,8 +328,8 @@ def brief(detail, code):
     stored = summary.get("text") if validate_summary(summary.get("text"), out) else None
     out["summary"] = stored or template_summary(out)
     out["summary_source"] = summary.get("source") if stored else SUMMARY_TEMPLATE
-    steps.append({"key": "brief", "title": "Assemble the brief",
-                  "found": f"Brief ready: {len(partners)} partner groups, {len(cities)} cities, "
+    steps.append({"key": "brief", "title": "Put the plan together",
+                  "found": f"Plan ready: {len(partners)} partner groups, {len(cities)} cities, "
                            f"{len(avoid)} {'caveat' if len(avoid) == 1 else 'caveats'} on what not to claim."})
     return {"steps": steps, "brief": out}
 

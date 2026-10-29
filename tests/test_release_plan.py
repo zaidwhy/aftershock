@@ -139,8 +139,8 @@ def test_countries_ranked_by_top_destination_affinity_with_heatmap_places_for_th
         assert hs["place_cells"][0] == list(cell(c["code"], 0))
         assert [x["name"] for x in c["cities"]] == hs["places"] and c["cities"][0]["density"] > c["cities"][1]["density"]
     assert all("hotspots" not in c and "cities" not in c and "candidates" not in c for c in rest)
-    assert out["countries"][0]["summary"].startswith("India leads: Qloo's destination affinity 0.90, the highest of the 24 countries")
-    assert "0.10 below India" in out["countries"][1]["summary"] and "peaks around Town" in out["countries"][1]["summary"]
+    assert out["countries"][0]["summary"].startswith("India is the best match: Qloo match score 0.90, the highest of the 24 countries")
+    assert "0.10 below India" in out["countries"][1]["summary"] and "concentrated around Town" in out["countries"][1]["summary"]
     assert all("probab" not in c["summary"] for c in out["countries"])
 
 

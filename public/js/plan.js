@@ -6,7 +6,7 @@ import { hotspotMap } from "./charts.js";
 import { rejectedList } from "./rejected.js";
 import { artistName } from "./artists.js";
 import { checkBox } from "./check.js";
-import { rankLabel } from "./format.js";
+import { rankLabel, plainWhy } from "./format.js";
 import { downloadWord, printPdf } from "./export.js";
 
 const STEP_MS = 450;
@@ -55,7 +55,7 @@ export function briefMarkdown(b, url) {
   const group = (gs) => gs.flatMap((g) => [`**${g.label}**`, ...list(g.picks.map((p) => p.name + mark(p))), ""]);
   const { partners, watches } = splitPartners(b.partners);
   return [`# Launch brief: ${b.title} in ${b.country}`, "", ...(b.window ? [`*${b.window}.*`, ""] : []), b.headline, "", ...(b.scale ? [b.scale, ""] : []),
-    `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this brief; every name and number in it checked against the brief"}.*`, "",
+    `## Summary`, b.summary, `*${b.summary_source === "template" ? "Template summary" : "Written by AI from this plan; every name and number in it checked against the plan"}.*`, "",
     ...((b.moves || []).length ? ["## This week's moves", ...(b.moves || []).map((m) => `- **${m.buyer}:** ${m.text}`), ""] : []),
     "## Where to start", ...(b.cities.length ? list(b.cities) : ["Qloo returned no named places for this country."]), "",
     ...((b.event_ideas || []).length ? ["## Quick-turn activation ideas", "Tours are booked months ahead; these are short activations where both audiences already live.", "", ...list(b.event_ideas.map((e) => e.text)), ""] : []),
@@ -91,7 +91,7 @@ function statTiles(b, row) {
     checked,
     [String(ideas), ideas === 1 ? "quick activation idea" : "quick activation ideas"],
   ];
-  return h("div", { class: "proof plan-tiles", role: "group", "aria-label": "Brief at a glance" },
+  return h("div", { class: "proof plan-tiles", role: "group", "aria-label": "The plan at a glance" },
     tiles.map(([v, n]) => h("div", { class: "proof-item" }, h("p", { class: "proof-v" }, v), h("p", { class: "proof-n" }, n))));
 }
 
@@ -136,7 +136,7 @@ function partnerSection(b) {
     h("section", { "aria-labelledby": "bs-partners" },
       h("h3", { id: "bs-partners" }, "Partners to approach"),
       b.kit_lead ? h("p", { class: "plan-kit-lead" }, b.kit_lead) : null,
-      h("p", { class: "plan-note mono" }, b.partner_basis === "qloo_kit_first" ? "Qloo's own picks for this title and country come first; AI picks that Qloo also confirmed follow."
+      h("p", { class: "plan-note mono" }, b.partner_basis === "qloo_kit_first" ? "Qloo's own picks for this show and country come first; AI ideas that Qloo also supported follow."
         : b.partner_basis === "ai_confirmed" ? "AI picks that Qloo confirmed come first." : "Qloo's own picks for this title and country."),
       partnerList(partners, kitFirst)),
     watches.length ? h("section", { "aria-labelledby": "bs-watches" },
@@ -159,17 +159,17 @@ function evidenceRows(st, b, row) {
   const spec = row?.specificity;
   const rows = [
     [`${b.country} is the ${rankLabel(b.rank, b.of_countries).toLowerCase()}`,
-      `${pctOf(fc?.probability)} chance to chart within 4 weeks${fc?.why ? `; ${fc.why}` : ""}. In the backtest the top 3 countries caught a next market ${BACKTEST.model} of the time against ${BACKTEST.baseline} for the busiest-countries baseline (${BACKTEST.times} times).`,
-      "This title's forecast is not graded yet; most breakouts never spread at all."],
+      `${pctOf(fc?.probability)} chance to reach the Top 10 there within 4 weeks${fc?.why ? `; ${plainWhy(fc.why)}` : ""}. Tested on past shows, our top 3 countries named the next one ${BACKTEST.model} of the time, against ${BACKTEST.baseline} for the obvious guess, the busiest countries (${BACKTEST.times} times better).`,
+      "This prediction has not been checked against real results yet; most shows never spread at all."],
     ["These partners fit this audience",
-      `Qloo confirmed ${confirmed} of the ${proposed} names an AI proposed for these viewers in ${b.country}${spec != null ? `; Qloo's own kit is ${Math.round(spec * 100)}% different from the country's general taste, so it is about this title` : ""}.`,
+      `Qloo supported ${confirmed} of the ${proposed} names an AI suggested for these viewers in ${b.country}${spec != null ? `; Qloo's own picks are ${Math.round(spec * 100)}% different from the country's general taste, so they are about this show` : ""}.`,
       "No data yet that these partners move streams, tickets or sales."],
     [`Start in ${(b.cities || []).slice(0, 3).join(", ") || "the mapped cities"}`,
-      "Qloo's heatmap of this title's audience in the country peaks there.",
-      "The heatmap shows where the audience lives, not where it will buy."],
+      "Qloo's map of this show's audience in the country peaks there.",
+      "The map shows where the audience lives, not where it will buy."],
   ];
-  if ((b.event_ideas || []).length) rows.push(["Quick-turn activations",
-    "An artist's five strongest heatmap cells sit within 30 km of a title hotspot.",
+  if ((b.event_ideas || []).length) rows.push(["Quick activation ideas",
+    "An artist's fans and this show's fans live within 30 km of each other there.",
     "Audience overlap is not ticket demand; venue dates are unknown."]);
   return rows;
 }
@@ -183,10 +183,10 @@ function evidenceTable(st, b, row) {
       h("tbody", null, rows.map(([c, e, m]) => h("tr", null, h("td", null, h("strong", null, c)), h("td", null, e), h("td", { class: "ev-gap" }, m)))))));
 }
 
-const decisionText = (b) => `Is ${b.country} worth a week of ${b.title} promotion, and where should it start? Read this as a shortlist for further research, a predicted opportunity, not a confirmed business one.`;
+const decisionText = (b) => `Is ${b.country} worth a week of promotion for ${b.title}, and where should it start? Treat this as a shortlist to research further: a likely opportunity, not a guaranteed one.`;
 
 function decisionLine(b) {
-  return h("div", { class: "plan-decision-box" }, h("p", { class: "gp-label mono" }, "The decision this supports"), h("p", null, decisionText(b)));
+  return h("div", { class: "plan-decision-box" }, h("p", { class: "gp-label mono" }, "The question this answers"), h("p", null, decisionText(b)));
 }
 
 /** The brief as a report for the Word and PDF files: the same sections as the page, in the same order. */
@@ -196,13 +196,13 @@ function briefReport(st, b, row) {
   const { partners, watches } = splitPartners(b.partners);
   const groupRows = (gs) => gs.map((g) => [g.label, g.picks.map((p) => p.name + mark(p)).join(", ")]);
   return {
-    title: `Launch brief: ${b.title} in ${b.country}`,
+    title: `Launch plan: ${b.title} in ${b.country}`,
     lead: b.headline,
     source: location.href,
     blocks: [
-      { heading: "The decision this supports", decision: decisionText(b) },
+      { heading: "The question this answers", decision: decisionText(b) },
       { text: [b.window, b.scale].filter(Boolean) },
-      { heading: "Summary", text: b.summary, note: b.summary_source === "template" ? "Template summary; no AI wrote it." : "Written by AI from this brief; every name and number in it checked against the brief." },
+      { heading: "Summary", text: b.summary, note: b.summary_source === "template" ? "Template summary; no AI wrote it." : "Written by AI from this plan; every name and number in it checked against the plan." },
       (b.moves || []).length ? { heading: "This week's moves", table: { head: ["Who", "Move"], rows: b.moves.map((m) => [m.buyer, m.text]) }, note: "Steps doable within about a week, not promised results." } : null,
       { heading: "Where to start", list: b.cities.length ? b.cities : ["Qloo returned no named places for this country."] },
       (b.event_ideas || []).length ? { heading: "Quick-turn activation ideas", list: b.event_ideas.map((e) => e.text) } : null,
@@ -217,10 +217,10 @@ function briefReport(st, b, row) {
 
 function briefCard(st, made, row) {
   const b = made.brief;
-  const note = b.summary_source === "template" ? "Template summary, no AI wrote it." : "Written by AI from this brief; every name and number in it checked against the brief.";
+  const note = b.summary_source === "template" ? "Template summary, no AI wrote it." : "Written by AI from this plan; every name and number in it checked against the plan.";
   return h("article", { class: "plan-brief", "aria-labelledby": "brief-h" },
     h("p", { class: "eyebrow" }, "Deliverable"),
-    h("h2", { id: "brief-h" }, `Launch brief: ${b.title} in ${b.country}`),
+    h("h2", { id: "brief-h" }, `Launch plan: ${b.title} in ${b.country}`),
     decisionLine(b),
     b.window ? h("p", { class: "plan-window" }, b.window) : null,
     statTiles(b, row),
@@ -230,7 +230,7 @@ function briefCard(st, made, row) {
       h("h3", { id: "bs-sum" }, "Summary"), h("p", null, b.summary), h("p", { class: "plan-note mono" }, note)),
     (b.moves || []).length ? h("section", { "aria-labelledby": "bs-moves" },
       h("h3", { id: "bs-moves" }, "This week's moves"),
-      h("p", { class: "plan-note mono" }, "One step per buyer, each doable within about a week, from this brief's own facts. Steps, not promised results."),
+      h("p", { class: "plan-note mono" }, "One step for each kind of partner, each doable within about a week, built from this plan's own facts. Steps, not promised results."),
       h("dl", { class: "plan-partners" }, b.moves.map((m) => h("div", null, h("dt", null, m.buyer), h("dd", null, m.text))))) : null,
     h("section", { "aria-labelledby": "bs-cities" },
       h("h3", { id: "bs-cities" }, "Where to start"),
@@ -238,7 +238,7 @@ function briefCard(st, made, row) {
       cityMap(b, row)),
     (b.event_ideas || []).length ? h("section", { "aria-labelledby": "bs-events" },
       h("h3", { id: "bs-events" }, "Quick-turn activation ideas"),
-      h("p", { class: "plan-note mono" }, "Things doable within about a week, such as a club night, a screening party, a DJ set, a sponsor activation or a playlist push, in cities where Qloo's map of the title's audience and of the artist's audience overlap. Tours are booked months ahead; these are short activations where both audiences already live."),
+      h("p", { class: "plan-note mono" }, "Things doable within about a week, such as a club night, a screening party, a DJ set, a sponsor activation or a playlist push, in cities where Qloo's map of the show's audience and of the artist's audience overlap. Tours are booked months ahead; these are short activations where both audiences already live."),
       h("ul", null, b.event_ideas.map((e) => h("li", null, artistName(e.artist), ` in ${joinList(e.cities)}: both audiences concentrate there.`)))) : null,
     partnerSection(b),
     evidenceTable(st, b, row),
@@ -246,8 +246,8 @@ function briefCard(st, made, row) {
       h("h3", { id: "bs-avoid" }, "What not to claim"), h("ul", null, b.avoid.map((a) => h("li", null, a)))),
     h("section", { "aria-labelledby": "bs-evidence" },
       h("h3", { id: "bs-evidence" }, "Evidence"), h("ul", null, b.evidence.map((a) => h("li", null, a)))),
-    h("p", { class: "plan-note" }, "Forecast locked in the public ", h("a", { href: "#/ledger" }, "ledger"), " before Netflix published the outcome. ",
-      h("a", { href: `#/storm/${encodeURIComponent(st.id)}` }, "Full forecast for this title"), "."));
+    h("p", { class: "plan-note" }, "Prediction recorded in advance in the public ", h("a", { href: "#/ledger" }, "prediction history"), " before Netflix published the result. ",
+      h("a", { href: `#/storm/${encodeURIComponent(st.id)}` }, "The full prediction for this show"), "."));
 }
 
 function controls(st, made) {
@@ -258,7 +258,7 @@ function controls(st, made) {
     if (!navigator.clipboard?.writeText) return flash("Copy blocked; use the address bar.");
     navigator.clipboard.writeText(location.href).then(() => flash("Link copied"), () => flash("Copy blocked; use the address bar."));
   });
-  const download = h("button", { type: "button", class: "btn btn-small" }, "Download brief");
+  const download = h("button", { type: "button", class: "btn btn-small" }, "Download plan");
   download.addEventListener("click", () => {
     const b = made.brief;
     const url = URL.createObjectURL(new Blob([briefMarkdown(b, location.href)], { type: "text/markdown;charset=utf-8" }));
@@ -291,17 +291,17 @@ function pickers(storms, st, code) {
   });
   country.addEventListener("change", () => { location.hash = planHref(st.id, country.value); });
   return h("div", { class: "plan-pick no-print" },
-    h("div", { class: "field" }, h("label", { for: "plan-title" }, "Title"), title),
+    h("div", { class: "field" }, h("label", { for: "plan-title" }, "Show or film"), title),
     h("div", { class: "field" }, h("label", { for: "plan-country" }, "Country"), country));
 }
 
 export function renderPlan(root, isCurrent, id, code) {
-  document.title = "Plan a launch - AFTERSHOCK";
+  document.title = "Launch plans - AFTERSHOCK";
   const body = h("div", null, loading("this week's titles"));
   add(root,
     h("div", { class: "no-print" },
-      h("h1", null, "Plan a launch"),
-      h("p", { class: "pitch" }, "Pick a title and a country. You get a launch brief to hand to a local partner, and every step the agent took to build it.")),
+      h("h1", null, "Launch plans"),
+      h("p", { class: "pitch" }, "Pick a show and a country. You get a launch plan to hand to a local partner: where to start, who to work with, and this week's moves. Underneath, every step the agent took to build it.")),
     body);
   const fail = (err) => { if (isCurrent()) body.replaceChildren(errorBox("the launch planner", err)); };
 
@@ -309,7 +309,7 @@ export function renderPlan(root, isCurrent, id, code) {
     defaultPlan().then((d) => {
       if (!isCurrent()) return;
       if (d) location.replace(planHref(d.id, d.code));
-      else body.replaceChildren(h("p", { class: "status" }, "No title has Qloo launch picks this week."));
+      else body.replaceChildren(h("p", { class: "status" }, "No show has a launch plan this week."));
     }).catch(fail);
     return;
   }
@@ -322,7 +322,7 @@ export function renderPlan(root, isCurrent, id, code) {
     body.replaceChildren(pickers(options, st, row?.code));
     if (!row) {
       add(body, h("p", { class: "status status-error", role: "alert" },
-        `No launch kit for ${code} on ${st.title}. Pick one of its kit countries above.`));
+        `No launch plan for ${code} for ${st.title}. Pick one of its countries above.`));
       return;
     }
     const made = row.brief;
@@ -354,7 +354,7 @@ export function renderPlan(root, isCurrent, id, code) {
   }).catch((err) => {
     if (!isCurrent()) return;
     if (err.status === 404) body.replaceChildren(h("p", { class: "status status-error", role: "alert" }, err.message),
-      h("p", null, h("a", { href: "#/plan" }, "Plan a different launch")));
+      h("p", null, h("a", { href: "#/plan" }, "Pick a different launch plan")));
     else fail(err);
   });
 }

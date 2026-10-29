@@ -45,8 +45,8 @@ def test_brief_counts_come_from_the_filtered_plan():
                                + [{"domain": "artist", "name": f"U{i}", "verdict": "not_in_qloo"} for i in range(2)])
     made = launch_brief.brief(detail([row]), "KR")
     by = {s["key"]: s for s in made["steps"]}
-    assert "proposed 10 names" in by["ai_proposals"]["found"]
-    assert by["qloo_check"]["found"].startswith("5 confirmed by Qloo for this audience, 3 known to Qloo but not among")
+    assert "suggested 10 names" in by["ai_proposals"]["found"]
+    assert by["qloo_check"]["found"].startswith("5 supported by Qloo for this audience, 3 known to Qloo but not linked")
     assert "2 with no Qloo data yet" in by["qloo_check"]["found"]
     assert all(r["name"] != "Show" for r in by["qloo_check"]["rejected"])
     assert all(c["name"] != "Show" for g in made["brief"]["partners"] for c in g["picks"])
