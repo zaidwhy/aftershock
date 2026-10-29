@@ -245,7 +245,7 @@ export function renderHome(root, isCurrent, followId = null) {
       const ours = lt.model.hit_rate, guess = lt.baseline.hit_rate;
       const oursSpread = lt.model.hit_breakouts / spread, guessSpread = lt.baseline.hit_breakouts / spread;
       testBox.replaceChildren(
-        h("p", { class: "qp-lede" }, `We tested it on ${whole(lt.model.breakouts)} past cases it had never seen, against the obvious guess: the ${lt.top_k} countries where the most shows chart.`),
+        h("p", { class: "qp-lede" }, `We tested it on ${whole(lt.model.breakouts)} past cases it had never seen, against the obvious guess: the ${lt.top_k} countries where the most shows reach the Top 10.`),
         h("div", { class: "fc-grid" },
           h("div", { class: "fc-card" }, h("p", { class: "gp-label mono" }, `All ${whole(lt.model.breakouts)} cases`),
             rateRow("AFTERSHOCK", ours, Math.max(ours, guess), "fc-us"), rateRow("Obvious guess", guess, Math.max(ours, guess), "fc-base"),
@@ -257,7 +257,7 @@ export function renderHome(root, isCurrent, followId = null) {
       testDetail.replaceChildren(h("summary", null, "How we tested the predictions"),
         h("ul", { class: "more-list" },
           h("li", null, `${whole(lt.model.breakouts)} past cases were hidden from the model; for each it named the ${lt.top_k} countries it expected next.`),
-          h("li", null, `The fair comparison is the obvious guess: the ${lt.top_k} countries where the most shows chart.`),
+          h("li", null, `The fair comparison is the obvious guess: the ${lt.top_k} countries where the most shows reach the Top 10.`),
           h("li", null, "Over all cases the rate is low, because most shows never spread anywhere."),
           h("li", null, "So it points at the right next country far more often than the obvious guess. It is a shortlist, not a promise that a show will chart.")));
       testDetail.hidden = false;
@@ -604,7 +604,7 @@ function leadChart(lt) {
   }
   const label = `Bar chart of weeks of warning for picks that charted, model against baseline. ${Array.from({ length: hz }, (_, i) => `${i + 1} week${i ? "s" : ""}: model ${dist("model")[String(i + 1)] ?? 0}, baseline ${dist("baseline")[String(i + 1)] ?? 0}`).join("; ")}.`;
   return h("div", { class: "db-box" },
-    h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Our top 3 (solid)", h("span", { class: "dot dot-placebo" }), "The obvious guess: the 3 countries where the most shows chart (outlined)"),
+    h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Our top 3 (solid)", h("span", { class: "dot dot-placebo" }), "The obvious guess: the 3 countries where the most shows reach the Top 10 (outlined)"),
     s("svg", { viewBox: `0 0 ${W} ${H}`, class: "lw-svg", role: "img", "aria-label": label }, g));
 }
 
@@ -627,7 +627,7 @@ function warningSection(sc) {
   return h("section", { "aria-labelledby": "warning-h" },
     h("h2", { id: "warning-h" }, "How much warning it gives"),
     h("p", null, `In ${whole(m.breakouts)} past cases the model had not seen, at least one of its top ${lt.top_k} countries had the show in its Top 10 within ${lt.horizon_weeks} weeks `,
-      h("strong", { class: "mono" }, `${share1(m.hit_rate)} of the time`), ` (${m.hit_breakouts} cases), against ${share1(b.hit_rate)} (${b.hit_breakouts}) for the obvious guess, the ${lt.top_k} countries where the most shows chart. `,
+      h("strong", { class: "mono" }, `${share1(m.hit_rate)} of the time`), ` (${m.hit_breakouts} cases), against ${share1(b.hit_rate)} (${b.hit_breakouts}) for the obvious guess, the ${lt.top_k} countries where the most shows reach the Top 10. `,
       `Of the ${whole(m.picks)} top-${lt.top_k} picks, ${share1(m.per_pick_precision)} charted (${share1(b.per_pick_precision)} for the baseline).`),
     spread != null ? h("p", null, `Most shows do not spread at all: only ${spread} of ${whole(m.breakouts)} reached any other country's Top 10 within ${lt.horizon_weeks} weeks. Our top ${lt.top_k} caught ${m.hit_breakouts} of those ${spread}; the obvious guess caught ${b.hit_breakouts}.`) : null,
     m.lead_weeks.median != null ? h("p", null, "When a predicted country did pick the show up, it did so a median of ", h("strong", { class: "mono" }, weeks(m.lead_weeks.median)),
@@ -688,7 +688,7 @@ function llmSection(sc) {
 const GLOSSARY = [
   ["Breakout", "A show or film that entered Netflix's weekly Top 10 in only 1 to 3 countries: the first sign it could travel."],
   ["Chart", "To enter a country's Netflix Top 10."],
-  ["The obvious guess (baseline)", "Always naming the 3 countries where the most shows chart. A useful prediction has to beat it."],
+  ["The obvious guess (baseline)", "Always naming the 3 countries where the most shows reach the Top 10. A useful prediction has to beat it."],
   ["Backtest", "Testing on past cases the model had never seen, using only what was known at the time."],
   ["ROC AUC", "How often the model ranks a country that later charted above one that did not: 1.0 is perfect, 0.5 is a coin flip."],
   ["Spillover", "Our name for a show spreading from one country to the next."],
