@@ -1,4 +1,4 @@
-// The guided tour: an intro that draws a seismograph, then seven short steps. Each step lifts one feature out of
+// The guided tour: an intro that says what AFTERSHOCK is (drawn on a seismograph), then seven short steps. Each step lifts one feature out of
 // a blurred page, a cursor points at it, and where seeing beats reading the tour acts itself (follows a breakout on
 // the globe, asks the chat a question). One line of text per step; dots, Back and Next; Esc or the cross to leave.
 import { h, s } from "./dom.js";
@@ -9,7 +9,7 @@ const TYPE_MS = 34;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // The hero copy sits over the globe's box; a spotlight on the globe starts where the copy ends.
-const HERO_COPY = [".stage-copy h1", ".stage-copy .lede", ".stage-copy .cta-row", ".stage-stats"];
+const HERO_COPY = [".stage-copy h1", ".stage-copy .lede", ".stage-copy .cta-row", ".stage-copy .tour-link", ".stage-copy .stats-q", ".stage-stats"];
 
 function press(el, cursor) {
   if (!el) return;
@@ -26,25 +26,25 @@ const chatOpen = () => !document.querySelector(".chat")?.hidden;
 const closeChat = () => { if (chatOpen()) document.querySelector(".chat .gp-close")?.click(); };
 
 const STEPS = [
-  { sel: '[data-tour="globe"]', clearOf: HERO_COPY, title: "This week's tremors",
-    text: "Each glow is a show that just broke out in one country. Arcs show where it heads next." },
-  { sel: '[data-tour="globe"]', clearOf: HERO_COPY, title: "Watch one travel",
-    text: "Nightwatch broke out in Denmark. Norway is most likely next, and the panel says why.",
-    act: async (cursor) => {
+  { sel: '[data-tour="globe"]', clearOf: HERO_COPY, title: "This week, on a globe",
+    text: "Each glowing country is where a Netflix show or film just got popular. The lines point to where we predict it goes next." },
+  { sel: '[data-tour="globe"]', clearOf: HERO_COPY, title: "Follow one show",
+    text: "Nightwatch, a Danish thriller film, is popular in Denmark. We predict Norway is the most likely next country, and the panel says why.",
+    act: async () => {
       const chip = [...document.querySelectorAll(".rail-chip")].find((c) => /nightwatch/i.test(c.textContent))
         || document.querySelectorAll(".rail-chip")[1];
-      // Follow it without sending the cursor down to the row of titles: the eye stays on the globe.
+      // Follow it without sending the cursor down to the row of shows: the eye stays on the globe.
       chip?.click();
       return 2400;
     } },
-  { sel: '[data-tour="plan"]', title: "Plan the launch",
-    text: "An AI suggests partners. Qloo keeps only the ones this audience really loves." },
-  { sel: '[data-tour="release"]', title: "Releasing something new?",
-    text: "A film, an album, a comedy tour: Qloo finds its countries, cities and venues." },
-  { sel: '[data-tour="qloo"]', title: "Why Qloo decides",
-    text: "An AI alone named partners Qloo could not back 71% of the time." },
-  { sel: '[data-tour="chat"]', title: "Ask anything",
-    text: "Watch it answer, with every step it took shown.",
+  { sel: '[data-tour="plan"]', title: "Get the launch plan",
+    text: "For the next country: the cities where fans live, and the local artists and brands Qloo's data supports." },
+  { sel: '[data-tour="release"]', title: "Planning your own release?",
+    text: "A film, an album, a comedy show or a tour: see which countries, cities and venues would love it." },
+  { sel: '[data-tour="qloo"]', title: "Why Qloo matters",
+    text: "An AI alone suggests partners with confidence, but Qloo's audience data supported only 29% of them. So here the AI suggests, and Qloo decides." },
+  { sel: '[data-tour="chat"]', title: "Ask in plain words",
+    text: "Ask about any show or country. Watch it answer, with the steps it took.",
     act: async (cursor, aim) => {
       if (!chatOpen()) press(document.querySelector('[data-tour="chat"]'), cursor);
       // The button hides as the chat opens; move the spotlight to the chat at once, not after the typing.
@@ -52,7 +52,7 @@ const STEPS = [
       await wait(400);
       const input = document.querySelector(".chat-form input");
       if (!input) return 0;
-      const question = "why is nightwatch breaking in norway";
+      const question = "why is nightwatch heading to norway";
       input.value = "";
       for (const ch of question) { input.value += ch; await wait(reduced() ? 0 : TYPE_MS); }
       input.form?.requestSubmit();
@@ -60,7 +60,14 @@ const STEPS = [
     },
     leave: closeChat },
   { sel: '[data-tour="theme"]', title: "Light or dark, your call",
-    text: "Switch themes here. The Tour button beside it replays this any time." },
+    text: "Switch themes here. The Tour button beside it replays this tour any time." },
+];
+
+// What AFTERSHOCK is, before any step: the three things a first-time visitor needs (what, why special, why try).
+const INTRO_POINTS = [
+  ["What it is", "When a Netflix show or film gets popular in one country, AFTERSHOCK predicts which country it reaches next."],
+  ["What makes it special", "Qloo's data on what people really like checks every launch idea, so each plan fits that country's audience."],
+  ["Why try it", "See this week's predictions, and for each one a launch plan: the cities, the local artists, the brands."],
 ];
 
 const cursorIcon = () => s("svg", { viewBox: "0 0 24 24", width: 24, height: 24, "aria-hidden": "true" },
@@ -102,13 +109,14 @@ export function startTour() {
   const veil = h("div", { class: "tour-veil" });
   const introKeys = (e) => { if (e.key === "Escape") { leave(); remember(); } };
   const leave = () => { veil.remove(); active = null; removeEventListener("keydown", introKeys); };
-  const go = h("button", { type: "button", class: "btn btn-primary" }, "Show me");
+  const go = h("button", { type: "button", class: "btn btn-primary" }, "Show me around (60 s)");
   veil.append(h("div", { class: "tour-intro", role: "dialog", "aria-modal": "true", "aria-label": "Welcome" },
     shockRings(),
     seismograph(),
-    h("p", { class: "tour-step mono" }, "A 60-second tour"),
-    h("h2", null, "Every hit has an ", h("em", null, "aftershock.")),
-    h("p", null, "Watch one travel, see Qloo check the plan, and ask the agent anything."),
+    h("p", { class: "tour-step mono" }, "Welcome to AFTERSHOCK"),
+    h("h2", null, "Shows travel. ", h("em", null, "See where next.")),
+    h("ul", { class: "tour-points" }, INTRO_POINTS.map(([k, v]) => h("li", null, h("strong", null, k), h("span", null, v)))),
+    h("p", { class: "tour-name" }, "Why the name? After an earthquake, smaller aftershocks follow nearby. Popular shows travel the same way."),
     h("div", { class: "tour-intro-actions" }, go,
       h("button", { type: "button", class: "btn btn-ghost", onclick: () => { leave(); remember(); } }, "I'll explore")),
     h("p", { class: "tour-keys mono" }, h("kbd", null, "Enter"), " to start, ", h("kbd", null, "Esc"), " to skip")));

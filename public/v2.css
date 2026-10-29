@@ -395,11 +395,13 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 .tour-intro { position: relative; isolation: isolate; width: min(520px, 100%); text-align: center; padding: 26px 28px 20px; border-radius: 20px; background: var(--paper-2); border: 1px solid var(--rule); box-shadow: 0 30px 80px var(--shadow); animation: tour-in .45s cubic-bezier(.2,.8,.2,1), tour-jolt .5s .78s cubic-bezier(.36,.07,.19,.97); }
 /* Text arrives after the trace has drawn its main tremor. */
-.tour-intro > :where(.tour-step, h2, p, .tour-intro-actions) { opacity: 0; animation: tour-rise .5s cubic-bezier(.2,.8,.2,1) forwards; }
+.tour-intro > :where(.tour-step, h2, p, .tour-intro-actions, .tour-points) { opacity: 0; animation: tour-rise .5s cubic-bezier(.2,.8,.2,1) forwards; }
 .tour-intro > .tour-step { animation-delay: .9s; }
 .tour-intro > h2 { animation-delay: 1s; }
 .tour-intro > p:not(.tour-step, .tour-keys) { animation-delay: 1.12s; }
-.tour-intro > .tour-intro-actions { animation-delay: 1.24s; }
+.tour-intro > .tour-points { animation-delay: 1.1s; }
+.tour-intro > .tour-name { animation-delay: 1.25s; }
+.tour-intro > .tour-intro-actions { animation-delay: 1.35s; }
 .tour-intro > .tour-keys { animation-delay: 1.5s; }
 @keyframes tour-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes tour-jolt { 0%, 100% { translate: 0 0; } 15% { translate: -5px 1px; } 30% { translate: 4px -1px; } 45% { translate: -3px 0; } 60% { translate: 2px 1px; } 80% { translate: -1px 0; } }
@@ -517,3 +519,45 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .rel-more > summary::before { content: ""; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .2s; }
 .rel-more[open] > summary::before { transform: rotate(45deg); }
 .rel-more > summary:hover { color: var(--ink); }
+
+/* Plain-language home: one main button, a quiet tour link, the stats framed as a question, a real example, a real user. */
+.tour-link { display: inline-flex; align-items: center; gap: 8px; margin: 14px 0 0; padding: 4px 0; border: 0; background: none; color: var(--ink-soft); font: 500 0.92rem var(--sans); cursor: pointer; }
+.tour-link:hover { color: var(--ink); }
+.tour-link-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); position: relative; flex: none; }
+.tour-link-dot::after { content: ""; position: absolute; left: 7px; top: 5px; border-left: 6px solid var(--on-accent); border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.stats-q { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid var(--rule); font-weight: 600; color: var(--ink); }
+.stage-copy .stage-stats { border-top: 0; padding-top: 6px; margin-top: 6px; }
+.stats-how { grid-column: 1 / -1; font-size: 0.88rem; justify-self: start; }
+.flow-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.flow-3 strong { font-size: 1.15rem; }
+.flow-3 span:not(.flow-n) { font-size: 0.95rem; }
+@media (max-width: 900px) { .flow-3 { grid-template-columns: 1fr; } }
+
+.example-card { margin-top: 18px; padding: 22px; border: 1px solid var(--rule); border-radius: 18px; background: radial-gradient(600px 220px at 100% 0%, rgba(255, 90, 54, .08), transparent 70%), var(--paper-2); display: grid; gap: 18px; }
+.ex-head { display: flex; gap: 18px; align-items: center; }
+.ex-poster { width: 84px; height: 120px; object-fit: cover; border-radius: 10px; box-shadow: 0 10px 26px var(--shadow); flex: none; }
+.ex-tag { margin: 0; font-size: 0.75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink, var(--accent)); }
+.ex-head h3 { margin: 4px 0; font-size: clamp(1.3rem, 3vw, 1.7rem); }
+.ex-sub { margin: 0; color: var(--ink-soft); }
+.ex-facts { margin: 0; display: grid; gap: 0; border-top: 1px solid var(--rule); }
+.ex-row { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.ex-row dt { color: var(--ink-soft); font-size: 0.9rem; }
+.ex-row dd { margin: 0; }
+.example-card > .btn { justify-self: start; }
+@media (max-width: 600px) { .ex-row { grid-template-columns: 1fr; gap: 2px; } .ex-poster { width: 64px; height: 92px; } }
+
+.voice { margin: 22px 0 0; padding: 18px 22px; border-left: 3px solid var(--qloo); border-radius: 0 14px 14px 0; background: var(--qloo-soft); }
+.voice blockquote { margin: 0; }
+.voice blockquote p { margin: 0; font: 600 clamp(1.15rem, 2.4vw, 1.45rem)/1.35 var(--serif); color: var(--ink); }
+.voice figcaption { margin-top: 6px; font-size: 0.9rem; color: var(--ink-soft); font-weight: 600; }
+.voice figcaption .muted { font-weight: 400; }
+
+/* The intro says what AFTERSHOCK is in three short points before the tour starts. */
+.tour-intro { width: min(600px, 100%); }
+.tour-points { list-style: none; margin: 6px 0 14px; padding: 0; display: grid; gap: 10px; text-align: left; counter-reset: pt; }
+.tour-points li { counter-increment: pt; display: grid; grid-template-columns: 28px 1fr; column-gap: 12px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--tint); border: 1px solid var(--rule); }
+.tour-points li::before { content: counter(pt); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 0.8rem var(--mono); color: var(--on-accent); background: linear-gradient(135deg, var(--amber), var(--accent)); }
+.tour-points strong { font-size: 0.95rem; }
+.tour-points span { color: var(--ink-soft); font-size: 0.9rem; line-height: 1.4; }
+.tour-intro .tour-name { font-size: 0.82rem; margin-bottom: 16px; max-width: 46ch; }
+@media (max-height: 760px) { .tour-intro .tour-seismo { height: 48px; } .tour-points li { padding: 8px 10px; } }

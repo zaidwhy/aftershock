@@ -3,7 +3,7 @@
 // and loaded only on the home page, after the copy has painted.
 import { h } from "./dom.js";
 import { getStorm } from "./api.js";
-import { pct, rankLabel } from "./format.js";
+import { pct, rankLabel, plainWhy } from "./format.js";
 import { ISO } from "./iso.js";
 import { CENTROID } from "./centroids.js";
 
@@ -150,11 +150,11 @@ export async function mountGlobe(host, week, onPick) {
     const bits = [`<b>${esc(name(code))}</b>`];
     if (focusId && detail) {
       const row = detail.spillover?.forecasts?.find((r) => r.code === code);
-      if (detail.origin_countries?.some((o) => o.code === code)) bits.push("Broke out here");
+      if (detail.origin_countries?.some((o) => o.code === code)) bits.push("Popular here now");
       else if (row) bits.push(`${rankLabel(detail.spillover.forecasts.indexOf(row) + 1, detail.spillover.forecasts.length)}: ${pct(row.probability)}`);
     } else {
-      if (originSet.has(code)) bits.push("A breakout started here this week");
-      if (chanceBy.has(code)) bits.push(`${pct(chanceBy.get(code))} chance at least one breakout arrives`);
+      if (originSet.has(code)) bits.push("A show got popular here this week");
+      if (chanceBy.has(code)) bits.push(`${pct(chanceBy.get(code))} chance one of this week's shows arrives`);
     }
     return `<div class="globe-tip">${bits.join("<br>")}</div>`;
   }
@@ -233,32 +233,35 @@ export async function mountGlobe(host, week, onPick) {
   };
 }
 
-/** The panel beside the globe for one country: week view lists the titles involved; title view gives the forecast,
- *  the reason, Qloo's cities and the AI names Qloo confirmed there. */
+/** The panel beside the globe for one country: the week view lists the shows involved; the show view gives the
+ *  prediction, the reason, where Qloo says the fans live and the partners Qloo supports there. */
 export function countryPanel(code, storm, week) {
   const head = h("p", { class: "gp-kicker mono" }, storm ? storm.title : "This week");
   if (storm) {
     const rows = storm.spillover?.forecasts || [];
     const row = rows.find((r) => r.code === code);
     const rank = rows.indexOf(row) + 1;
-    const isOrigin = storm.origin_countries?.some((o) => o.code === code);
+    const origin = storm.origin_countries?.find((o) => o.code === code);
+    const place = row?.name || origin?.name || name(code);
     const kit = (storm.launch_kit || []).find((k) => k.code === code);
     const confirmed = kit?.plan?.confirmed || [];
     return h("div", { class: "gp-body" }, head,
-      h("h3", { class: "gp-title" }, name(code)),
-      isOrigin ? h("p", { class: "gp-big" }, "Broke out here") : row ? [h("p", { class: "gp-rank mono" }, rankLabel(rank, rows.length)), h("p", { class: "gp-big" }, h("span", { class: "gp-num" }, pct(row.probability)), " chance to chart within 4 weeks")] : h("p", { class: "gp-big" }, "Not in this title's forecast"),
-      row?.why ? h("p", { class: "gp-why" }, h("span", { class: "gp-label mono" }, "Why"), `${row.why}.`) : null,
-      kit?.hotspots?.places?.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo heatmap"), `Audience lives around ${kit.hotspots.places.join(", ")}`) : null,
-      confirmed.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo confirmed"), confirmed.slice(0, 5).map((c) => c.name).join(", ")) : null,
-      kit?.brief ? h("a", { class: "btn btn-primary gp-cta", href: `#/plan/${encodeURIComponent(storm.id)}/${encodeURIComponent(code)}` }, `Plan the launch in ${name(code)}`)
-        : h("a", { class: "btn gp-cta", href: `#/storm/${encodeURIComponent(storm.id)}` }, "Open the full forecast"));
+      h("h3", { class: "gp-title" }, place),
+      origin ? h("p", { class: "gp-big" }, "Popular here now")
+        : row ? [h("p", { class: "gp-rank mono" }, rankLabel(rank, rows.length)), h("p", { class: "gp-big" }, h("span", { class: "gp-num" }, pct(row.probability)), " chance to reach Netflix's Top 10 here within 4 weeks")]
+        : h("p", { class: "gp-big" }, "Not predicted for this show"),
+      row?.why ? h("p", { class: "gp-why" }, h("span", { class: "gp-label mono" }, "Why"), `${plainWhy(row.why)}.`) : null,
+      kit?.hotspots?.places?.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono qloo-mark" }, "Where fans live"), kit.hotspots.places.join(", ")) : null,
+      confirmed.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono qloo-mark" }, "Partners Qloo supports"), confirmed.slice(0, 5).map((c) => c.name).join(", ")) : null,
+      kit?.brief ? h("a", { class: "btn btn-primary gp-cta", href: `#/plan/${encodeURIComponent(storm.id)}/${encodeURIComponent(code)}` }, `See the launch plan for ${place}`)
+        : h("a", { class: "btn gp-cta", href: `#/storm/${encodeURIComponent(storm.id)}` }, "See the full prediction"));
   }
   const c = (week.map?.countries || []).find((x) => x.code === code);
   const started = week.storms.filter((s) => s.origin_countries?.some((o) => o.code === code));
   return h("div", { class: "gp-body" }, head,
     h("h3", { class: "gp-title" }, name(code)),
-    c ? h("p", { class: "gp-big" }, h("span", { class: "gp-num" }, pct(c.chance)), " chance at least one of this week's breakouts charts here") : h("p", { class: "gp-big" }, "No breakout is forecast to arrive here this week"),
+    c ? h("p", { class: "gp-big" }, h("span", { class: "gp-num" }, pct(c.chance)), " chance one of this week's trending shows reaches the Top 10 here") : h("p", { class: "gp-big" }, "None of this week's trending shows is predicted to arrive here"),
     c?.top?.length ? h("ul", { class: "gp-list" }, c.top.map((t) => h("li", null, h("a", { href: `#/storm/${encodeURIComponent(t.id)}` }, t.title), h("span", { class: "mono" }, pct(t.p))))) : null,
-    started.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono" }, "Broke out here"), started.slice(0, 4).map((s) => s.title).join(", ")) : null,
-    h("p", { class: "gp-hint" }, "Pick a title above to see where it goes next and Qloo's city heatmap."));
+    started.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono" }, "Popular here now"), started.slice(0, 4).map((s) => s.title).join(", ")) : null,
+    h("p", { class: "gp-hint" }, "Pick a show below the globe to see where it goes next and where its fans live."));
 }

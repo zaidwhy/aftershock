@@ -22,3 +22,7 @@ export const BANDS = [
   ["24_and_younger", "24-", "24 and younger"], ["25_to_29", "25-29", "25 to 29"], ["30_to_34", "30-34", "30 to 34"],
   ["35_to_44", "35-44", "35 to 44"], ["45_to_54", "45-54", "45 to 54"], ["55_and_older", "55+", "55 and older"],
 ];
+
+/** The forecast's reason in plain words: "Norway joined 12 of 67 past breakouts that started in Denmark" reads
+ *  "Norway also charted for 12 of 67 shows that were popular first in Denmark". Unknown shapes pass through. */
+export const plainWhy = (why) => (why || "").replace(" joined ", " also charted for ").replace("past breakouts that started in", "shows that were popular first in");
