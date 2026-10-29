@@ -43,10 +43,12 @@ const STEPS = [
     text: "A film, an album, a comedy tour: Qloo finds its countries, cities and venues." },
   { sel: '[data-tour="qloo"]', title: "Why Qloo decides",
     text: "An AI alone named partners Qloo could not back 71% of the time." },
-  { sel: '[data-tour="chat"]', then: ".chat", title: "Ask anything",
+  { sel: '[data-tour="chat"]', title: "Ask anything",
     text: "Watch it answer, with every step it took shown.",
-    act: async (cursor) => {
+    act: async (cursor, aim) => {
       if (!chatOpen()) press(document.querySelector('[data-tour="chat"]'), cursor);
+      // The button hides as the chat opens; move the spotlight to the chat at once, not after the typing.
+      aim(".chat");
       await wait(400);
       const input = document.querySelector(".chat-form input");
       if (!input) return 0;
@@ -147,6 +149,8 @@ function run() {
     const el = document.querySelector(target);
     if (!el) return;
     const r = el.getBoundingClientRect();
+    // A target that has just hidden has no box; keep the spotlight where it was rather than jump to the corner.
+    if (!r.width || !r.height) return;
     let edge = r.left;
     for (const sel of steps[i].clearOf || []) {
       const over = document.querySelector(sel)?.getBoundingClientRect();
@@ -160,11 +164,12 @@ function run() {
     const roomLeft = box.x - 16 >= cw, roomRight = innerWidth - (box.x + box.w) - 16 >= cw;
     const roomBelow = innerHeight - (box.y + box.h) - 14 >= ch, roomAbove = box.y - 14 >= ch;
     let top, left;
-    if (roomBelow || roomAbove) {
+    // Tall targets (the globe, the open chat) take the card beside them, level with their top.
+    const tall = box.h > innerHeight * 0.45 && (roomLeft || roomRight);
+    if (!tall && (roomBelow || roomAbove)) {
       top = roomBelow ? box.y + box.h + 14 : box.y - ch - 14;
       left = box.x + box.w / 2 - cw / 2;
     } else {
-      // A tall target (the globe, the open chat): the card goes beside it, level with its top.
       top = box.y + 12;
       left = roomLeft ? box.x - cw - 16 : roomRight ? box.x + box.w + 16 : box.x + 16;
     }
@@ -208,9 +213,7 @@ function run() {
     if (st.act) {
       await wait(800);
       if (mine !== ticket || !active) return;
-      await st.act(cursor);
-      if (mine !== ticket || !active) return;
-      if (st.then) { target = st.then; scrollTo(document.querySelector(target)); setTimeout(pointAt, 300); }
+      await st.act(cursor, (sel) => { if (mine === ticket) { target = sel; setTimeout(pointAt, 350); } });
     }
   }
   const keys = (e) => {
