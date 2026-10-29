@@ -333,3 +333,7 @@ main { max-width: 1180px; }
 
 /* The brief and the steps use the full column; at 760px the evidence table was cramped and the right side empty. */
 .plan-brief, .plan-steps { max-width: 1000px; }
+
+/* .plain caps text at 68ch; a table with that class must still use the full width, or its columns squeeze. */
+table.use-table, table.ev-table { max-width: none; width: 100%; }
+.use-table td:first-child { min-width: 110px; }
