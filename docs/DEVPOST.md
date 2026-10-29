@@ -79,7 +79,7 @@ What each output does not prove is written next to it: the Launch Brief has an "
 
 ## Data rights
 
-Netflix's public Top 10 (credited; we use the published per-country lists), Qloo responses cached privately and never committed, MusicBrainz (CC0), Wikimedia pageviews, OpenStreetMap Nominatim (ODbL, credited), Tunefind data dropped over its terms. We claim no permission beyond what each source publishes.
+Netflix publishes its weekly Top 10 lists on its Top 10 site, with download links for the files. We read the per-country file when a new week appears and credit Netflix. We have not asked Netflix for permission, and nothing here means Netflix approves of, endorses or is connected with AFTERSHOCK. Netflix's Terms of Use (section 1.8) restrict reproducing information from the Netflix service, automated access and data extraction, and use in connection with machine learning; whether they cover the public Top 10 files is not something we can settle, so this is a hackathon prototype, and any use beyond it would need Netflix's permission first. Qloo responses are cached privately and never committed. MusicBrainz (CC0), Wikimedia pageviews, OpenStreetMap Nominatim (ODbL, credited). Tunefind data dropped over its terms.
 
 ## Testing instructions for judges
 

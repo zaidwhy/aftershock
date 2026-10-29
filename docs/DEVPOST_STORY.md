@@ -60,7 +60,7 @@ $$\text{lift} = \frac{\text{AFTERSHOCK's hit rate}}{\text{obvious guess}} = \fra
 ## What's next for AFTERSHOCK
 
 - **Grade it live.** The first forecasts are graded from 15 November, in public, misses included.
-- **More charts, with permission.** Netflix is the only streamer we found that publishes per-country weekly charts. Any other chart (music, video, other platforms) plugs straight into the same forecast once its terms allow it.
+- **Permission first.** We have no permission from Netflix and claim none; its Terms of Use restrict automated access and reuse. Before AFTERSHOCK is anything more than a prototype, we would ask Netflix, and any other chart (music, video, other platforms) plugs into the same forecast only once its terms allow it.
 - **Demand where there is no release.** With streaming-availability data, flag countries where Qloo sees the audience but the title isn't offered yet, so a distributor can license it there.
 - **Tours and live shows.** Plan a release already handles comedians and touring artists. Next: event calendars, so a promoter sees open dates next to the audience.
 - **A first real test with a label or promoter**, to measure what no backtest can: whether acting on a brief actually moves streams, tickets or sales. Until then, every output is a shortlist for research, not a promise.

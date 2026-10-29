@@ -162,7 +162,7 @@ API contract: `docs/API.md`.
 
 ### Data and terms
 
-Netflix Top 10 is Netflix's public weekly TSV; pageviews come from the Wikimedia API; soundtrack songs from MusicBrainz (CC0); place names from OpenStreetMap Nominatim. Raw Qloo responses are cached on the runner or locally and are never committed or served. Qloo is used under the hackathon key. Git history before 27 Oct 2026 still contains placement CSVs that were collected from Tunefind; they were removed from the current tree once their terms were read, and nothing in the product uses them.
+Netflix publishes its weekly Top 10 lists on its Top 10 site, with download links for the files. We read the per-country file when a new week appears and credit Netflix. We have not asked Netflix for permission, and nothing here means Netflix approves of, endorses or is connected with AFTERSHOCK. Netflix's Terms of Use (section 1.8) restrict reproducing information from the Netflix service, automated access and data extraction, and use in connection with machine learning; whether they cover the public Top 10 files is not something we can settle, so this is a hackathon prototype, and any use beyond it would need Netflix's permission first. Beyond Netflix: pageviews come from the Wikimedia API; soundtrack songs from MusicBrainz (CC0); place names from OpenStreetMap Nominatim. Raw Qloo responses are cached on the runner or locally and are never committed or served. Qloo is used under the hackathon key. Git history before 27 Oct 2026 still contains placement CSVs that were collected from Tunefind; they were removed from the current tree once their terms were read, and nothing in the product uses them.
 
 ## 6. Limits: what the results do not establish
 

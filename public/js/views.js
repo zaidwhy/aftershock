@@ -682,7 +682,7 @@ export function renderMethod(root) {
     h("p", null, "The Qloo key stays on the server; this page only talks to AFTERSHOCK's own API."),
     h("section", null, h("h2", null, "Data and terms"),
       h("ul", { class: "plain-list" },
-        h("li", null, h("strong", null, "Netflix Top 10"), ": public download from Netflix's Top 10 site."),
+        h("li", null, h("strong", null, "Netflix Top 10"), ": the per-country file Netflix links from its Top 10 site, credited. We have no permission from Netflix and claim none; its Terms of Use restrict automated access and reuse, so this is a prototype, and any use beyond it would need Netflix's permission."),
         h("li", null, h("strong", null, "Qloo API"), ": hackathon key. Results are shown in the app; raw responses are never published in the repo. Audiences are aggregates, not individuals."),
         h("li", null, h("strong", null, "Wikimedia Pageviews API"), "."),
         h("li", null, h("strong", null, "MusicBrainz"), " (CC0): soundtrack songs."),
