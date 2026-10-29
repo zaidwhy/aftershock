@@ -43,7 +43,7 @@ SUMMARY_TEMPLATE = "template"
 ALLOWED_CAPS = {"the", "this", "that", "it", "its", "a", "an", "in", "for", "with", "at", "on", "to", "and", "but",
                 "start", "approach", "begin", "lead", "open", "pair", "target", "expect", "focus", "launch", "because",
                 "there", "here", "if", "as", "by", "from", "of", "qloo", "netflix", "ai", "gemini", "kits", "kit",
-                "partners", "cities", "chance", "rank", "audience", "no", "not", "do", "avoid", "treat", "use"}
+                "partners", "cities", "chance", "rank", "audience", "second", "third", "most", "likely", "no", "not", "do", "avoid", "treat", "use"}
 _WORD = re.compile(r"[^\W\d_][\w'.-]*", re.UNICODE)
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
 _warned = []
@@ -144,12 +144,23 @@ def _partners(row, use_plan):
     return out
 
 
+# A bare "14%" reads as weak; the rank says what it means: of all countries, this is where it is second likeliest to go.
+_ORDINAL = {1: "", 2: "second ", 3: "third ", 4: "fourth ", 5: "fifth "}
+
+
+def rank_phrase(rank, of_countries):
+    """'the most likely', 'the second most likely', ... next country; past fifth, 'number 7 of 15'."""
+    if rank in _ORDINAL:
+        return f"the {_ORDINAL[rank]}most likely next country (of {of_countries})"
+    return f"number {rank} of {of_countries} likely next countries"
+
+
 def template_summary(b):
     partners = [g["picks"][0]["name"] for g in b["partners"] if g["picks"] and g.get("group") == "partner"]
     where = f" Start in {_join(b['cities'])}." if b["cities"] else ""
     pair = f" Approach {_join(partners[:3])}." if partners else ""
-    return (f"{b['title']} has a {b['chance_label']} chance of charting in {b['country']} within "
-            f"{b['horizon_weeks']} weeks, rank {b['rank']} of {b['of_countries']}.{where}{pair}")
+    return (f"{b['country']} is {rank_phrase(b['rank'], b['of_countries'])} for {b['title']}: a {b['chance_label']} "
+            f"chance of charting within {b['horizon_weeks']} weeks.{where}{pair}")
 
 
 def _moves(title, country, chance_label, horizon, cities, partners, event_ideas, lead_kit=False):
@@ -199,8 +210,9 @@ def brief(detail, code):
     rank = forecasts.index(fc) + 1
     origins = _join([o["name"] for o in detail.get("origin_countries") or []]) or "its home markets"
     steps = [{"key": "forecast", "title": "Forecast where it goes next",
-              "found": f"{title} is breaking out in {origins}; Netflix history gives {country} a {_pct(fc['probability'])} "
-                       f"chance of charting it within {horizon} weeks, rank {rank} of {len(forecasts)} countries.",
+              "found": f"{title} is breaking out in {origins}; Netflix history makes {country} "
+                       f"{rank_phrase(rank, len(forecasts))}, with a {_pct(fc['probability'])} chance of charting "
+                       f"it within {horizon} weeks.",
               "note": "The country ranking comes from where past breakouts from the same origin spread (Netflix "
                           "history only), so titles from the same origin get similar rankings. Qloo is what makes "
                           "the plan specific to this title."}]
@@ -296,8 +308,8 @@ def brief(detail, code):
     out = {"title": title, "country": country, "code": code, "storm_id": detail.get("id"), "rank": rank,
            "of_countries": len(forecasts), "chance": fc["probability"], "chance_label": _pct(fc["probability"]),
            "horizon_weeks": horizon,
-           "headline": f"{title} has a {_pct(fc['probability'])} chance of charting in {country} within {horizon} "
-                       f"weeks (rank {rank} of {len(forecasts)}).",
+           "headline": f"{country} is {rank_phrase(rank, len(forecasts))} for {title}: a {_pct(fc['probability'])} "
+                       f"chance of charting within {horizon} weeks.",
            "scale": scale_line(fc["probability"]),
            "kit_scope": "countrywide" if generic else "title-specific",
            "partner_basis": "qloo_kit_first" if lead and use_plan else "ai_confirmed" if use_plan else "qloo_kit",

@@ -14,7 +14,8 @@
 <meta name="twitter:title" content="AFTERSHOCK - An AI's launch plan sounds right. Qloo checks it.">
 <meta name="twitter:description" content="An AI&#39;s launch plan sounds right. Qloo checks it. Qloo could back only 29% of what an AI alone named for an audience in a country; AFTERSHOCK keeps only what Qloo confirms, forecasts which country a Netflix breakout reaches next, and maps the cities where that audience lives.">
 <meta name="twitter:image" content="https://aftershock-qloo.vercel.app/og.png">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="dark light">
+<script>try { if (localStorage.getItem("aftershock-theme") === "light") document.documentElement.dataset.theme = "light"; } catch (e) { /* storage blocked: stay dark */ }</script>
 <meta name="theme-color" content="#07090D">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -66,6 +67,7 @@
       </div>
     </details>
     <button type="button" class="icon-btn" data-tour="replay" aria-label="Replay the guided tour">Tour</button>
+    <button type="button" class="icon-btn theme-btn" data-tour="theme" aria-label="Switch to light mode" title="Light or dark"></button>
   </nav>
 </header>
 <main id="app" tabindex="-1"><p class="status" role="status">Loading...</p>

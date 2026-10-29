@@ -6,6 +6,7 @@ import { hotspotMap } from "./charts.js";
 import { rejectedList } from "./rejected.js";
 import { artistName } from "./artists.js";
 import { checkBox } from "./check.js";
+import { rankLabel } from "./format.js";
 
 const STEP_MS = 450;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -84,8 +85,8 @@ function statTiles(b, row) {
     ? [`${plan.confirmed.length} of ${proposed}`, "AI picks confirmed by Qloo"]
     : ["Qloo's own kit", "fewer than 3 AI picks confirmed"];
   const tiles = [
+    [`${b.rank} of ${b.of_countries}`, rankLabel(b.rank, b.of_countries).toLowerCase()],
     [b.chance_label, `chance to chart in ${b.horizon_weeks} weeks`],
-    [`${b.rank} of ${b.of_countries}`, "countries, ranked by chance"],
     checked,
     [String(ideas), ideas === 1 ? "quick activation idea" : "quick activation ideas"],
   ];
@@ -155,7 +156,7 @@ function evidenceTable(st, b, row) {
   const proposed = confirmed + (dropped.not_placed || 0) + (dropped.not_in_qloo || 0);
   const spec = row?.specificity;
   const rows = [
-    [`${b.country} is a likely next market`,
+    [`${b.country} is the ${rankLabel(b.rank, b.of_countries).toLowerCase()}`,
       `${pctOf(fc?.probability)} chance to chart within 4 weeks${fc?.why ? `; ${fc.why}` : ""}. In the backtest the top 3 countries caught a next market ${BACKTEST.model} of the time against ${BACKTEST.baseline} for the busiest-countries baseline (${BACKTEST.times} times).`,
       "This title's forecast is not graded yet; most breakouts never spread at all."],
     ["These partners fit this audience",

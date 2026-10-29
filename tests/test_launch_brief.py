@@ -43,7 +43,7 @@ def test_title_specific_kit_leads_the_partners_and_ai_picks_follow():
     made = launch_brief.brief(detail([specific_row()]), "kr")
     assert keys(made) == ["forecast", "qloo_kit", "ai_proposals", "qloo_check", "cities", "events", "brief"]
     by = {s["key"]: s for s in made["steps"]}
-    assert "21% chance" in by["forecast"]["found"] and "rank 1 of 3" in by["forecast"]["found"]
+    assert "21% chance" in by["forecast"]["found"] and "the most likely next country (of 3)" in by["forecast"]["found"]
     assert "title-specific" in by["qloo_kit"]["found"] and "decision" not in by["qloo_kit"]
     assert "proposed 11 names" in by["ai_proposals"]["found"]
     assert by["qloo_check"]["found"].startswith("5 confirmed by Qloo") and "4 known to Qloo" in by["qloo_check"]["found"]
@@ -152,7 +152,7 @@ def test_api_brief_and_404s(monkeypatch, tmp_path):
     monkeypatch.setattr(api, "PRIVATE", tmp_path)
     c = TestClient(api.app)
     ok = c.get("/api/brief", params={"storm": "show", "country": "KR"}).json()
-    assert ok["brief"]["headline"].startswith("Show has a 21% chance") and len(ok["steps"]) == 7
+    assert ok["brief"]["headline"].startswith("South Korea is the most likely next country (of 3) for Show: a 21% chance") and len(ok["steps"]) == 7
     assert c.get("/api/storms/show").json()["launch_kit"][0]["brief"] == ok
     nope = c.get("/api/brief", params={"storm": "nope", "country": "KR"})
     assert nope.status_code == 404 and nope.json()["detail"].startswith("No breakout called nope")

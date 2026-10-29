@@ -103,7 +103,7 @@ def test_why_is_a_title_breaking_in_a_country_uses_the_forecast_why(ctx):
 
 def test_why_will_a_title_go_to_a_country_names_its_rank(ctx):
     msg = ask.answer("why will fukrey returns go to nepal", ctx)["answer"]["message"]
-    assert "Nepal has a 20% chance" in msg and "number 2 of 4" in msg and "Nepal joined 3 of 10." in msg
+    assert "Nepal is the second most likely next country (of 4): a 20% chance" in msg and "Nepal joined 3 of 10." in msg
 
 
 def test_why_a_country_that_is_not_in_the_forecast_lists_the_ones_that_are(ctx):
@@ -122,12 +122,12 @@ def test_why_a_country_alone_reads_the_week_map_and_the_forecast_why(ctx):
 
 def test_why_without_a_country_gives_the_top_forecast(ctx):
     msg = ask.answer("why Fukrey Returns", ctx)["answer"]["message"]
-    assert "Bangladesh has a 38% chance" in msg and "After that: Nepal (20%), Sri Lanka (10%)." in msg
+    assert "Bangladesh is the most likely next country (of 4): a 38% chance" in msg and "After that: Nepal (20%), Sri Lanka (10%)." in msg
 
 
 def test_why_for_an_index_title_without_a_written_reason_says_so(ctx):
     msg = ask.answer("why is Fresh Show heading to Japan", ctx)["answer"]["message"]
-    assert "Japan has a 31% chance" in msg and "No written reason is stored" in msg
+    assert "Japan is the most likely next country (of 1): a 31% chance" in msg and "No written reason is stored" in msg
 
 
 def test_where_should_i_release_x_links_plan_a_release_with_the_name(ctx):

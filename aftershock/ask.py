@@ -13,6 +13,7 @@ import difflib
 import re
 from urllib.parse import quote
 
+from aftershock import launch_brief
 from aftershock import titles as title_index
 from aftershock.ripple import MAX_SONGS
 
@@ -951,8 +952,8 @@ def _why_title_answer(found, country, steps, names):
     steps.append(_step("forecast", title, True, f"Read the forecast row for {row['name']}: {pct(row['probability'])}, number {rank} of {len(rows)}."))
     reason = _stop(f"Why: {row['why']}") if row["why"] else "No written reason is stored for this country."
     window = f" within {horizon} weeks" if horizon else ""
-    msg = (f"{title} started in {origin} (week of {week}). {row['name']} has a {pct(row['probability'])} chance of being next{window}"
-           f", number {rank} of {len(rows)}. {reason}")
+    msg = (f"{title} started in {origin} (week of {week}). {row['name']} is {launch_brief.rank_phrase(rank, len(rows))}: "
+           f"a {pct(row['probability'])} chance of charting{window}. {reason}")
     if rank == 1 and len(rows) > 1:
         after = ", ".join(f"{r['name']} ({pct(r['probability'])})" for r in rows[1:3])
         msg += f" After that: {after}."

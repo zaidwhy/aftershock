@@ -1,3 +1,6 @@
+const ORDINAL = ["", "", "second ", "third ", "fourth ", "fifth "];
+/** "Most likely next country", "Second most likely next country", ... "Number 7 of 15": a chance means little without its rank. */
+export const rankLabel = (rank, of) => (rank >= 1 && rank <= 5 ? `${ORDINAL[rank]}most likely next country`.replace(/^./, (c) => c.toUpperCase()) : `Number ${rank} of ${of} likely next countries`);
 export const pct = (p) => (p == null ? "n/a" : p > 0 && p < 0.005 ? "<1%" : `${Math.round(p * 100)}%`);
 export const num2 = (n) => (n == null ? "n/a" : (n >= 0 ? "+" : "-") + Math.abs(n).toFixed(2));
 export const plain2 = (n) => (n == null ? "n/a" : n.toFixed(2));

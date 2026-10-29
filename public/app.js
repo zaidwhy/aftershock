@@ -66,6 +66,17 @@ function route() {
 window.addEventListener("hashchange", route);
 window.addEventListener("aftershock:tour", startTour);
 document.querySelector('[data-tour="replay"]')?.addEventListener("click", startTour);
+// Dark is the default; the choice is kept per browser, and the globe repaints itself on the event.
+const themeBtn = document.querySelector(".theme-btn");
+const showTheme = () => { const light = document.documentElement.dataset.theme === "light"; themeBtn?.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode"); };
+themeBtn?.addEventListener("click", () => {
+  const light = document.documentElement.dataset.theme !== "light";
+  if (light) document.documentElement.dataset.theme = "light"; else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem("aftershock-theme", light ? "light" : "dark"); } catch { /* storage blocked: the choice lasts this visit */ }
+  showTheme();
+  window.dispatchEvent(new CustomEvent("aftershock:theme"));
+});
+showTheme();
 route();
 mountChat();
 maybeAutoTour();

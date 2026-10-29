@@ -17,9 +17,44 @@
   --map-sea: #0C1016;
   --grid: rgba(233, 237, 243, 0.035);
   --focus: #FFC478;
+  --tint: rgba(255, 255, 255, 0.03);
+  --tint-2: rgba(255, 255, 255, 0.06);
+  --head-bg: rgba(7, 9, 13, 0.72);
+  --tip-bg: rgba(10, 12, 17, 0.92);
+  --wh-none: #1b212b;
+  --globe-sea: #0d1320;
+  --shadow: rgba(0, 0, 0, 0.5);
   --serif: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
+/* Daylight: the same identity on paper. Mint and amber darken so they still read as text on white. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --paper: #F5F3EE;
+  --paper-2: #FFFFFF;
+  --panel: rgba(255, 255, 255, 0.86);
+  --ink: #15181D;
+  --ink-soft: #5A616C;
+  --rule: #E2DED5;
+  --accent: #E8462A;
+  --accent-ink: #C83A20;
+  --on-accent: #FFFFFF;
+  --qloo: #0E9C72;
+  --qloo-soft: rgba(14, 156, 114, 0.10);
+  --amber: #B5670A;
+  --map-base: #E6E1D6;
+  --map-sea: #EFEBE3;
+  --grid: rgba(21, 24, 29, 0.045);
+  --focus: #C83A20;
+  --tint: rgba(21, 24, 29, 0.025);
+  --tint-2: rgba(21, 24, 29, 0.05);
+  --head-bg: rgba(245, 243, 238, 0.8);
+  --tip-bg: rgba(255, 255, 255, 0.96);
+  --wh-none: #E3E1DB;
+  --globe-sea: #DCE3EC;
+  --shadow: rgba(30, 30, 40, 0.14);
 }
 
 *, *::before, *::after { box-sizing: border-box; }

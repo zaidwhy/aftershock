@@ -3,7 +3,7 @@
 // and loaded only on the home page, after the copy has painted.
 import { h } from "./dom.js";
 import { getStorm } from "./api.js";
-import { pct } from "./format.js";
+import { pct, rankLabel } from "./format.js";
 import { ISO } from "./iso.js";
 import { CENTROID } from "./centroids.js";
 
@@ -102,8 +102,15 @@ export async function mountGlobe(host, week, onPick) {
     .labelLat("lat").labelLng("lng").labelText("text").labelSize(0.9).labelDotRadius(0.35)
     .labelColor(() => "rgba(255,240,230,0.92)").labelResolution(2);
 
-  g.globeMaterial().color.set("#0d1320");
-  g.globeMaterial().emissive?.set("#05070c");
+  const light = () => document.documentElement.dataset.theme === "light";
+  const paintSea = () => {
+    g.globeMaterial().color.set(getComputedStyle(document.documentElement).getPropertyValue("--globe-sea").trim() || "#0d1320");
+    g.globeMaterial().emissive?.set(light() ? "#9aa6b5" : "#05070c");
+    g.polygonStrokeColor(() => (light() ? "rgba(20,24,30,0.18)" : "rgba(255,255,255,0.10)"));
+  };
+  paintSea();
+  const onTheme = () => { paintSea(); g.polygonCapColor(g.polygonCapColor()); };
+  window.addEventListener("aftershock:theme", onTheme);
   g.renderer().setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   const controls = g.controls();
   controls.autoRotate = !reduced();
@@ -133,7 +140,7 @@ export async function mountGlobe(host, week, onPick) {
     if (focusId && detail) {
       const row = detail.spillover?.forecasts?.find((r) => r.code === code);
       if (detail.origin_countries?.some((o) => o.code === code)) bits.push("Broke out here");
-      else if (row) bits.push(`${pct(row.probability)} chance to chart next`);
+      else if (row) bits.push(`${rankLabel(detail.spillover.forecasts.indexOf(row) + 1, detail.spillover.forecasts.length)}: ${pct(row.probability)}`);
     } else {
       if (originSet.has(code)) bits.push("A breakout started here this week");
       if (chanceBy.has(code)) bits.push(`${pct(chanceBy.get(code))} chance at least one breakout arrives`);
@@ -209,7 +216,7 @@ export async function mountGlobe(host, week, onPick) {
   g.pointOfView({ lat: 25, lng: 30, altitude: 2.3 });
   return {
     focus, select,
-    destroy() { resize.disconnect(); seen.disconnect(); g.pauseAnimation(); g._destructor?.(); host.replaceChildren(); },
+    destroy() { window.removeEventListener("aftershock:theme", onTheme); resize.disconnect(); seen.disconnect(); g.pauseAnimation(); g._destructor?.(); host.replaceChildren(); },
   };
 }
 
@@ -218,13 +225,15 @@ export async function mountGlobe(host, week, onPick) {
 export function countryPanel(code, storm, week) {
   const head = h("p", { class: "gp-kicker mono" }, storm ? storm.title : "This week");
   if (storm) {
-    const row = storm.spillover?.forecasts?.find((r) => r.code === code);
+    const rows = storm.spillover?.forecasts || [];
+    const row = rows.find((r) => r.code === code);
+    const rank = rows.indexOf(row) + 1;
     const isOrigin = storm.origin_countries?.some((o) => o.code === code);
     const kit = (storm.launch_kit || []).find((k) => k.code === code);
     const confirmed = kit?.plan?.confirmed || [];
     return h("div", { class: "gp-body" }, head,
       h("h3", { class: "gp-title" }, name(code)),
-      isOrigin ? h("p", { class: "gp-big" }, "Broke out here") : row ? h("p", { class: "gp-big" }, h("span", { class: "gp-num" }, pct(row.probability)), " chance to chart within 4 weeks") : h("p", { class: "gp-big" }, "Not in this title's forecast"),
+      isOrigin ? h("p", { class: "gp-big" }, "Broke out here") : row ? [h("p", { class: "gp-rank mono" }, rankLabel(rank, rows.length)), h("p", { class: "gp-big" }, h("span", { class: "gp-num" }, pct(row.probability)), " chance to chart within 4 weeks")] : h("p", { class: "gp-big" }, "Not in this title's forecast"),
       row?.why ? h("p", { class: "gp-why" }, h("span", { class: "gp-label mono" }, "Why"), `${row.why}.`) : null,
       kit?.hotspots?.places?.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo heatmap"), `Audience lives around ${kit.hotspots.places.join(", ")}`) : null,
       confirmed.length ? h("p", { class: "gp-cities" }, h("span", { class: "gp-label mono qloo-mark" }, "Qloo confirmed"), confirmed.slice(0, 5).map((c) => c.name).join(", ")) : null,
