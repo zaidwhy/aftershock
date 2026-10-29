@@ -22,10 +22,10 @@ export function rejectedList(rejected) {
   const more = (list) => (list.length > SHOWN ? h("p", { class: "plan-note" }, `and ${list.length - SHOWN} more`) : null);
   return h("div", { class: "rejected" },
     placed.length ? h("div", null,
-      h("p", { class: "plan-note mono" }, "Not used, because Qloo does not place them with these viewers here:"),
+      h("p", { class: "plan-note mono" }, "Left out, because Qloo's data does not link them to these viewers here:"),
       h("ul", { class: "rejected-list" }, placed.slice(0, SHOWN).map((r) => h("li", null,
         h("s", null, r.name), h("span", { class: "rejected-why" }, ` (${DOMAIN_WORD[r.domain] ?? r.domain}): ${NOT_PLACED_REASON}`)))),
       more(placed)) : null,
-    unknown.length ? h("p", { class: "plan-note unknown-line" }, h("span", { class: "mono" }, "No Qloo data yet (check locally): "),
+    unknown.length ? h("p", { class: "plan-note unknown-line" }, h("span", { class: "mono" }, "No Qloo data yet, so check these yourself: "),
       unknown.slice(0, SHOWN).map((r) => r.name).join(", "), unknown.length > SHOWN ? `, and ${unknown.length - SHOWN} more` : "", ".") : null);
 }

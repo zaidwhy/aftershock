@@ -18,7 +18,7 @@ export function verdictNode(res, domain, title, country) {
   if (res.verdict === "not_placed") {
     return h("p", { class: "check-out check-no" }, h("s", null, name), ` (${WORD[domain]}): ${NOT_PLACED_REASON}. Qloo knows it, but does not put it among its picks for this audience.`);
   }
-  return h("p", { class: "check-out check-unknown" }, h("span", { class: "mono" }, "No Qloo data yet (check locally): "), h("span", { class: "check-name" }, name),
+  return h("p", { class: "check-out check-unknown" }, h("span", { class: "mono" }, "No Qloo data yet, so check this yourself: "), h("span", { class: "check-name" }, name),
     `. Qloo has no ${WORD[domain]} with exactly this name, which is a gap in its coverage and not a verdict on the name.`);
 }
 

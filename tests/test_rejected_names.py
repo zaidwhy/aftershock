@@ -31,7 +31,7 @@ def test_only_not_placed_names_are_struck_through_and_unknown_ones_are_listed_ap
                   {"domain": "brand", "name": "Beta", "verdict": "not_in_qloo"}])
     assert "<s>Alpha</s>" in out and "<s>Beta</s>" not in out
     assert "not in Qloo's picks for these viewers here" in out
-    assert "No Qloo data yet (check locally): </span>Beta." in out
+    assert "No Qloo data yet, so check these yourself: </span>Beta." in out
 
 
 def test_unknown_names_alone_have_no_strikethrough_or_reason():
@@ -60,7 +60,7 @@ def test_check_box_verdicts_render_in_words():
     yes, no, unknown = run_js(body)
     assert "Confirmed by Qloo: </strong><span>A</span>" in yes and "<s>" not in yes
     assert "<s>B</s>" in no and "not in Qloo's picks for these viewers here" in no
-    assert "<s>" not in unknown and "No Qloo data yet (check locally): </span><span>C</span>" in unknown
+    assert "<s>" not in unknown and "No Qloo data yet, so check these yourself: </span><span>C</span>" in unknown
 
 
 def test_catalog_tag_rule():

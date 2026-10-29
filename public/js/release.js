@@ -66,7 +66,7 @@ function cityMaps(plan) {
   const grid = h("div", { class: "rel-maps" });
   for (const c of withCells) {
     const cities = c.cities || [];
-    const fig = h("figure", { class: "card rel-map" }, h("figcaption", null, h("span", { class: "gp-label mono qloo-mark" }, "Qloo heatmap"), h("strong", null, c.name)));
+    const fig = h("figure", { class: "card rel-map" }, h("figcaption", null, h("span", { class: "gp-label mono qloo-mark" }, "Where fans live (Qloo)"), h("strong", null, c.name)));
     grid.append(fig);
     const pc = c.hotspots.place_cells || [];
     const places = (c.hotspots.places || []).slice(0, pc.length).map((name, i) => ({ name, cell: pc[i] }));
