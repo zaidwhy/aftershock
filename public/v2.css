@@ -568,3 +568,5 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .glossary-list dd { margin: 0; color: var(--ink-soft); }
 @media (max-width: 600px) { .glossary-list div { grid-template-columns: 1fr; gap: 2px; } }
 .agent-line { font-family: var(--sans); font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 4px; }
+/* In-page jumps (the main button, the tour) stop below the sticky header instead of under it. */
+main h2[id], main section[id] { scroll-margin-top: 96px; }
