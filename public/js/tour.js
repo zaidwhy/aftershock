@@ -197,8 +197,9 @@ function run() {
   const scrollTo = (el) => {
     if (!el || getComputedStyle(el).position === "fixed" || el.closest(".site-head")) return;
     const r = el.getBoundingClientRect();
-    // Tall targets show from their top, just under the sticky header; short ones sit mid-screen.
-    const y = r.height > innerHeight * 0.6 ? r.top + scrollY - 72 : r.top + scrollY - (innerHeight - r.height) / 2;
+    // Tall targets show from their top, just under the sticky header, leaving room for the card below; short ones
+    // sit mid-screen.
+    const y = r.height > innerHeight * 0.4 ? r.top + scrollY - 72 : r.top + scrollY - (innerHeight - r.height) / 2;
     window.scrollTo({ top: Math.max(0, y), behavior: reduced() ? "auto" : "smooth" });
   };
   async function show(to) {
