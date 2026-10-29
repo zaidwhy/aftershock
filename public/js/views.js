@@ -86,7 +86,7 @@ function idleWalk(ids, pick, host, isCurrent) {
 
 // Five steps from a chart entry to a brief; the fourth is the one only Qloo can do.
 const FLOW = [
-  ["Detect", "Netflix Top 10, 94 countries, every week"],
+  ["Detect", "Netflix's weekly Top 10, 94 countries"],
   ["Forecast", "Where it charts next, and why"],
   ["Propose", "An AI suggests launch partners"],
   ["Qloo decides", "Keeps only what this audience loves"],
@@ -172,7 +172,7 @@ export function renderHome(root, isCurrent, followId = null) {
         h("ul", { class: "more-list" },
           h("li", null, "Every output is a shortlist for further research: a predicted opportunity, not a confirmed one."),
           h("li", null, "No customers, pilots or prices yet."),
-          h("li", null, "Forecasts are probabilities, graded in public on the ledger from 15 November."),
+          h("li", null, "Forecasts are probabilities. Grading on the public ledger is paused until Netflix permits reading its newer files."),
           h("li", null, "No permission from Netflix is claimed; this is a hackathon prototype.")))));
 
   getScorecard().then((sc) => {
@@ -185,7 +185,7 @@ export function renderHome(root, isCurrent, followId = null) {
     const tiles = [
       gc ? [p(gc.not_placed + gc.not_in_qloo), `of an AI's ${whole(n)} launch names Qloo could not back`] : null,
       lift ? [`${lift.toFixed(1)}x`, `better than guessing the busiest countries, on ${whole(sc.lead_time.model.breakouts)} past breakouts`] : null,
-      locked ? [whole(locked), "forecasts locked before Netflix published the outcome; graded from 15 Nov"] : null,
+      locked ? [whole(locked), "forecasts locked in a public ledger before Netflix published the outcome"] : null,
     ].filter(Boolean);
     stats.replaceChildren(...tiles.map(([v, k]) => h("div", { class: "stat" }, h("span", { class: "stat-v" }, v), h("span", { class: "stat-k" }, k))));
     stats.hidden = !tiles.length;
@@ -682,7 +682,7 @@ export function renderScorecard(root, isCurrent) {
         sc.top_pick?.breakouts > 0 ? h("div", { class: "score-block", "aria-label": "Early read" },
           h("h3", null, "Early read: last week's top picks"),
           h("p", null, `${sc.top_pick.top_pick_hits} of ${sc.top_pick.breakouts} top picks have already charted. If the forecasts were exactly calibrated we would expect ${sc.top_pick.expected_hits}. Always picking the country that charts the most titles (${sc.top_pick.baseline_country}) gets ${sc.top_pick.baseline_hits}.`),
-          h("p", { class: "muted" }, "Defined before the data existed, reported every week whichever way it goes. The 4-week result is the real grade. ",
+          h("p", { class: "muted" }, "Defined before the data existed and reported whichever way it goes. The 4-week result is the real grade. ",
             h("a", { href: "https://github.com/zaidwhy/aftershock/blob/main/docs/EARLY_GRADE.md", rel: "noopener" }, "How it is defined"))) : null,
         h("div", { class: "grid2" }, spillSection, rp.locked ? rippleSection : null),
         h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),

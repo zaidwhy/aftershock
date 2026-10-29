@@ -517,7 +517,7 @@ FEATURES = {
         "scorecard misses miss wrong tests tested honest failures failed", "results right track record performance"),
     "ledger": _feature(
         "Ledger", "#/ledger",
-        "The Ledger holds 3,240 forecasts that were locked before Netflix published the weeks they are graded on. They are graded from 15 Nov.",
+        "The Ledger holds 3,240 forecasts that were locked before Netflix published the weeks they are graded on. Grading is paused until Netflix permits reading its newer files.",
         ("ledger",),
         "ledger locked graded grade grading receipts predictions", "forecasts outcomes proof verify november nov"),
     "song_check": _feature(

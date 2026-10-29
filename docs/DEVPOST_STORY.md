@@ -25,7 +25,7 @@ So we asked: if you can see the first tremor, can you say where the next one lan
 
 ## What it does
 
-**Every hit has an aftershock.** AFTERSHOCK watches Netflix's public Top 10 lists for 94 countries every week and catches titles that just broke out in one to three of them. Then it does three things:
+**Every hit has an aftershock.** AFTERSHOCK reads Netflix's weekly Top 10 lists for 94 countries and catches titles that just broke out in one to three of them. Then it does three things:
 
 1. **Forecasts where it lands next.** From Netflix's own history, with a reason you can read: *"Norway joined 12 of 67 past breakouts that started in Denmark."*
 2. **Asks an AI for a launch plan, then lets Qloo decide.** Gemini proposes artists, brands, shows and films that the audience in that country should love. Qloo's taste graph checks every single name for *that* audience in *that* country. What Qloo backs stays; what it can't back gets struck out on screen, in public.
@@ -46,7 +46,7 @@ $$\text{lift} = \frac{\text{AFTERSHOCK's hit rate}}{\text{obvious guess}} = \fra
   For the 113 breakouts that spread at all, its top 3 named a next market **72%** of the time, against 30%. It also ranks a country that went on to chart above one that didn't 82% of the time (ROC AUC 0.82).
 - **The Qloo half.** `/v2/insights` for what an audience over-indexes on in a country; the same call *without* the title as a control, so a kit that just repeats the country's general taste is labelled countrywide; a filtered call (`filter.results.entities`) that confirms or rejects each AI name; `urn:heatmap` for the cities; `urn:entity:destination` to rank countries for a new release; `urn:entity:place` with venue tags for the venues.
 - **The agent.** A fixed plan of visible steps. We chose that on purpose: a brief someone acts on has to say why every name is in it, and an agent that picks its own steps could quietly skip the Qloo check.
-- **The stack.** Python and FastAPI on Vercel, a vanilla JavaScript front end with a three.js globe (globe.gl) and d3 maps, a GitHub Action that runs every week, an MCP server with ten tools so any AI agent can use it, and a hash-chained ledger where each forecast carries a fingerprint of the one before. 433 automated tests.
+- **The stack.** Python and FastAPI on Vercel, a vanilla JavaScript front end with a three.js globe (globe.gl) and d3 maps, a weekly GitHub Action (paused until Netflix permits it), an MCP server with ten tools so any AI agent can use it, and a hash-chained ledger where each forecast carries a fingerprint of the one before. 433 automated tests.
 
 ## Challenges we ran into
 
@@ -74,8 +74,8 @@ $$\text{lift} = \frac{\text{AFTERSHOCK's hit rate}}{\text{obvious guess}} = \fra
 
 ## What's next for AFTERSHOCK
 
-- **Grade it live.** The first forecasts are graded from 15 November, in public, misses included.
 - **Permission first.** We have no permission from Netflix and claim none; its Terms of Use restrict automated access and reuse. Before AFTERSHOCK is anything more than a prototype, we would ask Netflix, and any other chart (music, video, other platforms) plugs into the same forecast only once its terms allow it.
+- **Grade it live, once permitted.** We stopped the weekly downloads on 29 Oct until Netflix says yes; then the 3,240 locked forecasts are graded in public, misses included.
 - **Demand where there is no release.** With streaming-availability data, flag countries where Qloo sees the audience but the title isn't offered yet, so a distributor can license it there.
 - **Tours and live shows.** Plan a release already handles comedians and touring artists. Next: event calendars, so a promoter sees open dates next to the audience.
 - **A first real test with a label or promoter**, to measure what no backtest can: whether acting on a brief actually moves streams, tickets or sales. Until then, every output is a shortlist for research, not a promise.

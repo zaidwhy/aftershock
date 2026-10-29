@@ -12,7 +12,7 @@
 |---|---|
 | Qloo alone, an LLM alone, an LLM checked by Qloo | How specific to the title the picks are (0 to 1, same 81 title-country pairs): Qloo alone 0.62, LLM alone 0.81, LLM checked by Qloo 0.86 (exploratory, not pre-registered). Of 1,615 names an AI proposed, Qloo could back 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not backed, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not place with that audience. Only confirmed names ship in a plan. |
 | Forecast backtest (829 held-out breakouts) | Counting all 829: its top 3 named a next country for 9.8% of breakouts against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. For scale, a typical country charts a given breakout about 1% of the time (758 of 76,760 held-out pairs), so the featured 14% for Sweden is about 14 times that. Of the three held-out breakouts it was most sure about (a fixed rule), one hit: an Arabic series broke out in Kuwait in April 2026, and its top two forecasts, Saudi Arabia (30%) and Oman (19%), both charted one week later. The other two did not spread. |
-| Forecasts locked in public | 3,240 so far, each locked before Netflix published the week it is graded on; grading starts 15 Nov 2026. |
+| Forecasts locked in public | 3,240, each locked before Netflix published the week it is graded on; grading is paused until Netflix permits reading its newer files. |
 
 ## Why it needs Qloo
 
@@ -35,7 +35,7 @@ A breakout travels country by country: that is what we forecast from Netflix his
 - **Plan a release (new).** For something that has not launched yet, a film, series, album or comedy special, or an artist or comedian going on tour: Qloo ranks 24 countries (or every country in a region you pick) by audience affinity, maps the cities in the top three, finds venues there (comedy clubs, live music venues or cinemas, by Qloo place tag) and names the local shows, films and artists this audience also loves. If Qloo does not know the title yet, up to three comparables stand in for it. It asks what the release is, its goal (tour, premiere or digital only), a region to look deeper in, a home market to leave out, and the release month, which turns the plan into a dated schedule. The result is a world heatmap of every country checked with a ranked list, city maps with each city's numbers, venues filtered to real performance spaces, and a "Why this ranking" panel that walks through each number. Every Qloo call the plan made is listed with its parameters. Names in other scripts work ("오징어 게임" finds Squid Game). Worked examples: Zakir Khan, Kevin Hart, Dua Lipa, and two unreleased titles planned from comparables.
 - **Ask AFTERSHOCK.** A chat on every page answers from the site's own tools, no language model: where a title goes next, why it is breaking in a country, why a title is not here, where a release could work, what any feature does. Every answer shows the steps it took.
 - **Guided tour.** A 60-second tour highlights each feature in turn; it runs on a first visit and from the Tour button.
-- **Public ledger.** Every week's forecasts are locked in a hash-chained ledger before Netflix publishes the weeks they are graded on, then graded. An MCP server exposes the same tools to any agent.
+- **Public ledger.** Each week's forecasts were locked in a hash-chained ledger before Netflix published the weeks they are graded on; grading waits for Netflix's permission. An MCP server exposes the same tools to any agent.
 
 ## Qloo calls we make
 
@@ -70,7 +70,7 @@ What each output does not prove is written next to it: the Launch Brief has an "
 - The warning is about a week. That suits short activations, playlist pushes and local ads, not tours, which are booked months ahead.
 - The country forecast uses Netflix history only. Qloo added no lift to it in our test.
 - It watches Netflix only, because Netflix is the one major streamer we found that publishes a weekly Top 10 for each of 94 countries, back to 2021; we found no comparable per-country charts from other streamers, and third-party chart scrapers carry terms risk. That history is also what makes the forecast testable: it is how we backtested on 829 held-out breakouts and how every new forecast gets graded in public. The Qloo half (kits, city maps, artist overlap, the live check) works for any title Qloo knows, from any platform.
-- Launch kits and activation ideas are not yet validated against outcomes, and forecasts are graded only from 15 Nov 2026.
+- Launch kits and activation ideas are not yet validated against outcomes, and grading of the locked forecasts is paused until Netflix permits reading its newer files.
 
 ## What we measured, including what did not work
 
@@ -81,7 +81,7 @@ What each output does not prove is written next to it: the Launch Brief has an "
 
 ## Data rights
 
-Netflix publishes its weekly Top 10 lists on its Top 10 site, with download links for the files. We read the per-country file when a new week appears and credit Netflix. We have not asked Netflix for permission, and nothing here means Netflix approves of, endorses or is connected with AFTERSHOCK. Netflix's Terms of Use (section 1.8) restrict reproducing information from the Netflix service, automated access and data extraction, and use in connection with machine learning; whether they cover the public Top 10 files is not something we can settle, so this is a hackathon prototype, and any use beyond it would need Netflix's permission first. Qloo responses are cached privately and never committed. MusicBrainz (CC0), Wikimedia pageviews, OpenStreetMap Nominatim (ODbL, credited). Tunefind data dropped over its terms.
+Netflix publishes its weekly Top 10 lists on its Top 10 site, with download links for the files. We read the per-country file each week and credit Netflix; on 29 Oct 2026 we stopped every automated download until we have Netflix's permission. We have not asked Netflix for permission, and nothing here means Netflix approves of, endorses or is connected with AFTERSHOCK. Netflix's Terms of Use (section 1.8) restrict reproducing information from the Netflix service, automated access and data extraction, and use in connection with machine learning; whether they cover the public Top 10 files is not something we can settle, so this is a hackathon prototype, and any use beyond it would need Netflix's permission first. Qloo responses are cached privately and never committed. MusicBrainz (CC0), Wikimedia pageviews, OpenStreetMap Nominatim (ODbL, credited). Tunefind data dropped over its terms.
 
 ## Testing instructions for judges
 

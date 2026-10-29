@@ -11,7 +11,7 @@ const SHOW = 5;
 const ACCESSIBLE = 10;
 const ALL = "";
 const QUICK = 4;
-const WEEK_CAPTION = "Each country is shaded by the chance that at least one of this week's breakouts reaches its Top 10 in the next 4 weeks. Updated every week from Netflix's public data.";
+const WEEK_CAPTION = "Each country is shaded by the chance that at least one of this week's breakouts reaches its Top 10 in the next 4 weeks. From Netflix's public data for the week shown.";
 
 /** "a 52% chance", with "under 1%" for tiny values. */
 export function chanceText(c) {

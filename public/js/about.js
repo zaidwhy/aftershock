@@ -41,7 +41,7 @@ export function renderAbout(root) {
       card("Data, and what we cannot claim", list([
         "No permission from Netflix is claimed; its Terms of Use restrict automated access and reuse, so this is a hackathon prototype.",
         "No customers, pilots or prices yet.",
-        "Forecasts are probabilities, graded in public on the ledger from 15 November."]))),
+        "Forecasts are probabilities. Grading on the public ledger is paused until Netflix permits reading its newer files."]))),
     h("section", { "aria-labelledby": "team-h" },
       h("h2", { id: "team-h" }, "The team"),
       h("div", { class: "card" },

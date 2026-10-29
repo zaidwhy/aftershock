@@ -22,7 +22,7 @@ export function renderAgent(root, isCurrent) {
   document.title = "What the agent did - AFTERSHOCK";
   const box = h("div", null, loading("the agent's last run"));
   add(root, h("h1", null, "What the agent did this week"),
-    h("p", { class: "pitch" }, "AFTERSHOCK runs on its own every Tuesday (a GitHub Actions job) with nobody pressing a button. This page shows its last run, step by step, with what each step found."),
+    h("p", { class: "pitch" }, "AFTERSHOCK ran on its own every Tuesday (a GitHub Actions job) with nobody pressing a button. Those runs are paused until Netflix permits reading its files; this page shows the last one, step by step, with what each step found."),
     box);
   getAgentRun().then((run) => {
     if (!isCurrent()) return;

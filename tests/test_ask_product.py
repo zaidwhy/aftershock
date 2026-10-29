@@ -17,7 +17,7 @@ FEATURE_CASES = [
     ("what is the scorecard", "feature_help", "including the misses", "#/scorecard"),
     ("WHAT IS THE SCORCARD", "feature_help", "including the misses", "#/scorecard"),  # misspelled, shouted
     ("what is the ledger", "feature_help", "3,240 forecasts", "#/ledger"),
-    ("wat is the ledgr", "feature_help", "graded from 15 Nov", "#/ledger"),
+    ("wat is the ledgr", "feature_help", "Grading is paused", "#/ledger"),
     ("what is sync scout", "feature_help", "different their listeners' ages are", "#/scout"),
     ("Sync Scout", "feature_help", "which artists its fans like", "#/scout"),
     ("what is song check", "feature_help", "reaches a new crowd", "#/try"),
