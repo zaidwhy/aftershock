@@ -567,3 +567,4 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .glossary-list dt { font-weight: 600; }
 .glossary-list dd { margin: 0; color: var(--ink-soft); }
 @media (max-width: 600px) { .glossary-list div { grid-template-columns: 1fr; gap: 2px; } }
+.agent-line { font-family: var(--sans); font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 4px; }

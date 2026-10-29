@@ -178,9 +178,13 @@ function run() {
     if (!tall && (roomBelow || roomAbove)) {
       top = roomBelow ? box.y + box.h + 14 : box.y - ch - 14;
       left = box.x + box.w / 2 - cw / 2;
-    } else {
+    } else if (roomLeft || roomRight) {
       top = box.y + 12;
       left = roomLeft ? box.x - cw - 16 : roomRight ? box.x + box.w + 16 : box.x + 16;
+    } else {
+      // No room anywhere (a phone, a full-width target): dock at the bottom like a sheet, so the target's top shows.
+      top = innerHeight - ch - 12;
+      left = innerWidth / 2 - cw / 2;
     }
     // Never off screen, even mid-scroll.
     card.style.top = `${Math.min(innerHeight - ch - 12, Math.max(12, top))}px`;
