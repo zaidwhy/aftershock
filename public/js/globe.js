@@ -112,6 +112,14 @@ export async function mountGlobe(host, week, onPick) {
     g.labelColor(() => (light() ? "rgba(30,24,18,0.9)" : "rgba(255,240,230,0.92)"));
   };
   paintSea();
+  // three.js draws a transparent double-sided material in two passes and marks it for a program check between
+  // them, every frame. With ~570 country meshes that alone kept the main thread near 100%. The caps face outward,
+  // so one pass looks the same. Layers make new materials as data changes; each is caught on the frame it first draws.
+  const singlePass = (m) => { if (m.transparent && !m.forceSinglePass) m.forceSinglePass = true; };
+  g.scene().onBeforeRender = () => g.scene().traverse((o) => {
+    if (Array.isArray(o.material)) o.material.forEach(singlePass);
+    else if (o.material) singlePass(o.material);
+  });
   const onTheme = () => { paintSea(); g.polygonCapColor(g.polygonCapColor()).pointColor(g.pointColor()); };
   window.addEventListener("aftershock:theme", onTheme);
   g.renderer().setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
@@ -128,6 +136,14 @@ export async function mountGlobe(host, week, onPick) {
   const resize = new ResizeObserver(size);
   resize.observe(host);
   // A WebGL loop costs battery and scroll smoothness while nobody can see it.
+  // A slow auto-rotate reads the same at half the frame rate, and each frame is ~900 draw calls of main-thread work.
+  // Any pointer input or camera flight restores the full rate for a moment so dragging and flights stay smooth.
+  const renderer = g.renderer();
+  const draw = renderer.render.bind(renderer);
+  let fullUntil = 0, frame = 0;
+  const wake = (ms = 1600) => { fullUntil = Math.max(fullUntil, performance.now() + ms); };
+  renderer.render = (scene, camera) => { if (performance.now() < fullUntil || (frame++ & 1) === 0) draw(scene, camera); };
+  ["pointerdown", "pointermove", "wheel", "touchstart"].forEach((t) => host.addEventListener(t, () => wake(), { passive: true }));
   const seen = new IntersectionObserver(([e]) => (e.isIntersecting ? g.resumeAnimation() : g.pauseAnimation()));
   seen.observe(host);
 
@@ -191,13 +207,14 @@ export async function mountGlobe(host, week, onPick) {
     // The panel covers the right third of the globe on wide screens; turning the camera east of the target slides
     // the target left, clear of it. The turn scales with altitude, since a closer camera sweeps fewer degrees.
     const shift = besidePanel && innerWidth >= 980 ? altitude * 16 : 0;
+    wake(1400);
     g.pointOfView({ lat: p.lat, lng: p.lng + shift, altitude }, reduced() ? 0 : 1100);
   }
 
   async function focus(stormId) {
     focusId = stormId;
     picked = null;
-    if (!stormId) { detail = null; repaint(); g.pointOfView({ altitude: 2.3 }, reduced() ? 0 : 900); return null; }
+    if (!stormId) { detail = null; repaint(); wake(1200); g.pointOfView({ altitude: 2.3 }, reduced() ? 0 : 900); return null; }
     detail = await getStorm(stormId);
     if (focusId !== stormId) return null;
     controls.autoRotate = false;
