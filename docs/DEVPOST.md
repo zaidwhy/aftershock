@@ -62,7 +62,7 @@ Each buyer has one move that fits in the week between a trending show and its pe
 
 Local media and creators can act fastest, on the same cities. Promoters use Plan my release to choose which cities to research for a tour.
 
-What each output does not prove is written next to it: the launch plan has an "Evidence behind each claim" table (the claim, what supports it, what is still missing), and opens with the decision it supports. Every output is a shortlist for further research, a predicted opportunity, not a confirmed business one: we have not shown that any recommendation lifts streams, tickets or sales. We have no customers or pilots. **Pricing hypothesis (untested):** a weekly per-territory brief for labels and agencies, artist pages free. We have not tested it with anyone.
+What each output does not prove is written next to it: the launch plan has an "Evidence behind each claim" table (the claim, what supports it, what is still missing), and opens with the decision it supports. Every output is a shortlist for further research, a predicted opportunity, not a confirmed business one: we have not shown that any recommendation lifts streams, tickets or sales. We have no customers or pilots. **Business model hypothesis (untested):** a weekly per-country launch plan for brands, labels and agencies; artist pages free. We have not tested it with anyone.
 
 ## What it can't do
 
@@ -87,10 +87,10 @@ Netflix publishes its weekly Top 10 lists on its Top 10 site, with download link
 
 No login, nothing to install. About eight minutes on https://aftershock-qloo.vercel.app:
 
-1. **Home, the globe:** take the 60-second tour (it starts on a first visit), then pick a show in the "Follow one show" row and click a country.
+1. **Home:** the intro says what AFTERSHOCK is in three points, then a 60-second tour (both start on a first visit). Read the real prediction under "See it in action", then pick a show in the "Follow one show" row and click a country on the globe.
 2. **Plan my release:** https://aftershock-qloo.vercel.app/#/release opens a worked example; type your own show (and comparables if Qloo does not know it yet). A live plan makes about 40 Qloo calls and takes 10 to 30 seconds.
 3. **Ask AFTERSHOCK** (bottom right): try "why isn't Squid Game here?" or "why is Nightwatch heading to Norway?".
-4. **Launch plans:** open https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (Nightwatch: Demons Are Forever in Sweden). Watch the steps replay, then read, download or print the launch plan.
+4. **Launch plans:** open https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/NO (Nightwatch: Demons Are Forever in Norway, the example on the home page). The launch plan is at the top; download or print it, then watch the agent's steps replay underneath.
 5. **Check a name live:** in the box under step 4, type any artist, brand, show or film; Qloo confirms or rejects it for this audience, now. Live lookups are capped per visitor.
 6. **Any show's page:** Qloo's picks per country and "AI plan, checked by Qloo".
 7. **For music artists:** https://aftershock-qloo.vercel.app/#/artist/veronica-maggio.
