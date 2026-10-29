@@ -12,6 +12,7 @@ import { defaultPlan } from "./plan.js";
 import { rejectedList } from "./rejected.js";
 import { artistName } from "./artists.js";
 import { isCatalogTitle } from "./catalog.js";
+import { roadmap } from "./roadmap.js";
 
 // AUCs that differ in the third decimal must not round to the same label.
 const auc4 = (n) => (n == null ? "n/a" : n.toFixed(4));
@@ -83,6 +84,23 @@ function idleWalk(ids, pick, host, isCurrent) {
   timer = setTimeout(wait, IDLE_START_MS);
 }
 
+// Five steps from a chart entry to a brief; the fourth is the one only Qloo can do.
+const FLOW = [
+  ["Detect", "Netflix Top 10, 94 countries, every week"],
+  ["Forecast", "Where it charts next, and why"],
+  ["Propose", "An AI suggests launch partners"],
+  ["Qloo decides", "Keeps only what this audience loves"],
+  ["Brief", "Window, cities, venues, this week's moves"],
+];
+const USES = [
+  ["A label's catalogue team", "Which market gets this week's playlist push for a song tied to a breakout", "The next likely country, the artists Qloo links to that audience there, the cities", "That the push lifts streams"],
+  ["An artist's team", "Where to post, play a DJ set or announce a show next", "The artist page: titles whose viewers over-index on the artist, and where both audiences live", "That fans will buy tickets"],
+  ["A promoter", "Which cities to research for a tour or a one-off show", "Plan a release: countries and cities by Qloo affinity, venues of the right type", "Ticket demand or open dates"],
+  ["A brand's local marketing", "Whether to run local ads next to a breakout this week", "The brands Qloo links to this audience in the country, checked one by one", "That the ad converts"],
+];
+// The week's list opens on the likeliest movers; the long tail folds away.
+const STORMS_SHOWN = 8;
+
 export function renderHome(root, isCurrent, followId = null) {
   setTitle("");
   const stormBox = h("div", null);
@@ -90,6 +108,8 @@ export function renderHome(root, isCurrent, followId = null) {
   const proofBar = h("div", { class: "qproof", hidden: true });
   const testBox = h("div", { class: "fc-test", hidden: true });
   const agentBox = h("p", { class: "agent-line", hidden: true });
+  const testDetail = h("details", { hidden: true });
+  const qlooDetail = h("details", { hidden: true });
   const planCta = h("a", { class: "btn btn-primary", href: "#/plan", "data-tour": "plan" }, "Plan a launch");
   const globeHost = h("div", { class: "globe-host", role: "img", "aria-label": "Globe of this week's Netflix breakouts and where each is forecast to chart next" });
   const panel = h("aside", { class: "globe-panel", "aria-live": "polite", hidden: true });
@@ -108,8 +128,8 @@ export function renderHome(root, isCurrent, followId = null) {
       h("div", { class: "stage-copy" },
         h("p", { class: "eyebrow mono" }, "Netflix breakouts, planned with Qloo's taste graph"),
         h("h1", null, "Every hit has an ", h("em", null, "aftershock.")),
-        h("p", { class: "lede" }, "When a show breaks out in one country, AFTERSHOCK forecasts where it lands next and plans the launch there. An AI proposes the partners. ",
-          h("strong", { class: "qloo-word" }, "Qloo decides"), " which ones that audience actually loves."),
+        h("p", { class: "lede" }, "A show breaks out in one country. AFTERSHOCK forecasts where it lands next; an AI proposes launch partners, and ",
+          h("strong", { class: "qloo-word" }, "Qloo decides"), " which ones that audience loves."),
         h("div", { class: "cta-row" }, planCta,
           h("a", { class: "btn", href: "#/release", "data-tour": "release" }, "Plan a release"),
           h("button", { type: "button", class: "btn btn-ghost", onclick: () => window.dispatchEvent(new CustomEvent("aftershock:tour")) }, "Take the 60-second tour")),
@@ -118,34 +138,36 @@ export function renderHome(root, isCurrent, followId = null) {
       rail),
     mockNote(),
     h("section", { class: "how", "aria-labelledby": "how-h", "data-tour": "how" },
-      h("h2", { id: "how-h" }, "How a breakout becomes a launch plan"),
-      h("ol", { class: "quake" },
-        h("li", null, h("span", { class: "quake-n mono" }, "01"), h("h3", null, "Detect"), h("p", null, "Every Monday the agent reads Netflix's public Top 10 for 94 countries and flags titles that just broke out in one to three of them.")),
-        h("li", null, h("span", { class: "quake-n mono" }, "02"), h("h3", null, "Forecast"), h("p", null, "Netflix history says which countries usually follow: the reason is shown for every country, like \"Norway joined 12 of 67 past breakouts that started in Denmark\".")),
-        h("li", null, h("span", { class: "quake-n mono" }, "03"), h("h3", null, "Propose"), h("p", null, "Gemini suggests artists, brands, shows and films for that audience in that country.")),
-        h("li", { class: "quake-qloo" }, h("span", { class: "quake-n mono" }, "04"), h("h3", null, "Qloo decides"), h("p", null, "Qloo's taste graph checks every name for that audience in that country, keeps what it backs, strikes the rest, and maps the cities where the audience lives.")),
-        h("li", null, h("span", { class: "quake-n mono" }, "05"), h("h3", null, "Brief"), h("p", null, "A Launch Brief for labels, artists, promoters and brands: the window, the cities, the venues and this week's moves.")))),
+      h("h2", { id: "how-h" }, "How it works"),
+      h("ol", { class: "flow" }, FLOW.map(([name, line], k) =>
+        h("li", { class: name === "Qloo decides" ? "flow-qloo" : null }, h("span", { class: "flow-n mono" }, String(k + 1).padStart(2, "0")), h("strong", null, name), h("span", null, line))))),
     h("section", { class: "qloo-band", "aria-labelledby": "qp-h", "data-tour": "qloo" },
       h("h2", { id: "qp-h" }, "Why it needs Qloo"),
       proofBar),
     h("section", { class: "fc-band", "aria-labelledby": "fc-h" },
       h("h2", { id: "fc-h" }, "Does the forecast work?"),
       testBox),
-    h("section", { class: "use-band", "aria-labelledby": "use-h" },
-      h("h2", { id: "use-h" }, "Who uses it, for which decision"),
-      h("div", { class: "table-wrap" }, h("table", { class: "plain use-table" },
-        h("thead", null, h("tr", null, h("th", null, "Who"), h("th", null, "The decision"), h("th", null, "What AFTERSHOCK gives them"), h("th", null, "What it does not prove"))),
-        h("tbody", null, [
-          ["A label's catalogue team", "Which market gets this week's playlist push for a song tied to a breakout", "The next likely country, the artists Qloo links to that audience there, the cities", "That the push lifts streams"],
-          ["An artist's team", "Where to post, play a DJ set or announce a show next", "The artist page: titles whose viewers over-index on the artist, and where both audiences live", "That fans will buy tickets"],
-          ["A promoter", "Which cities to research for a tour or a one-off show", "Plan a release: countries and cities by Qloo affinity, venues of the right type", "Ticket demand or open dates"],
-          ["A brand's local marketing", "Whether to run local ads next to a breakout this week", "The brands Qloo links to this audience in the country, checked one by one", "That the ad converts"],
-        ].map((r) => h("tr", null, r.map((c, i) => h("td", { class: i === 3 ? "ev-gap" : null }, i === 0 ? h("strong", null, c) : c))))))),
-      h("p", { class: "muted" }, "Every output is a shortlist for further research: a predicted opportunity, not a confirmed business one. We have no customers or pilots yet and say so.")),
     h("section", { "aria-labelledby": "live-h", "data-tour": "storms" },
       h("h2", { id: "live-h" }, "This week's breakouts"),
       agentBox,
-      stormBox));
+      stormBox),
+    h("section", { class: "next-band", "aria-labelledby": "next-h" },
+      h("h2", { id: "next-h" }, "What's next"),
+      roadmap()),
+    h("section", { class: "more", "aria-labelledby": "more-h" },
+      h("h2", { id: "more-h" }, "More detail"),
+      h("details", null, h("summary", null, "Who uses it, for which decision"),
+        h("div", { class: "table-wrap" }, h("table", { class: "plain use-table" },
+          h("thead", null, h("tr", null, h("th", null, "Who"), h("th", null, "The decision"), h("th", null, "What AFTERSHOCK gives them"), h("th", null, "What it does not prove"))),
+          h("tbody", null, USES.map((r) => h("tr", null, r.map((c, i) => h("td", { class: i === 3 ? "ev-gap" : null }, i === 0 ? h("strong", null, c) : c)))))))),
+      testDetail,
+      qlooDetail,
+      h("details", null, h("summary", null, "What it does not claim"),
+        h("ul", { class: "more-list" },
+          h("li", null, "Every output is a shortlist for further research: a predicted opportunity, not a confirmed one."),
+          h("li", null, "No customers, pilots or prices yet."),
+          h("li", null, "Forecasts are probabilities, graded in public on the ledger from 15 November."),
+          h("li", null, "No permission from Netflix is claimed; this is a hackathon prototype.")))));
 
   getScorecard().then((sc) => {
     if (!isCurrent()) return;
@@ -170,26 +192,37 @@ export function renderHome(root, isCurrent, followId = null) {
       const ours = lt.model.hit_rate, guess = lt.baseline.hit_rate;
       const oursSpread = lt.model.hit_breakouts / spread, guessSpread = lt.baseline.hit_breakouts / spread;
       testBox.replaceChildren(
-        h("p", { class: "qp-lede" }, `We hid ${whole(lt.model.breakouts)} past breakouts from the model and asked it, for each, to name the top ${lt.top_k} countries it would go to next. The fair comparison is the obvious guess: the ${lt.top_k} countries that chart the most titles.`),
+        h("p", { class: "qp-lede" }, `On ${whole(lt.model.breakouts)} past breakouts it never saw: its top ${lt.top_k} countries against the obvious guess.`),
         h("div", { class: "fc-grid" },
           h("div", { class: "fc-card" }, h("p", { class: "gp-label mono" }, `All ${whole(lt.model.breakouts)} breakouts`),
             rateRow("AFTERSHOCK", ours, Math.max(ours, guess), "fc-us"), rateRow("Busiest countries", guess, Math.max(ours, guess), "fc-base"),
-            h("p", { class: "fc-say" }, `${(ours / guess).toFixed(1)} times the obvious guess. Low in absolute terms because most breakouts never spread anywhere.`)),
+            h("p", { class: "fc-say" }, `${(ours / guess).toFixed(1)}x the obvious guess.`)),
           h("div", { class: "fc-card" }, h("p", { class: "gp-label mono" }, `The ${whole(spread)} that spread`),
             rateRow("AFTERSHOCK", oursSpread, Math.max(oursSpread, guessSpread), "fc-us"), rateRow("Busiest countries", guessSpread, Math.max(oursSpread, guessSpread), "fc-base"),
-            h("p", { class: "fc-say" }, "When a breakout did travel, its top 3 usually named where."))),
-        h("p", { class: "qp-foot" }, "In plain words: it is a triage tool that points at the right next market far more often than the obvious guess, not a promise that a title will chart. ",
-          h("a", { href: "#/scorecard" }, "Every test, including what did not work")));
+            h("p", { class: "fc-say" }, "When a breakout travelled, its top 3 usually named where."))),
+        h("p", { class: "qp-foot" }, h("a", { href: "#/scorecard" }, "Every test, including what did not work")));
+      testDetail.replaceChildren(h("summary", null, "How the forecast was tested"),
+        h("ul", { class: "more-list" },
+          h("li", null, `${whole(lt.model.breakouts)} past breakouts were hidden from the model; for each it named the top ${lt.top_k} countries it expected next.`),
+          h("li", null, `The fair comparison is the obvious guess: the ${lt.top_k} countries that chart the most titles.`),
+          h("li", null, "The hit rate over all breakouts is low in absolute terms because most breakouts never spread anywhere."),
+          h("li", null, "So it is a triage tool that points at the right next market far more often than the obvious guess, not a promise that a title will chart.")));
+      testDetail.hidden = false;
       testBox.hidden = false;
     }
     if (gc) {
       const seg = (cls, x, label) => h("span", { class: `qp-seg ${cls}`, style: `flex:${x}` }, h("span", { class: "qp-v mono" }, p(x)), h("span", { class: "qp-l" }, label));
       proofBar.replaceChildren(
-        h("p", { class: "qp-lede" }, `We asked an AI alone for launch partners for 81 title-country audiences and checked all ${whole(n)} names against Qloo.`),
+        h("p", { class: "qp-lede" }, `An AI alone named ${whole(n)} launch partners. Here is what Qloo made of them.`),
         h("div", { class: "qp-bar", role: "img", "aria-label": `${p(gc.confirmed)} backed by Qloo, ${p(gc.not_placed)} known but not linked to that audience, ${p(gc.not_in_qloo)} not in Qloo` },
           seg("qp-ok", gc.confirmed, "backed by Qloo for that audience"), seg("qp-np", gc.not_placed, "Qloo knows them, not for these viewers"), seg("qp-nq", gc.not_in_qloo, "not in Qloo's data yet")),
-        h("p", { class: "qp-foot" }, "So in AFTERSHOCK the AI only proposes. Qloo decides what goes in the plan, supplies its own picks for the audience, and maps the cities. ",
-          h("a", { href: "#/scorecard" }, "Every test, misses included")));
+        h("p", { class: "qp-foot" }, "So the AI only proposes; Qloo decides. ", h("a", { href: "#/scorecard" }, "Every test, misses included")));
+      qlooDetail.replaceChildren(h("summary", null, "How the Qloo check works"),
+        h("ul", { class: "more-list" },
+          h("li", null, `An AI alone was asked for launch partners (artists, brands, shows, films) for 81 title-country audiences: ${whole(n)} names.`),
+          h("li", null, "Each name was resolved in Qloo and checked against that audience in that country."),
+          h("li", null, "In a plan only the names Qloo backs stay; Qloo adds its own picks for the audience and maps the cities where it lives.")));
+      qlooDetail.hidden = false;
       proofBar.hidden = false;
     }
   }).catch(() => {});
@@ -248,9 +281,7 @@ export function renderHome(root, isCurrent, followId = null) {
     const byChance = [...storms].sort((a, b) => (b.top_forecast?.probability ?? -1) - (a.top_forecast?.probability ?? -1));
     const ranked = [...byChance.filter((s) => !catalog(s)), ...byChance.filter(catalog)];
     const maxP = Math.max(0.0001, ...ranked.map((s) => s.top_forecast?.probability ?? 0));
-    add(stormBox,
-      h("p", { class: "muted" }, `Week of ${week}: ${storms.length} titles entered Netflix's Top 10 in only 1 to 3 countries. Recent releases first, then older catalog titles that re-entered the chart.`),
-      h("ul", { class: "storm-list" }, ranked.map((s) => h("li", null,
+    const stormRow = (s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
           s.meta?.image ? h("img", { class: "storm-poster", src: s.meta.image, alt: "", loading: "lazy", width: 42, height: 60 }) : h("span", { class: "storm-poster" }),
           h("span", { class: "storm-main" },
@@ -261,7 +292,12 @@ export function renderHome(root, isCurrent, followId = null) {
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
                  h("span", { style: `width:${Math.max(2, (s.top_forecast.probability / maxP) * 100)}%` }))]
-            : "No forecast yet"))))));
+            : "No forecast yet")));
+    add(stormBox,
+      h("p", { class: "muted" }, `Week of ${week}: ${storms.length} titles broke out in 1 to 3 countries. Newest releases first.`),
+      h("ul", { class: "storm-list" }, ranked.slice(0, STORMS_SHOWN).map(stormRow)),
+      ranked.length > STORMS_SHOWN ? h("details", { class: "storm-more" }, h("summary", null, `Show the other ${ranked.length - STORMS_SHOWN}`),
+        h("ul", { class: "storm-list" }, ranked.slice(STORMS_SHOWN).map(stormRow))) : null);
   });
 }
 
@@ -655,12 +691,21 @@ export function renderScorecard(root, isCurrent) {
         tableOf("No lift from Qloo", [
           row(`Same ${bs.subset_breakouts ?? "n/a"} breakouts, history-only`, auc4(bs.history_auc_same_subset)),
           row(`Same ${bs.subset_breakouts ?? "n/a"}, history + Qloo`, auc4(bs.qloo_auc))]),
-        h("h3", null, "The song tests"),
+        h("details", { class: "fold" }, h("summary", null, "The song tests"),
         h("p", null, `No Qloo signal predicted which soundtrack songs spike on Wikipedia: ${br.n_artists ?? "n/a"} artists in ${br.n_shows ?? "n/a"} shows were scored, and on 2024+ releases the Qloo age gap beat a placebo spike measured before release at p = ${plain2(pl["2024_plus"]?.["p: gap real minus gap placebo"])}.`),
-        h("p", { class: "muted" }, "The song tables and the placebo check are in ", h("a", { href: GITHUB_README_3, rel: "noopener" }, "README section 3"), ".")),
+        h("p", { class: "muted" }, "The song tables and the placebo check are in ", h("a", { href: GITHUB_README_3, rel: "noopener" }, "README section 3"), "."))),
       h("section", { class: "caveat", "aria-labelledby": "dne-h" },
         h("h2", { id: "dne-h" }, "What this does not establish"),
-        h("p", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do. Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right. The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset). The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes. The song test collected 490 songs from 34 soundtracks; 229 artists in 24 of those shows (4 released 2024 or later) had enough Qloo audience profiles to be scored, where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases. No Qloo signal predicted which songs spike. Many new 2026 titles have no Qloo audience profile yet. The model would not have picked Running Up That Hill for Stranger Things 4. The live ledger, where each forecast is locked before its outcome exists, is the real test.")));
+        h("ul", { class: "more-list caveat-list" },
+          h("li", null, "Qloo describes the taste of groups, not of any individual: an audience profile says what a group tends to like, not what a given person will do."),
+          h("li", null, "Forecasts are probabilities, so a 20% forecast that does not happen was not wrong, and one that does was not proven right."),
+          h("li", null, "The spillover backtest shows Netflix history predicts spread well; it does not show that Qloo adds to it (no lift on the 200-breakout subset)."),
+          h("li", null, "The country forecast uses no Qloo data, and the launch kit has not been validated against outcomes."),
+          h("li", null, "The song test collected 490 songs from 34 soundtracks; 229 artists in 24 of those shows (4 released 2024 or later) had enough Qloo audience profiles to be scored, where a placement means a song on the title's official soundtrack album, which can include songs a show barely used; its outcome (Wikipedia page spike) is a proxy for attention, and Qloo audiences are today's, which postdate those releases."),
+          h("li", null, "No Qloo signal predicted which songs spike."),
+          h("li", null, "Many new 2026 titles have no Qloo audience profile yet."),
+          h("li", null, "The model would not have picked Running Up That Hill for Stranger Things 4."),
+          h("li", null, "The live ledger, where each forecast is locked before its outcome exists, is the real test."))));
     if (wantWarning) { wantWarning = false; document.getElementById("warning-h")?.scrollIntoView(); }
   });
 }

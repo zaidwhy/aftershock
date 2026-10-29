@@ -82,6 +82,9 @@ themeBtn?.addEventListener("click", () => {
 });
 showTheme();
 route();
+// The splash stays at least long enough to read, then lifts once the first view is on screen.
+const splash = document.querySelector(".splash");
+if (splash) setTimeout(() => { splash.classList.add("is-out"); setTimeout(() => splash.remove(), 500); }, Math.max(0, 1300 - performance.now()));
 mountChat();
 startMotion(app);
 maybeAutoTour();

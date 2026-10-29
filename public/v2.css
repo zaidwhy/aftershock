@@ -360,7 +360,7 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 :is(input[type="text"], input[type="date"], textarea, .wm-select, .chip) { border-width: 1px; border-color: var(--rule); }
 :is(input[type="text"], input[type="date"], textarea):focus-visible { border-color: var(--accent); }
 /* Small accent text needs the darker ink on light paper to stay readable. */
-:root[data-theme="light"] :is(.quake-n, .rel-step, .tour-count, .fc-us .fc-v, .rel-top .rel-rank, .tour-play[aria-pressed="true"]) { color: var(--accent-ink); }
+:root[data-theme="light"] :is(.quake-n, .flow-n, .rel-step, .tour-count, .fc-us .fc-v, .rel-top .rel-rank, .tour-play[aria-pressed="true"]) { color: var(--accent-ink); }
 
 /* Tour: a progress track, a click ripple where the tour acts, and room for Play. */
 .tour-progress { display: flex; gap: 4px; margin: 0 0 12px; }
@@ -446,3 +446,68 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
   .storm-link:hover { transform: translateX(3px); }
   .btn:active, .rail-chip:active, .seg-b:active, .chip:active { transform: scale(.97); }
 }
+
+/* Splash: covers the first paint while the app loads. Script lifts it once the first view has rendered; if script
+   never runs, it fades on its own after 4 s so the page is never trapped behind it. */
+.splash { position: fixed; inset: 0; z-index: 200; display: grid; place-content: center; justify-items: center; gap: 6px; background: var(--paper); animation: splash-gone .4s 4s forwards; transition: opacity .45s ease, visibility .45s; }
+.splash-trace { width: min(320px, 70vw); height: auto; overflow: visible; }
+.splash-trace path { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(255, 90, 54, .45)); animation: draw-trace 1.1s .1s cubic-bezier(.4,0,.2,1) forwards; }
+.splash-name { margin: 10px 0 0; font: 600 0.95rem var(--mono); letter-spacing: .5em; padding-left: .5em; color: var(--ink); opacity: 0; animation: splash-rise .5s .55s ease-out forwards; }
+.splash-line { margin: 0; font-size: 0.8rem; color: var(--ink-soft); opacity: 0; animation: splash-rise .5s .75s ease-out forwards; }
+.splash.is-out { opacity: 0; visibility: hidden; }
+.splash.is-out > * { transform: scale(1.04); transition: transform .45s ease; }
+@keyframes splash-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes splash-gone { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .splash-trace path { animation: none; stroke-dashoffset: 0; } .splash-name, .splash-line { animation: none; opacity: 1; } }
+
+/* While the tour runs, a clear shield takes every click on the page, so a press on a lit-up button cannot navigate
+   away and strand the tour; the card nudges instead. */
+.tour-shield { position: fixed; inset: 0; z-index: 91; cursor: default; }
+.tour-card.tour-nudge { animation: tour-nudge .4s cubic-bezier(.36,.07,.19,.97); }
+.tour-card.tour-nudge .btn-primary { box-shadow: 0 0 0 4px rgba(255, 90, 54, .35); }
+@keyframes tour-nudge { 20% { translate: -5px 0; } 40% { translate: 4px 0; } 60% { translate: -3px 0; } 80% { translate: 2px 0; } }
+
+/* How it works, as a flow: five steps joined by arrows, the Qloo step lit. Stacks on phones. */
+.flow { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; counter-reset: none; }
+.flow li { position: relative; display: grid; gap: 4px; align-content: start; padding: 16px; border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2); }
+.flow li:not(:last-child)::after { content: ""; position: absolute; top: 50%; right: -22px; width: 16px; height: 16px; margin-top: -8px;
+  background: var(--ink-soft); clip-path: polygon(0 35%, 55% 35%, 55% 10%, 100% 50%, 55% 90%, 55% 65%, 0 65%); opacity: .55; }
+.flow strong { font-size: 1.05rem; }
+.flow span:not(.flow-n) { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.4; }
+.flow-n { font-size: 0.75rem; letter-spacing: .1em; color: var(--accent); }
+.flow .flow-qloo { border-color: rgba(62, 230, 176, .5); background: linear-gradient(180deg, var(--qloo-soft), transparent), var(--paper-2); box-shadow: 0 0 0 3px var(--qloo-soft); }
+.flow .flow-qloo strong, .flow .flow-qloo .flow-n { color: var(--qloo); }
+@media (max-width: 900px) {
+  .flow { grid-template-columns: 1fr; gap: 18px; }
+  .flow li:not(:last-child)::after { top: auto; bottom: -17px; right: auto; left: 28px; transform: rotate(90deg); }
+}
+
+/* What's next: a timeline, one dot per step on a single rule. */
+.roadmap { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; position: relative; }
+.roadmap::before { content: ""; position: absolute; left: 6px; right: 6px; top: 6px; height: 2px; background: linear-gradient(90deg, var(--accent), var(--amber) 40%, var(--rule)); }
+.roadmap li { position: relative; display: grid; gap: 4px; align-content: start; padding-top: 26px; }
+.roadmap li::before { content: ""; position: absolute; top: 0; left: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); border: 2px solid var(--amber); }
+.roadmap li:first-child::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 5px rgba(255, 90, 54, .18); }
+.rm-when { font-size: 0.75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--amber); }
+.rm-title { font-size: 1rem; }
+.rm-line { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.4; }
+@media (max-width: 900px) {
+  .roadmap { grid-template-columns: 1fr; gap: 16px; padding-left: 26px; }
+  .roadmap::before { left: 6px; right: auto; top: 6px; bottom: 6px; width: 2px; height: auto; background: linear-gradient(180deg, var(--accent), var(--amber) 40%, var(--rule)); }
+  .roadmap li { padding-top: 0; }
+  .roadmap li::before { left: -26px; }
+}
+
+/* More detail: the secondary material, folded, for anyone who wants the method behind the numbers. */
+.more details, .storm-more, details.fold { border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-2); margin-top: 10px; }
+.more summary, .storm-more summary, .fold > summary { cursor: pointer; padding: 14px 18px; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 10px; }
+.more summary::-webkit-details-marker, .storm-more summary::-webkit-details-marker, .fold > summary::-webkit-details-marker { display: none; }
+.more summary::before, .storm-more summary::before, .fold > summary::before { content: ""; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .2s; flex: none; }
+.more details[open] > summary::before, .storm-more[open] > summary::before, .fold[open] > summary::before { transform: rotate(45deg); }
+.more details > :not(summary), .fold > :not(summary) { margin: 0 18px 16px; }
+.more-list { padding-left: 18px; color: var(--ink-soft); }
+.more-list li { margin: 4px 0; }
+.storm-more { background: transparent; }
+.storm-more > .storm-list { margin: 0 12px 12px; }
+.roadmap + .card { margin-top: 28px; }
+.caveat-list li { margin: 6px 0; }

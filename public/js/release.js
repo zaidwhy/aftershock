@@ -265,7 +265,7 @@ export function renderRelease(root, isCurrent, preset = {}) {
     h("section", { class: "rel-hero" },
       h("p", { class: "eyebrow mono" }, "Plan a release"),
       h("h1", null, "Releasing something new? ", h("em", null, "Find its audience first.")),
-      h("p", { class: "lede" }, "A film, series, album or comedy special, or a tour. Tell us what it is and what you want from it; Qloo's taste graph finds the countries and cities where its audience lives, the venues there, and the local shows, films and artists to pair it with."),
+      h("p", { class: "lede" }, "A film, series, album, special or tour. Qloo finds the countries, cities and venues where its audience lives, and what to pair it with."),
       h("form", { class: "rel-form card", onsubmit: (e) => { e.preventDefault(); runLive(); } },
         field("01", "What are you releasing?", "A title, an artist or a comedian, as Netflix, Spotify or Wikipedia spells it.", name),
         field("02", "What kind?", null, segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),

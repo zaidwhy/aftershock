@@ -3,7 +3,7 @@
 // reduced motion asked for, the page is simply static and complete.
 
 const COUNT = ".stat-v, .qp-v, .fc-v, .plan-tiles .proof-v, .wh-v";
-const REVEAL = "main > section:not(.stage), .rel-sec, .card, .quake li, .storm-list li, .plan-brief";
+const REVEAL = "main > section:not(.stage), .rel-sec, .card, .quake li, .flow li, .roadmap li, .storm-list li, .plan-brief";
 const FILL = ".qp-bar, .fc-card";
 const NUMBER =/^(\D*)(\d[\d,]*(?:\.\d+)?)(.*)$/;
 

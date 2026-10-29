@@ -123,6 +123,7 @@ function run() {
   // Step 1 is the whole week, whatever the globe was showing before.
   window.dispatchEvent(new CustomEvent("aftershock:globe-reset"));
   const blur = h("div", { class: "tour-blur" });
+  const shield = h("div", { class: "tour-shield" });
   const hole = h("div", { class: "tour-hole" });
   const cursor = h("div", { class: "tour-cursor" }, cursorIcon());
   const count = h("span", { class: "tour-count mono" });
@@ -134,7 +135,7 @@ function run() {
   const close = h("button", { type: "button", class: "tour-x", "aria-label": "Close the tour" }, "×");
   const card = h("div", { class: "tour-card", role: "dialog", "aria-modal": "true", "aria-label": "Guided tour" },
     close, count, title, text, h("div", { class: "tour-foot" }, dots, h("span", { class: "tour-gap" }), back, next));
-  document.body.append(blur, hole, cursor, card);
+  document.body.append(blur, hole, shield, cursor, card);
   cursor.style.left = `${innerWidth / 2}px`;
   cursor.style.top = `${innerHeight / 2}px`;
 
@@ -217,7 +218,12 @@ function run() {
     }
   }
   const keys = (e) => {
-    if (e.key === "Escape") end();
+    if (e.key === "Tab") {
+      // Keep keyboard focus on the card's own buttons, so Enter cannot follow a link on the page behind it.
+      const stops = [...card.querySelectorAll("button:not(:disabled)")];
+      e.preventDefault();
+      stops[(stops.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + stops.length) % stops.length]?.focus();
+    } else if (e.key === "Escape") end();
     else if (e.key === "ArrowRight") next.click();
     else if (e.key === "ArrowLeft" && i > 0) back.click();
   };
@@ -225,9 +231,10 @@ function run() {
     ticket += 1;
     steps[i]?.leave?.();
     cancelAnimationFrame(frame);
-    [blur, hole, cursor, card].forEach((n) => n.remove());
+    [blur, hole, shield, cursor, card].forEach((n) => n.remove());
     removeEventListener("resize", place);
     removeEventListener("keydown", keys);
+    removeEventListener("hashchange", end);
     active = null;
     remember();
     // Leave the page as the visitor found it: the whole week on the globe, at the top.
@@ -238,9 +245,11 @@ function run() {
   next.onclick = () => { if (i === steps.length - 1) end(); else show(i + 1); };
   back.onclick = () => show(i - 1);
   close.onclick = end;
-  blur.onclick = () => next.click();
+  shield.onclick = () => { card.classList.remove("tour-nudge"); void card.offsetWidth; card.classList.add("tour-nudge"); next.focus({ preventScroll: true }); };
   addEventListener("resize", place);
   addEventListener("keydown", keys);
+  // If the page changes anyway (the back button, a typed address), close cleanly instead of pointing at nothing.
+  addEventListener("hashchange", end);
   // Scrolls, the globe's camera and the chat panel all move the target; keep the cut-out on it every frame.
   const follow = () => { if (active) { place(); frame = requestAnimationFrame(follow); } };
   active = { end };
