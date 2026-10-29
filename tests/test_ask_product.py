@@ -13,23 +13,23 @@ from aftershock import ask  # noqa: E402
 
 FEATURE_CASES = [
     ("what does plan a launch do", "feature_help", "7 visible steps", "#/plan"),
-    ("What is Plan A Launch?", "feature_help", "downloadable Launch Brief", "#/plan"),
+    ("What is Plan A Launch?", "feature_help", "downloadable launch plan", "#/plan"),
     ("what is the scorecard", "feature_help", "including the misses", "#/scorecard"),
     ("WHAT IS THE SCORCARD", "feature_help", "including the misses", "#/scorecard"),  # misspelled, shouted
-    ("what is the ledger", "feature_help", "3,240 forecasts", "#/ledger"),
+    ("what is the ledger", "feature_help", "3,240 predictions", "#/ledger"),
     ("wat is the ledgr", "feature_help", "Grading is paused", "#/ledger"),
     ("what is sync scout", "feature_help", "different their listeners' ages are", "#/scout"),
     ("Sync Scout", "feature_help", "which artists its fans like", "#/scout"),
     ("what is song check", "feature_help", "reaches a new crowd", "#/try"),
     ("what's the song checker", "feature_help", "age groups are compared", "#/try"),
     ("what is for artists", "feature_help", "where their next fans are this week", "#/artists"),
-    ("what is the globe", "feature_help", "this week's breakouts", "#/"),
-    ("what does the map show", "feature_help", "forecast to go next", "#/"),
-    ("what is plan a release", "feature_help", "audience affinity", "#/release"),
+    ("what is the globe", "feature_help", "this week's trending shows", "#/"),
+    ("what does the map show", "feature_help", "predicted to go next", "#/"),
+    ("what is plan a release", "feature_help", "Qloo's match score", "#/release"),
     ("explain the weekly job", "feature_help", "automatic weekly job", "#/agent"),
     ("how accurate is the forecast", "feature_help", "(ROC AUC 0.82)", "#/scorecard"),
     ("how do I use this", "tour", "tour button replays the guided tour", "#/"),
-    ("give me a tour", "tour", "Plan a release does the same", "#/plan"),
+    ("give me a tour", "tour", "Plan my release does the same", "#/plan"),
     ("what can you do", "capabilities", "what each page of the site does", "#/release"),
     ("what is qloo's role", "qloo_role", "71% of the time", "#/plan"),
     ("how does it use Qloo?", "qloo_role", "the AI proposes and Qloo decides", "#/plan"),
@@ -47,7 +47,7 @@ def test_feature_questions_get_a_short_paragraph_and_the_page_link(ctx, question
 
 def test_qloo_answer_numbers_add_up(ctx):
     msg = ask.answer("what is qloo's role", ctx)["answer"]["message"]
-    for fact in ("1,615 names", "29% were backed", "37% were known", "34% were not in Qloo", "Netflix history only"):
+    for fact in ("1,615 names", "29% were supported", "37% were known", "34% were not in Qloo", "Netflix history only"):
         assert fact in msg
 
 
@@ -83,14 +83,14 @@ def test_why_missing_for_a_title_netflix_never_charted_points_to_plan_a_release(
 def test_why_missing_suggests_the_nearest_title(ctx):
     r = ask.answer("why isn't fkry rtrns here", ctx)
     assert "Did you mean Fukrey Returns?" in r["answer"]["message"] and r["intent"] == "why_missing"
-    assert r["links"][0] == {"label": "Storm page for Fukrey Returns", "href": "#/storm/fukrey-returns"}
+    assert r["links"][0] == {"label": "Prediction page for Fukrey Returns", "href": "#/storm/fukrey-returns"}
     assert "is here" in ask.answer("why isnt Fukrey Retuns listed", ctx)["answer"]["message"]  # a near-exact typo resolves
 
 
 def test_why_missing_for_a_current_breakout_says_it_is_here(ctx):
     r = ask.answer("why is Fukrey Returns not showing", ctx)
     assert "Fukrey Returns is here" in r["answer"]["message"]
-    assert r["links"] == [{"label": "Full forecast for Fukrey Returns", "href": "#/storm/fukrey-returns"}]
+    assert r["links"] == [{"label": "Full prediction for Fukrey Returns", "href": "#/storm/fukrey-returns"}]
 
 
 def test_why_is_a_title_breaking_in_a_country_uses_the_forecast_why(ctx):
@@ -98,7 +98,7 @@ def test_why_is_a_title_breaking_in_a_country_uses_the_forecast_why(ctx):
     msg = r["answer"]["message"]
     assert r["intent"] == "why_forecast"
     assert "started in India" in msg and "38% chance" in msg and "Why: Bangladesh joined 3 of 10." in msg
-    assert r["links"] == [{"label": "Full forecast for Fukrey Returns", "href": "#/storm/fukrey-returns"}]
+    assert r["links"] == [{"label": "Full prediction for Fukrey Returns", "href": "#/storm/fukrey-returns"}]
 
 
 def test_why_will_a_title_go_to_a_country_names_its_rank(ctx):
@@ -143,7 +143,7 @@ def test_where_should_i_release_x_links_plan_a_release_with_the_name(ctx):
 def test_a_release_question_without_a_title_links_the_bare_page(ctx):
     for q in ("where will my comedy special work", "Where should I release my comedy tour in Brazil?", "where should I tour"):
         r = ask.answer(q, ctx)
-        assert r["intent"] == "release_plan" and r["links"] == [{"label": "Plan a release", "href": "#/release"}], q
+        assert r["intent"] == "release_plan" and r["links"] == [{"label": "Plan my release", "href": "#/release"}], q
         assert "Type your title on that page" in r["answer"]["message"]
 
 
@@ -180,8 +180,8 @@ def test_small_talk_gets_a_friendly_line_and_three_examples(ctx):
 
 def test_unmatched_question_with_a_feature_word_gets_the_closest_feature(ctx):
     r = ask.answer("how do I download the brief", ctx)
-    assert r["intent"] == "closest_feature" and "closest thing AFTERSHOCK does is Plan a launch" in r["answer"]["message"]
-    assert r["links"] == [{"label": "Plan a launch", "href": "#/plan"}] and r["steps"][-1]["ok"] is True
+    assert r["intent"] == "closest_feature" and "closest thing AFTERSHOCK does is Launch plans" in r["answer"]["message"]
+    assert r["links"] == [{"label": "Launch plans", "href": "#/plan"}] and r["steps"][-1]["ok"] is True
     r = ask.answer("any good venues for stand up in london", ctx)
     assert r["links"][0]["href"] == "#/release" and "I could not" not in r["answer"]["message"]
 

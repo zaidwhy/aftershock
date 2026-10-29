@@ -445,7 +445,7 @@ def _country_answer(ctx, country, steps):
 def _links(a):
     kind = a["kind"]
     if kind in ("kit", "storm"):
-        return [{"label": f"Full forecast for {a['title']}", "href": f"#/storm/{a['id']}"}]
+        return [{"label": f"Full prediction for {a['title']}", "href": f"#/storm/{a['id']}"}]
     if kind == "title" and a["history"].get("storm_id"):
         return [{"label": "Storm page", "href": f"#/storm/{a['history']['storm_id']}"}]
     if kind in ("ripple", "unavailable") and "parsed" in a:
@@ -485,40 +485,42 @@ def _feature(name, href, text, aliases, keys, loose, link_label=None, more=(), n
 FEATURES = {
     "overview": _feature(
         "AFTERSHOCK", "#/",
-        "AFTERSHOCK forecasts which country a Netflix breakout (a title that entered a country's Top 10 while not "
-        "charting elsewhere) reaches next, then plans the launch there: an AI proposes partner names for that audience "
-        "and Qloo confirms or rejects each one.",
+        "AFTERSHOCK predicts which country a Netflix show or film reaches next once it gets popular in one country "
+        "(it entered that country's Top 10 but almost nowhere else), then plans the launch there: an AI suggests "
+        "partners for that audience and Qloo supports or rejects each one.",
         ("what is aftershock", "what s aftershock", "what is this", "what is this site", "what is this app",
          "what is this tool", "what does aftershock do", "what does this do", "what does this site do",
          "explain aftershock", "aftershock", "tell me about aftershock", "about aftershock", "what is it"),
         "aftershock", "netflix breakout breakouts", "Home page map", more=("plan",)),
     "plan": _feature(
-        "Plan a launch", "#/plan",
-        "Plan a launch runs 7 visible steps: the forecast, Qloo's launch kit, AI proposals, a Qloo check of each name, "
-        "cities, matching artists to cities, and the brief. It ends in a downloadable Launch Brief.",
-        ("plan a launch", "plan launch", "launch plan", "launch planner", "launch brief", "plan page"),
+        "Launch plans", "#/plan",
+        "A launch plan runs 7 visible steps: the prediction, Qloo's picks for the audience, AI suggestions, a Qloo check "
+        "of each one, the cities where fans live, artists matched to cities, and the plan itself. It ends in a "
+        "downloadable launch plan.",
+        ("plan a launch", "plan launch", "launch plan", "launch plans", "launch planner", "launch brief", "plan page"),
         "brief proposals planner download pdf", "plan launch partner partners brand brands kit step steps cities artists seven"),
     "release": _feature(
-        "Plan a release", "#/release",
-        "Plan a release is for something that is not on Netflix: an upcoming film, series, album, comedy special or "
-        "tour. Qloo ranks countries and cities by audience affinity, then suggests venues and local taste.",
-        ("plan a release", "plan release", "release plan", "release planner"),
+        "Plan my release", "#/release",
+        "Plan my release is for something that is not on Netflix: an upcoming film, series, album, comedy special or "
+        "tour. Qloo ranks countries and cities by how well their taste matches the audience (Qloo's match score), "
+        "then suggests venues and local taste.",
+        ("plan a release", "plan my release", "plan release", "release plan", "release planner"),
         "venue venues album comedy special podcast documentary concert gig festival",
         "release film series tour music upcoming premiere audience affinity taste local cities"),
     "artists": _feature(
-        "For artists", "#/artists",
-        "For artists shows an artist where their next fans are this week.",
-        ("for artists", "for artist", "artists page", "artist page"),
+        "For music artists", "#/artists",
+        "For music artists shows an artist where their next fans are this week.",
+        ("for artists", "for music artists", "music artists", "for artist", "artists page", "artist page"),
         "musician musicians singer singers band bands", "artist artists fans"),
     "scorecard": _feature(
-        "Scorecard", "#/scorecard",
-        "The Scorecard has every test of the forecast, including the misses.",
-        ("scorecard", "score card"),
+        "Prediction results", "#/scorecard",
+        "Prediction results has every test of the predictions, including the misses.",
+        ("scorecard", "score card", "prediction results", "results page"),
         "scorecard misses miss wrong tests tested honest failures failed", "results right track record performance"),
     "ledger": _feature(
-        "Ledger", "#/ledger",
-        "The Ledger holds 3,240 forecasts that were locked before Netflix published the weeks they are graded on. Grading is paused until Netflix permits reading its newer files.",
-        ("ledger",),
+        "Prediction history", "#/ledger",
+        "The prediction history holds 3,240 predictions recorded before Netflix published the weeks they are checked against. Grading is paused until Netflix permits reading its newer files.",
+        ("ledger", "prediction history"),
         "ledger locked graded grade grading receipts predictions", "forecasts outcomes proof verify november nov"),
     "song_check": _feature(
         "Song check", "#/try",
@@ -534,19 +536,19 @@ FEATURES = {
         ("sync scout", "scout"),
         "sync scout licensing licence license placement supervisor", "show artists music age"),
     "agent": _feature(
-        "Weekly run", "#/agent",
-        "Weekly run is the log of the automatic weekly job.",
-        ("weekly run", "weekly job", "weekly log", "agent page", "the agent"),
+        "The automatic run", "#/agent",
+        "The automatic run page is the log of the automatic weekly job, paused until Netflix permits reading its files.",
+        ("weekly run", "automatic run", "weekly job", "weekly log", "agent page", "the agent"),
         "weekly automatic automatically cron schedule scheduled job agent log", "run runs week updates update refresh often"),
     "globe": _feature(
         "Map", "#/",
-        "The map on the home page shows this week's breakouts and where each is forecast to go next.",
+        "The map on the home page shows this week's trending shows and where each is predicted to go next.",
         ("globe", "map", "world map", "the map", "the globe"),
         "globe map", "home world countries breakouts pins dots", "Home page map", no_country=True),
     "tour": _feature(
         "Guided tour", "#/",
-        "The tour button replays the guided tour. Otherwise: the map on the home page shows this week's breakouts, "
-        "Plan a launch builds the launch for one of them, and Plan a release does the same for your own film, "
+        "The tour button replays the guided tour. Otherwise: the map on the home page shows this week's trending shows, "
+        "Launch plans builds the plan for one of them, and Plan my release does the same for your own film, "
         "series, album or comedy special.",
         ("guided tour", "take the tour", "take a tour", "give me a tour", "show me around", "walk me through",
          "walkthrough", "tutorial", "onboarding", "how do i use", "how to use", "getting started", "get started",
@@ -555,19 +557,20 @@ FEATURES = {
         more=("plan", "release")),
     "qloo": _feature(
         "Qloo's role", "#/plan",
-        "An AI alone named things Qloo could not back 71% of the time: of 1,615 names, 29% were backed, 37% were known "
-        "but not placed with that audience, and 34% were not in Qloo. So the AI proposes and Qloo decides. Qloo also "
-        "supplies the launch kit, the city heatmaps and the audience maps. The forecast itself uses Netflix history only.",
+        "An AI alone suggested partners that Qloo's audience data did not support 71% of the time: of 1,615 names, 29% "
+        "were supported, 37% were known but not linked to that audience, and 34% were not in Qloo. So the AI proposes "
+        "and Qloo decides. Qloo also supplies its own picks and the maps of where fans live. The next-country "
+        "prediction itself uses Netflix history only.",
         ("qloo", "qloo s role", "role of qloo", "qloo role", "how does it use qloo", "how do you use qloo",
          "how is qloo used", "what does qloo do", "why qloo", "what is qloo"),
         "qloo taste affinity heatmap heatmaps", "ai gemini confirm reject partners audience audiences"),
     "forecast": _feature(
         "How the forecast works", "#/scorecard",
-        "The forecast uses Netflix history only. On 829 past breakouts it never saw, its top 3 countries caught the next "
-        "market 9.8% of the time, against 4.1% for always guessing the 3 busiest countries: 2.4 times the obvious guess. "
-        "For the 113 breakouts that spread at all, 72% against 30%. It ranks a country that went on to chart above one "
-        "that did not 82% of the time (ROC AUC 0.82). It is a triage tool, not a promise. A breakout is a title that "
-        "entered a country's Top 10 while not charting elsewhere.",
+        "The prediction uses Netflix history only. On 829 past cases it never saw, its top 3 countries named the next "
+        "one 9.8% of the time, against 4.1% for always guessing the 3 busiest countries: 2.4 times the obvious guess. "
+        "For the 113 shows that spread at all, 72% against 30%. It ranks a country that went on to reach the Top 10 above "
+        "one that did not 82% of the time (ROC AUC 0.82). It is a shortlist, not a promise. A trending show here means "
+        "one that entered a country's Top 10 while charting almost nowhere else.",
         ("how accurate", "accuracy", "how does the forecast work", "does the forecast work", "does it work",
          "is it accurate", "is the forecast accurate", "is the forecast right", "backtest", "baseline", "how well does it work", "how does it forecast", "how do you forecast",
          "what is a breakout", "what is the forecast", "how good is the forecast", "roc auc", "auc",
@@ -576,9 +579,9 @@ FEATURES = {
         more=("ledger",)),
     "capabilities": _feature(
         "What I can answer", "#/",
-        "I answer questions about this week's Netflix breakouts and where they go next, what to pair a breakout with "
+        "I answer questions about this week's trending Netflix shows and where they go next, what to pair a show with "
         "in a country, artists for a show, whether a song reaches a new crowd, and what each page of the site does. "
-        "For your own film, series, album or comedy special, ask where to release it and I will point you to Plan a release.",
+        "For your own film, series, album or comedy special, ask where to release it and I will point you to Plan my release.",
         ("what can you do", "what do you do", "what can i ask", "what can i ask you", "what can this do",
          "what can aftershock do", "what can u do", "what are you", "who are you", "what can i do here", "help",
          "options", "example questions", "examples"),
@@ -848,7 +851,7 @@ def _release_answer(raw, steps, names):
     name = _release_name(raw, names)
     kind, guessed = _release_kind(raw.replace(name, " ")) if name else (None, False)  # a word in the title is not a signal
     about = f" about {name}" if name else ""
-    steps.append(_step("understand", name, True, f"Release question{about}: this is not a Netflix breakout, so it goes to Plan a release."))
+    steps.append(_step("understand", name, True, f"Release question{about}: this is not a trending Netflix show, so it goes to Plan my release."))
     steps.append(_step("route", "#/release", True, "Plan a release asks Qloo which countries and cities have the most audience affinity."))
     href = "#/release" + (f"?name={quote(name, safe='')}" if name else "") + (f"&kind={kind}" if kind else "")
     if not name:
@@ -859,7 +862,7 @@ def _release_answer(raw, steps, names):
         fill = f" I have filled in {name} for you."
     msg = ("Plan a release is built for this. For an upcoming film, series, album, comedy special or tour, Qloo ranks countries "
            "and cities by audience affinity, then suggests venues and local taste." + fill)
-    return _guide("release_plan", steps, msg, [{"label": "Plan a release" + (f" for {name}" if name else ""), "href": href}],
+    return _guide("release_plan", steps, msg, [{"label": "Plan my release" + (f" for {name}" if name else ""), "href": href}],
                   name=name)
 
 
@@ -881,8 +884,8 @@ def _missing_answer(ctx, x, steps):
     if item:
         t = item["summary"]["title"]
         steps.append(_step("week_storms", t, True, f"{t} is one of this week's breakouts."))
-        return _guide("why_missing", steps, f"{t} is here: it is one of this week's breakouts, with a forecast of what comes next.",
-                      [{"label": f"Full forecast for {t}", "href": f"#/storm/{item['summary']['id']}"}])
+        return _guide("why_missing", steps, f"{t} is here: it is one of this week's trending shows, with a prediction of where it goes next.",
+                      [{"label": f"Full prediction for {t}", "href": f"#/storm/{item['summary']['id']}"}])
     rec = _history(ctx, x)
     if rec:
         places = {c for c, _ in rec["countries"]}
@@ -893,7 +896,7 @@ def _missing_answer(ctx, x, steps):
                f"{last}, {len(places)} {'country' if len(places) == 1 else 'countries'} so far) but it is not one of this week's breakouts. "
                "A breakout has to start in one country while charting nowhere else; titles that launch worldwide chart everywhere "
                "at once, so there is nothing to forecast.")
-        links = [{"label": f"Storm page for {rec['title']}", "href": f"#/storm/{rec['storm_id']}"}] if rec.get("storm_id") else []
+        links = [{"label": f"Prediction page for {rec['title']}", "href": f"#/storm/{rec['storm_id']}"}] if rec.get("storm_id") else []
         return _guide("why_missing", steps, msg, links + [{"label": "This week's storms", "href": "#/"}])
     steps.append(_step("title_lookup", x, False, f"{x} is not in Netflix's Top 10 in any country since {_since(ctx)}."))
     mean = _did_you_mean(ctx, x)
@@ -902,8 +905,8 @@ def _missing_answer(ctx, x, steps):
     msg = (f"{x} has not been in Netflix's Top 10 in any country since {_since(ctx)}, so AFTERSHOCK has nothing on it."
            + (f" Did you mean {mean['title']}?" if mean else "")
            + " For a title on any platform, use Plan a release.")
-    links = ([{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else [])
-    return _guide("why_missing", steps, msg, links + [{"label": "Plan a release", "href": f"#/release?name={quote(x, safe='')}"}],
+    links = ([{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else [])
+    return _guide("why_missing", steps, msg, links + [{"label": "Plan my release", "href": f"#/release?name={quote(x, safe='')}"}],
                   did_you_mean=mean)
 
 
@@ -930,7 +933,7 @@ def _why_title_answer(found, country, steps, names):
     title, origin, week, horizon, rows, sid, origin_codes = _why_rows(found, names)
     focus = f" in {country[1]}" if country else ""
     steps.append(_step("understand", title, True, f"The reason behind the forecast for {title}{focus}."))
-    links = [{"label": f"Full forecast for {title}", "href": f"#/storm/{sid}"}] if sid else []
+    links = [{"label": f"Full prediction for {title}", "href": f"#/storm/{sid}"}] if sid else []
     if not rows:
         reason = _no_forecast_reason(found["history"]) if found["history"] else "it has no forecast rows."
         steps.append(_step("forecast", title, False, f"No forecast for this title: {reason}"))
@@ -976,7 +979,7 @@ def _why_country_answer(ctx, country, steps):
         row = next((f for f in storm["detail"]["spillover"]["forecasts"] if f["code"] == country[0]), None) if storm else None
         reason = f": {_stop(row['why'])}" if row and row.get("why") else "."
         parts.append(f"{t['title']} ({pct(t['p'])}){reason}")
-        links.append({"label": f"Full forecast for {t['title']}", "href": f"#/storm/{t['id']}"})
+        links.append({"label": f"Full prediction for {t['title']}", "href": f"#/storm/{t['id']}"})
     msg = f"{country[1]} has a {pct(entry['chance'])} chance of getting at least one new breakout this week." + (
         " The strongest pull: " + " Then ".join(parts) if parts else "")
     return _guide("why_forecast", steps, msg, links or [{"label": "This week's storms", "href": "#/"}])
@@ -996,7 +999,7 @@ def _why_question(ctx, raw, names):
             return _guide("why_forecast", steps,
                           f"{x} has not been in Netflix's Top 10 in any country since {_since(ctx)}, so there is no forecast to explain."
                           + (f" Did you mean {mean['title']}?" if mean else ""),
-                          [{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else [],
+                          [{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else [],
                           did_you_mean=mean)
         return _why_title_answer(found, country, [], names)
     m = WHY_ANY.match(raw)
@@ -1039,7 +1042,7 @@ def _unknown_name_answer(ctx, name, steps):
            + (f" Did you mean {mean['title']}?" if mean else "")
            + f" If {name} has a film, series, album, comedy special or tour coming up, Plan a release ranks countries and cities by "
              "Qloo audience affinity. I have filled in the name as music; switch the type on that page if it is a comedy act, film or series.")
-    links = [{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []
+    links = [{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []
     links.append({"label": f"Plan a release for {name}", "href": f"#/release?name={quote(name, safe='')}&kind=music"})
     return _guide("unknown_name", steps, msg, links, name=name, did_you_mean=mean)
 
@@ -1249,7 +1252,7 @@ def answer(question, ctx):
             msg += f" For {country[1]}, ask \"What is heading to {country[1]}?\"."
         msg += " AFTERSHOCK follows titles that have just broken out on Netflix" + (f"; this week's include {picks}." if picks else ".")
         done = _done("forecast", steps, {"kind": "help", "message": msg, "did_you_mean": mean})
-        done["links"] = ([{"label": f"Storm page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []) + links
+        done["links"] = ([{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []) + links
         return done
 
     who = WHO_IS.match(raw)

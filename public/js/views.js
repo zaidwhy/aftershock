@@ -339,7 +339,7 @@ export function renderHome(root, isCurrent, followId = null) {
           h("span", { class: "storm-main" },
             h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
             h("span", { class: "storm-meta" }, s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-facts" }, yearGenres(s.meta.year, s.meta.genres)) : null,
-              `Popular in ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "catalog title") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Launch plan: general taste" : "Launch plan ready") : null)),
+              `Popular in ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "older show") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Launch plan: general taste" : "Launch plan ready") : null)),
           h("span", { class: "storm-next" }, s.top_forecast
             ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
                h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
@@ -362,20 +362,20 @@ export function renderStorm(root, id, isCurrent) {
     const fc = st.spillover?.forecasts || [];
     const mapBox = h("div", { class: "map-box" }, loading("the map"));
     add(root, 
-      h("p", { class: "crumb" }, h("a", { href: "#/" }, "All breakouts")),
+      h("p", { class: "crumb" }, h("a", { href: "#/" }, "All trending shows")),
       archivedBanner(st.archived_week),
       h("h1", null, st.title, st.season ? h("span", { class: "h1-sub" }, ` ${st.season}`) : null),
       titleHead(st),
       answerLine(st, fc),
       mockNote(),
       h("section", { "aria-labelledby": "map-h" },
-        h("h2", { id: "map-h" }, `Where it charts next (${st.spillover?.horizon_weeks ?? "?"} week horizon)`),
+        h("h2", { id: "map-h" }, `Where it goes next (within ${st.spillover?.horizon_weeks ?? "?"} weeks)`),
         h("p", { class: "follow-link" }, h("a", { href: `#/?follow=${encodeURIComponent(st.id)}` }, "Follow it on the globe")),
         mapBox,
-        h("p", { class: "legend" }, h("span", { class: "key key-origin" }), "Origin countries (outlined)", h("span", { class: "key key-ramp" }), "Darker = higher probability"),
+        h("p", { class: "legend" }, h("span", { class: "key key-origin" }), "Popular here now (outlined)", h("span", { class: "key key-ramp" }), "Darker = higher chance it arrives"),
         fc.length ? forecastTable(fc) : h("p", { class: "status" }, "No forecast rows for this title.")),
       kitSection(st),
-      h("p", { class: "locked mono" }, st.spillover?.locked_at ? `Locked at ${dateLabel(st.spillover.locked_at)} | ledger id ${st.spillover.ledger_id}` : "Not locked yet."));
+      h("p", { class: "locked mono" }, st.spillover?.locked_at ? `Recorded in advance on ${dateLabel(st.spillover.locked_at)} | prediction id ${st.spillover.ledger_id}` : "Not recorded yet."));
     forecastMap(fc, st.origin_countries).then((svg) => {
       if (isCurrent()) mapBox.replaceChildren(svg);
     }).catch((err) => {
@@ -404,7 +404,7 @@ function titleHead(st) {
   const text = h("div", { class: "title-text" },
     facts ? h("p", { class: "meta title-facts" }, facts) : null,
     m.blurb ? h("p", { class: "title-blurb" }, m.blurb) : null,
-    h("p", { class: "meta" }, `${st.category || "Title"} | origin week ${st.origin_week} | broke out in `, h("strong", null, origins(st.origin_countries))));
+    h("p", { class: "meta" }, `${st.category || "Show"} | week of ${st.origin_week} | popular in `, h("strong", null, origins(st.origin_countries))));
   if (!m.image) return text;
   return h("div", { class: "title-head" },
     h("img", { class: "poster", src: m.image, alt: `Poster or still for ${st.title}`, loading: "lazy", width: "84", height: "126", referrerpolicy: "no-referrer",
@@ -418,7 +418,7 @@ function kitRows(st) {
 function answerLine(st, fc) {
   const top = fc[0], n = kitRows(st).length;
   return h("p", { class: "answer" },
-    top ? h("span", null, "Most likely next: ", h("strong", null, top.name), " ", h("span", { class: "mono" }, `(${pct(top.probability)})`)) : null,
+    top ? h("span", null, "Most likely next country: ", h("strong", null, top.name), " ", h("span", { class: "mono" }, `(${pct(top.probability)})`)) : null,
     top && n ? h("span", { class: "answer-sep", "aria-hidden": "true" }, "|") : null,
     n ? h("a", { href: "#/", onclick: scrollTo("par-h") }, `Qloo's launch picks for ${n} ${n === 1 ? "country" : "countries"} below`) : null);
 }
@@ -431,7 +431,7 @@ function hotspotBlock(r) {
   if (hs.cells?.length) {
     hotspotMap(r.code, hs.cells).then((svg) => { if (svg) box.prepend(svg); }).catch(() => {});
   }
-  if (hs.places?.length) box.append(h("p", { class: "hs-places" }, "Hotspots: ", h("strong", null, hs.places.join(", "))));
+  if (hs.places?.length) box.append(h("p", { class: "hs-places" }, "Where fans live: ", h("strong", null, hs.places.join(", "))));
   return box;
 }
 
@@ -465,11 +465,11 @@ function planBlock(r) {
     rejectedList(plan.rejected));
 }
 
-/** "Copy launch brief": clipboard write inside the click; if it is refused, show the text selected in a box. */
+/** "Copy launch plan": clipboard write inside the click; if it is refused, show the text selected in a box. */
 function briefControl(st, rows) {
   const status = h("span", { class: "muted", role: "status" });
   const fallback = h("div", { class: "brief-fallback", hidden: true });
-  const btn = h("button", { type: "button", class: "btn btn-small" }, "Copy launch brief");
+  const btn = h("button", { type: "button", class: "btn btn-small" }, "Copy launch plan");
   btn.addEventListener("click", () => {
     const text = launchBrief(st, location.href, rows);
     const showBox = () => {
@@ -504,12 +504,12 @@ function kitSection(st) {
   const names = (r, d) => r.kit[d].flatMap((e, i) => [i ? ", " : null,
     common(r, d).has(key(e.name)) ? h("span", { class: "kit-common" }, e.name) : e.name]);
   const specific = (r) => (r.specificity == null ? null : h("p", { class: "kit-spec" },
-    h("strong", null, r.generic ? "Mostly the whole country's taste" : "Title-specific"), `: ${Math.round(r.specificity * 100)}%`));
+    h("strong", null, r.generic ? "Mostly the whole country's taste" : "Specific to this show"), `: ${Math.round(r.specificity * 100)}%`));
   return h("section", { "aria-labelledby": "par-h" },
     h("h2", { id: "par-h" }, "Qloo's picks: what this audience loves there"),
-    h("p", { class: "muted" }, "From Qloo: what the title's audience over-indexes on in each forecast country, as a starting point for a local launch. Netflix history says where; this says what to do there. It does not change the probabilities."),
+    h("p", { class: "muted" }, "From Qloo: what this show's viewers like far more than average in each predicted country, as a starting point for a local launch. Netflix history says where; Qloo says what to do there. It does not change the chances."),
     briefControl(st, rows),
-    anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "Greyed out"), ": popular across the whole country anyway, not specific to this title") : null,
+    anyCommon ? h("p", { class: "kit-cap" }, h("span", { class: "kit-common" }, "Greyed out"), ": popular across the whole country anyway, not specific to this show") : null,
     h("div", { class: "kit-cols" }, rows.map((r) => h("div", { class: "kit" },
       h("h3", null, countryName(r.code)),
       r.brief ? h("p", { class: "plan-link" }, h("a", { href: `#/plan/${encodeURIComponent(st.id)}/${encodeURIComponent(r.code)}` }, "Plan a launch here")) : null,
@@ -518,7 +518,7 @@ function kitSection(st) {
         h("dt", null, KIT_LABELS[d]), h("dd", null, names(r, d))))),
       planBlock(r), hotspotBlock(r), eventsBlock(r)))),
     rows.some((r) => r.hotspots?.cells?.length || r.hotspots?.places?.length)
-      ? h("p", { class: "hs-credit" }, "Hotspots: Qloo heatmap; place names © OpenStreetMap contributors.") : null);
+      ? h("p", { class: "hs-credit" }, "Where fans live: from Qloo's audience map; place names © OpenStreetMap contributors.") : null);
 }
 
 /* ----------------------------------------------------------------- ripple */
@@ -526,7 +526,7 @@ const earlyRead = (x) => (x.early_ratio == null ? "n/a" : `${x.early_ratio.toFix
 
 export function renderRipple(root) {
   setTitle("Song forecasts");
-  add(root, h("p", { class: "crumb" }, h("a", { href: "#/" }, "All breakouts")),
+  add(root, h("p", { class: "crumb" }, h("a", { href: "#/" }, "All trending shows")),
     h("h1", null, "No song forecasts yet"),
     h("p", null, "Song forecasts are not published right now. The breakouts and the scorecard are."));
 }
@@ -551,13 +551,13 @@ function songTable(r, songs) {
 function forecastTable(fc) {
   return h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Forecast table, scrolls sideways on narrow screens" },
     h("table", { class: "fc fc-stack" },
-      h("caption", null, "Ranked forecast. Probability is the chance the title enters that country's Top 10 within the horizon."),
-      h("thead", null, h("tr", null, ["#", "Country", "Probability", "Why"].map((t, i) => h("th", { scope: "col", class: i === 2 ? "num" : null }, t)))),
+      h("caption", null, "Countries ranked by chance: the chance the show enters that country's Top 10 within the time shown."),
+      h("thead", null, h("tr", null, ["#", "Country", "Chance", "Why"].map((t, i) => h("th", { scope: "col", class: i === 2 ? "num" : null }, t)))),
       h("tbody", null, fc.map((f, i) => h("tr", null,
         h("td", { class: "mono rank" }, i + 1),
         h("th", { scope: "row" }, f.name),
         h("td", { class: "num mono prob" }, pct(f.probability)),
-        h("td", { class: "why" }, f.why))))));
+        h("td", { class: "why" }, plainWhy(f.why)))))));
 }
 
 export { renderTry, renderScout } from "./audience.js";
@@ -572,13 +572,13 @@ function kitCheckSection(sc) {
   const kc = sc.kit_check;
   if (!kc) return null;
   const example = (label, e) => (e ? h("li", null, `${label}: `, h("a", { href: `#/storm/${encodeURIComponent(e.id)}` }, `${e.title} in ${e.country}`),
-    h("span", { class: "mono" }, ` (${Math.round(e.specificity * 100)}% specific)`)) : null);
+    h("span", { class: "mono" }, ` (${Math.round(e.specificity * 100)}% specific to the show)`)) : null);
   return h("section", { "aria-labelledby": "kitcheck-h" },
-    h("h2", { id: "kitcheck-h" }, "What Qloo adds: is the launch kit about the title?"),
-    h("p", null, h("strong", { class: "mono" }, `${kc.specific} of ${kc.kits}`), ` launch kits this week are title-specific; ${kc.generic} are mostly countrywide taste. Mean specificity is `,
+    h("h2", { id: "kitcheck-h" }, "What Qloo adds: are its picks about the show?"),
+    h("p", null, h("strong", { class: "mono" }, `${kc.specific} of ${kc.kits}`), ` sets of Qloo picks this week are specific to their show; ${kc.generic} mostly match the whole country's taste. On average they are `,
       h("span", { class: "mono" }, `${Math.round(kc.mean_specificity * 100)}%`), "."),
-    h("p", { class: "muted" }, "For every kit we also ask Qloo what the whole country likes, with no title. A kit counts as countrywide when most of its picks repeat that country-only list, and as title-specific when they do not."),
-    h("ul", { class: "kit-examples" }, example("Title-specific", kc.example_specific), example("Countrywide", kc.example_generic)));
+    h("p", { class: "muted" }, "For every set of picks we also ask Qloo what the whole country likes, with no show named. A set counts as whole-country taste when most of its picks repeat that list, and as specific to the show when they do not."),
+    h("ul", { class: "kit-examples" }, example("Specific to the show", kc.example_specific), example("Whole-country taste", kc.example_generic)));
 }
 
 const share1 = (n) => (n == null ? "n/a" : `${(n * 100).toFixed(1)}%`);
@@ -604,7 +604,7 @@ function leadChart(lt) {
   }
   const label = `Bar chart of weeks of warning for picks that charted, model against baseline. ${Array.from({ length: hz }, (_, i) => `${i + 1} week${i ? "s" : ""}: model ${dist("model")[String(i + 1)] ?? 0}, baseline ${dist("baseline")[String(i + 1)] ?? 0}`).join("; ")}.`;
   return h("div", { class: "db-box" },
-    h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Model's top 3 (solid)", h("span", { class: "dot dot-placebo" }), "Baseline: the 3 countries that chart most titles (outlined)"),
+    h("p", { class: "legend" }, h("span", { class: "dot dot-real" }), "Our top 3 (solid)", h("span", { class: "dot dot-placebo" }), "The obvious guess: the 3 countries where the most shows chart (outlined)"),
     s("svg", { viewBox: `0 0 ${W} ${H}`, class: "lw-svg", role: "img", "aria-label": label }, g));
 }
 
@@ -616,7 +616,7 @@ function caseStudy(c) {
   const others = c.all_countries_charted_within_horizon.length ? `Within 4 weeks it charted in ${c.all_countries_charted_within_horizon.map(COUNTRY).join(", ")}.` : "Within 4 weeks it charted nowhere else.";
   return h("li", null,
     h("strong", null, shown), ` (${c.category === "Films" ? "film" : "series"}, broke out ${dayLabel(c.breakout_week)} in ${c.origin_countries.map(COUNTRY).join(", ")}). `,
-    h("span", { class: "mono" }, hit ? "Hit. " : "Miss. "), `Top 3 forecast: ${picks.join("; ")}. ${others}`);
+    h("span", { class: "mono" }, hit ? "Hit. " : "Miss. "), `Our top 3: ${picks.join("; ")}. ${others}`);
 }
 
 /** How much warning the held-out backtest says a distributor would have had; nothing without the measurement. */
@@ -645,11 +645,11 @@ function numbersExplained(gp) {
   const { confirmed: c, not_placed: np, not_in_qloo: nq } = gp.counts, n = c + np + nq;
   const p = (x) => `${Math.round((x / n) * 100)}%`;
   return h("div", { class: "num-explained" },
-    h("p", null, `Across ${gp.pairs} title-country pairs, an LLM proposed ${whole(n)} artists, brands, films and shows for the audience. Of those ${whole(n)} names:`),
+    h("p", null, `Across ${gp.pairs} show-and-country pairs, an AI (a large language model) suggested ${whole(n)} artists, brands, films and shows for the audience. Of those ${whole(n)} names:`),
     h("ul", null,
       h("li", null, h("strong", { class: "mono" }, p(np + c)), ` are names Qloo knows (${whole(np + c)}).`),
-      h("li", null, h("strong", { class: "mono" }, p(c)), ` are ones Qloo links to this audience in this country (${whole(c)}). Only these go into a launch brief.`),
-      h("li", null, h("strong", { class: "mono" }, p(np + nq)), ` are not backed by Qloo (${whole(np + nq)}): `,
+      h("li", null, h("strong", { class: "mono" }, p(c)), ` are ones Qloo links to this audience in this country (${whole(c)}). Only these go into a launch plan.`),
+      h("li", null, h("strong", { class: "mono" }, p(np + nq)), ` are not supported by Qloo (${whole(np + nq)}): `,
         `${p(nq)} (${whole(nq)}) Qloo does not know at all, plus ${p(np)} (${whole(np)}) it knows but does not link to this audience in this country.`)));
 }
 
@@ -658,16 +658,16 @@ function llmSection(sc) {
   const ex = sc.kit_experiment;
   const slot = ex
     ? h("div", { class: "kit-exp" },
-      h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} title-country pairs.` : "."),
-      h("p", null, `How much each list changes once the title is named, against the same source's list for the country alone (higher means more about this title): Qloo ${share(ex.qloo)}, LLM ${share(ex.llm)}.`),
-      h("p", null, `Only ${share(ex.grounding_share)} of the LLM's picks are names Qloo knows as the right kind of thing (the same figure as above, before checking audience), so some are not audience taste at all.`,
-        ex.grounded_pairs ? ` Counting only those, the LLM still leads (${share(ex.grounded_llm)} against Qloo's ${share(ex.grounded_qloo)} on ${ex.grounded_pairs} pairs).` : ""),
-      h("p", null, "What we do about it: every kit is checked against Qloo's country-only answer and labelled countrywide when it mostly matches it, so a kit never claims to be about a title when it is not."),
+      h("p", null, h("strong", null, ex.verdict ?? "Result recorded"), ex.scored_pairs ? ` across ${ex.scored_pairs} show-and-country pairs.` : "."),
+      h("p", null, `How much each list changes once the show is named, against the same source's list for the country alone (higher means more about this show): Qloo ${share(ex.qloo)}, AI ${share(ex.llm)}.`),
+      h("p", null, `Only ${share(ex.grounding_share)} of the AI's picks are names Qloo knows as the right kind of thing (the same figure as above, before checking audience), so some are not audience taste at all.`,
+        ex.grounded_pairs ? ` Counting only those, the AI still leads (${share(ex.grounded_llm)} against Qloo's ${share(ex.grounded_qloo)} on ${ex.grounded_pairs} pairs).` : ""),
+      h("p", null, "What we do about it: every set of Qloo picks is checked against Qloo's answer for the whole country and labelled when it mostly matches it, so a plan never claims to be about a show when it is not."),
       h("p", null, h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "How it was registered and scored")))
     : h("p", { class: "muted" }, "Registered on 27 Oct before any data was collected; results will appear here. ",
       h("a", { href: GITHUB_EXPERIMENT, rel: "noopener" }, "Read the registration"));
   const gp = sc.grounded_plan;
-  if (gp?.unbacked_share == null) return h("section", { "aria-labelledby": "llm-h" }, h("h2", { id: "llm-h" }, "Qloo versus an LLM (pre-registered)"), slot);
+  if (gp?.unbacked_share == null) return h("section", { "aria-labelledby": "llm-h" }, h("h2", { id: "llm-h" }, "Qloo versus an AI (pre-registered)"), slot);
   // Lead with the result that shapes the product; the registered test stays below it in full.
   return h("section", { "aria-labelledby": "llm-h" },
     h("h2", { id: "llm-h" }, `An LLM alone: Qloo could not back ${share(gp.unbacked_share)} of what it named`),
@@ -684,27 +684,38 @@ function llmSection(sc) {
     slot);
 }
 
+// Plain meanings for the measured words the results page keeps, so it stays exact and still readable.
+const GLOSSARY = [
+  ["Breakout", "A show or film that entered Netflix's weekly Top 10 in only 1 to 3 countries: the first sign it could travel."],
+  ["Chart", "To enter a country's Netflix Top 10."],
+  ["The obvious guess (baseline)", "Always naming the 3 countries where the most shows chart. A useful prediction has to beat it."],
+  ["Backtest", "Testing on past cases the model had never seen, using only what was known at the time."],
+  ["ROC AUC", "How often the model ranks a country that later charted above one that did not: 1.0 is perfect, 0.5 is a coin flip."],
+  ["Spillover", "Our name for a show spreading from one country to the next."],
+  ["Qloo's picks (kit)", "What Qloo says a show's viewers in a country like far more than average: artists, shows, films, brands."],
+  ["Prediction history (ledger)", "Every prediction, recorded before Netflix published the result and chained so none can be edited later."],
+  ["AI (LLM)", "A large language model, here Gemini, asked for launch partners on its own."],
+];
+
 export function renderScorecard(root, isCurrent) {
-  setTitle("Scorecard");
+  setTitle("Prediction results");
   const box = h("div", null);
-  add(root, h("h1", null, "Scorecard"), h("p", { class: "pitch" }, "What the signals did on past events, then the live ledger: forecasts are locked first and graded later. Nothing here is edited after the fact."), mockNote(), box);
-  load(box, "the scorecard", isCurrent, getScorecard, (sc) => {
+  add(root, h("h1", null, "Prediction results"),
+    h("p", { class: "pitch" }, "How well AFTERSHOCK's predictions and Qloo's checks did on past data, including what did not work. Nothing here is edited after the fact."),
+    h("details", { class: "fold glossary" }, h("summary", null, "Words used on this page"),
+      h("dl", { class: "glossary-list" }, GLOSSARY.map(([k, v]) => h("div", null, h("dt", null, k), h("dd", null, v))))),
+    mockNote(), box);
+  load(box, "the prediction results", isCurrent, getScorecard, (sc) => {
     const sp = sc.spillover || {}, rp = sc.ripple || {}, bt = sc.backtest || {};
     const bs = bt.spillover || {}, br = bt.ripple || {};
     const pl = br.placebo || {};
     const row = (label, value) => h("tr", null, h("th", { scope: "row" }, label), h("td", { class: "mono" }, value));
     const so = sp.so_far;
-    const closes = (() => {
-      if (!sp.earliest_origin_week) return null;
-      const d = new Date(`${sp.earliest_origin_week}T00:00:00Z`);
-      d.setUTCDate(d.getUTCDate() + 7 * (sp.horizon_weeks ?? 4));
-      return d.toISOString().slice(0, 10);
-    })();
     const dl = (pairs) => h("dl", null, pairs.map(([k, v]) => h("div", null, h("dt", null, k), h("dd", { class: "mono" }, v ?? "n/a"))));
-    const spillSection = h("section", { class: "score-block", "aria-label": "Spillover" },
-      h("h2", null, "Spillover"),
-      h("p", { class: "state" }, h("strong", { class: "mono" }, whole(sp.locked) ?? "n/a"), " forecasts locked.",
-        sp.graded ? ` ${sp.graded} graded so far.` : closes ? ` First ${sp.horizon_weeks ?? 4}-week horizons close on ${closes}. Early grades appear weekly as Netflix publishes.` : " Grades appear weekly as Netflix publishes."),
+    const spillSection = h("section", { class: "score-block", "aria-label": "Next-country predictions" },
+      h("h2", null, "Next-country predictions (spillover)"),
+      h("p", { class: "state" }, h("strong", { class: "mono" }, whole(sp.locked) ?? "n/a"), " predictions recorded in advance.",
+        sp.graded ? ` ${sp.graded} graded so far.` : " Checking them against what really happened is paused until Netflix permits reading its newer files."),
       sp.graded ? dl([["Hits", sp.hits], ["Pending", sp.pending], ["AUC", plain2(sp.auc)]]) : null,
       so?.forecasts > 0 ? dl([["So far: hits, horizon still open", `${so.hits} of ${so.forecasts}`], ["So far: partial AUC (misses can still turn into hits)", plain2(so.auc)]]) : null);
     const rippleSection = h("section", { class: "score-block", "aria-label": "Ripple" },
@@ -721,20 +732,20 @@ export function renderScorecard(root, isCurrent) {
       kitCheckSection(sc),
       warningSection(sc),
       h("section", { "aria-labelledby": "bt-h" },
-        h("h2", { id: "bt-h" }, "Where a breakout goes next: the country backtest"),
+        h("h2", { id: "bt-h" }, "Where a show goes next: tested on past cases"),
         scored == null ? h("p", { class: "muted" }, "The backtest has not been generated yet.")
           : h("p", null, h("strong", null, `Ranks a country that went on to chart above one that did not ${Math.round(scored * 100)}% of the time`), ` (ROC AUC ${plain2(scored)}), on ${whole(bs.test_breakouts)} past breakouts.`),
         h("p", { class: "muted" }, "Netflix history only: how often each country followed past breakouts from the same origins. Mar-Oct 2026 breakouts the model had not seen. The country forecast uses no Qloo data."),
         tableOf("Country backtest", row(`Spillover: history-only AUC (${bs.test_breakouts ?? "n/a"} breakouts)`, auc4(bs.history_auc)))),
       h("section", { "aria-labelledby": "ledger-h" },
-        h("h2", { id: "ledger-h" }, "Live ledger"),
+        h("h2", { id: "ledger-h" }, "Prediction history"),
         sc.top_pick?.breakouts > 0 ? h("div", { class: "score-block", "aria-label": "Early read" },
           h("h3", null, "Early read: last week's top picks"),
           h("p", null, `${sc.top_pick.top_pick_hits} of ${sc.top_pick.breakouts} top picks have already charted. If the forecasts were exactly calibrated we would expect ${sc.top_pick.expected_hits}. Always picking the country that charts the most titles (${sc.top_pick.baseline_country}) gets ${sc.top_pick.baseline_hits}.`),
           h("p", { class: "muted" }, "Defined before the data existed and reported whichever way it goes. The 4-week result is the real grade. ",
             h("a", { href: "https://github.com/zaidwhy/aftershock/blob/main/docs/EARLY_GRADE.md", rel: "noopener" }, "How it is defined"))) : null,
         h("div", { class: "grid2" }, spillSection, rp.locked ? rippleSection : null),
-        h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the public ledger"),
+        h("div", { class: "ledger-row" }, h("a", { class: "btn", href: "#/ledger" }, "Open the prediction history"),
           sc.ledger_intact == null ? null : h("span", { class: "muted" }, sc.ledger_intact ? "Ledger hash chain verified." : "Ledger hash chain FAILED verification."),
           sc.data_week ? h("span", { class: "muted" }, `Netflix data through the week of ${sc.data_week}.`) : null)),
       h("section", { "aria-labelledby": "dnw-h" },
@@ -766,22 +777,22 @@ export function renderScorecard(root, isCurrent) {
 export function renderLedger(root, isCurrent) {
   setTitle("Ledger");
   const box = h("div", null);
-  add(root, h("p", { class: "crumb" }, h("a", { href: "#/scorecard" }, "Scorecard")), h("h1", null, "The public forecast ledger"), mockNote(), box);
+  add(root, h("p", { class: "crumb" }, h("a", { href: "#/scorecard" }, "Prediction results")), h("h1", null, "Prediction history"), mockNote(), box);
   load(box, "the ledger", isCurrent, getLedger, (lg) => {
     const when = (iso) => (iso ? dateLabel(iso) : "n/a");
     const state = { pending: "Pending", hit: "Hit", miss: "Miss" };
     add(box,
-      h("p", { class: "pitch" }, "Each line is fixed when it is written: it includes a fingerprint of the line before, so changing an old forecast would break every line after it. The raw file is on GitHub."),
+      h("p", { class: "pitch" }, "Every prediction AFTERSHOCK made, recorded before Netflix published the result. Each line carries a fingerprint of the line before, so changing an old prediction would break every line after it. The raw file is on GitHub."),
       h("dl", { class: "ledger-stats" },
-        [["Forecasts", whole(lg.total)], ["Distinct titles", whole(lg.titles)], ["First locked", when(lg.first_locked)], ["Last locked", when(lg.last_locked)],
+        [["Predictions", whole(lg.total)], ["Different shows", whole(lg.titles)], ["First recorded", when(lg.first_locked)], ["Last recorded", when(lg.last_locked)],
           ["Fingerprint chain", lg.intact ? "Verified" : "FAILED verification"]].map(([k, v]) => h("div", null, h("dt", null, k), h("dd", { class: "mono" }, v)))),
-      h("p", null, "Timing: every forecast was locked before Netflix published any later week for that title."),
-      h("p", { class: "ledger-raw" }, h("a", { class: "btn", href: lg.raw_url, rel: "noopener" }, "Open the raw ledger file on GitHub")),
-      h("h2", null, `The ${lg.rows.length} most recent forecasts`),
-      h("p", { class: "muted" }, "Newest lock first, likeliest first within one lock. Each row is the chance that the title charts in that country within 4 weeks. Status is Pending until Netflix's weekly data settles it."),
-      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Recent forecasts, scrolls sideways on narrow screens" },
-        h("table", { class: "plain ledger-table" }, h("caption", { class: "sr-only" }, "Most recent locked forecasts"),
-          h("thead", null, h("tr", null, ["Locked at", "Title", "Country", "Chance", "Status"].map((t, i) => h("th", { scope: "col", class: i === 3 ? "num" : null }, t)))),
+      h("p", null, "Timing: every prediction was recorded before Netflix published any later week for that show."),
+      h("p", { class: "ledger-raw" }, h("a", { class: "btn", href: lg.raw_url, rel: "noopener" }, "Open the raw file on GitHub")),
+      h("h2", null, `The ${lg.rows.length} most recent predictions`),
+      h("p", { class: "muted" }, "Newest first, most likely first within one batch. Each row is the chance that the show reaches that country's Top 10 within 4 weeks. Status stays Pending until it is checked against Netflix's data, which is paused until Netflix permits it."),
+      h("div", { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Recent predictions, scrolls sideways on narrow screens" },
+        h("table", { class: "plain ledger-table" }, h("caption", { class: "sr-only" }, "Most recent predictions"),
+          h("thead", null, h("tr", null, ["Recorded", "Show", "Country", "Chance", "Status"].map((t, i) => h("th", { scope: "col", class: i === 3 ? "num" : null }, t)))),
           h("tbody", null, lg.rows.map((r) => h("tr", null,
             h("td", { class: "mono" }, dateLabel(r.locked_at)), h("th", { scope: "row" }, r.title), h("td", null, r.country),
             h("td", { class: "num mono" }, pct(r.probability)), h("td", null, state[r.status] ?? r.status)))))));
@@ -790,18 +801,18 @@ export function renderLedger(root, isCurrent) {
 
 /* ----------------------------------------------------------------- method */
 export function renderMethod(root) {
-  setTitle("Method");
+  setTitle("How it is built");
   add(root, 
-    h("h1", null, "Method"),
-    h("p", { class: "pitch" }, "Two models, one rule: lock the forecast before the outcome."),
-    h("section", null, h("h2", null, "SPILLOVER: which countries next"),
+    h("h1", null, "How it is built"),
+    h("p", { class: "pitch" }, "The technical detail, for anyone who wants to check it. In short: Netflix's own history predicts the next country, Qloo plans what to do there, and every prediction is recorded before the result is known."),
+    h("section", null, h("h2", null, "Spillover: which country is next"),
       h("p", null, "Start with a title that entered Netflix's Top 10 in 1 to 3 countries. The probability that each other country charts it within 4 weeks comes from Netflix history only: how often that country followed past breakouts from the same origin countries, smoothed toward the same-category rate for that country, which is smoothed toward the country's base rate."),
       h("p", null, "Backtest: ROC AUC 0.817 on 829 test breakouts (Mar-Oct 2026). We also tested Qloo as an extra feature on a 200-breakout subset: AUC 0.8188 with history only against 0.8182 with Qloo, so no lift. Qloo had an in-country value for only 2.8% of title-country pairs (975 of 35,344). So Qloo's role in SPILLOVER is the partners list: artists the title's audience over-indexes on in each forecast country."),
       h("p", null, "Every candidate country's probability is locked in the ledger, not just the top rows, so AUC and calibration can be graded. Grading happens once a title's 4-week horizon has passed in Netflix's weekly data.")),
-    h("section", null, h("h2", null, "Launch kit and hotspots: what to do there"),
-      h("p", null, "For each storm's top three forecast countries, Qloo is asked which shows, films, brands and artists the title's audience over-indexes on there, and where in the country that audience lives (a heatmap, reduced to its three strongest places and named with OpenStreetMap). Neither changes the probabilities, and neither has been validated against outcomes."),
+    h("section", null, h("h2", null, "Qloo's picks and where fans live: what to do there"),
+      h("p", null, "For each show's top three predicted countries, Qloo is asked which shows, films, brands and artists the show's viewers there like far more than average, and where in the country that audience lives (a heatmap, reduced to its three strongest places and named with OpenStreetMap). Neither changes the probabilities, and neither has been validated against outcomes."),
       h("p", null, "Sync Scout is a discovery tool: it ranks the artists a show's audience likes by the age gap between the artist's audience and the show's. It ranks artists, not scenes.")),
-    h("section", null, h("h2", null, "RIPPLE: the song score, tested"),
+    h("section", null, h("h2", null, "Ripple: the song score, tested"),
       h("p", null, "The score is the Qloo age gap, from 0 to 1: how far outside the show's generation an artist's audience sits. We tested whether it, Qloo taste fit or obscurity predicts which soundtrack songs spike on Wikipedia, using 490 songs from the official soundtracks of 34 titles in MusicBrainz (CC0). Only artists with a Qloo audience profile can be scored, and a show needs at least 4 of them: 229 artists in 24 of the 34 titles qualified."),
       h("p", null, "Result: no Qloo signal predicts the spike. Within-show Spearman for the age gap is 0.02 (p 0.40) on 24 shows and 0.18 (p 0.22) on the 4 released from 2024 on; real minus placebo p is 0.14, and taste fit is 0.04. Obscurity is 0.22 against 0.11 on a placebo spike measured before release."),
       h("p", null, "An earlier version used placement lists from Tunefind and showed a significant effect. Tunefind's terms do not permit automated collection, so that data and everything computed from it was discarded, and the effect did not replicate on MusicBrainz. The song score is an explorer, not a predictor."),
@@ -821,7 +832,7 @@ export function renderMethod(root) {
         h("li", null, h("strong", null, "MusicBrainz"), " (CC0): soundtrack songs."),
         h("li", null, h("strong", null, "OpenStreetMap Nominatim"), ": place names, credited to OpenStreetMap contributors."),
         h("li", null, h("strong", null, "Gemini"), ": only for the pre-registered comparison.")),
-      h("p", null, "An earlier song dataset collected from Tunefind was deleted after we read its terms; nothing derived from it is used.")));
+      h("p", null, "An earlier song dataset collected from Tunefind was removed from the product and the current repo after we read its terms (older commits still hold it); nothing derived from it is used.")));
 }
 
 export function renderNotFound(root) {

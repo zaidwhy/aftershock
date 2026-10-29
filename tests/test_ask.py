@@ -68,7 +68,7 @@ def test_launch_kit_for_a_storm_and_country(ctx):
     assert "Read the Qloo launch kit (title-specific 97%)." in notes
     assert any(n.startswith("Added Qloo hotspots") for n in notes)
     assert [s["n"] for s in r["steps"]] == [1, 2, 3, 4]
-    assert r["links"] == [{"label": "Full forecast for Fukrey Returns", "href": "#/storm/fukrey-returns"}]
+    assert r["links"] == [{"label": "Full prediction for Fukrey Returns", "href": "#/storm/fukrey-returns"}]
 
 
 def test_launch_kit_country_outside_top_three_offers_the_forecast(ctx):
@@ -133,7 +133,7 @@ def test_unparseable_question_fails_gracefully(ctx):
     r = ask.answer("who will win the world cup", ctx)
     assert r["intent"] == "none" and r["answer"]["kind"] == "help"
     assert "Where will Fukrey Returns go next?" in r["answer"]["message"]  # this week's lead breakout, not a fixed title
-    assert r["links"][0] == {"label": "Plan a launch", "href": "#/plan"} and r["steps"][0]["ok"] is False
+    assert r["links"][0] == {"label": "Launch plans", "href": "#/plan"} and r["steps"][0]["ok"] is False
     assert ask.answer("   ", ctx)["answer"]["kind"] == "help"
 
 
@@ -246,7 +246,7 @@ def test_did_you_mean_links_a_storm_and_names_an_index_title(ctx):
     r = ask.answer("where will fkry rtrns go next", ctx)
     assert r["answer"]["did_you_mean"] == {"title": "Fukrey Returns", "href": "#/storm/fukrey-returns"}
     assert "Did you mean Fukrey Returns?" in r["answer"]["message"]
-    assert r["links"][0] == {"label": "Storm page for Fukrey Returns", "href": "#/storm/fukrey-returns"}
+    assert r["links"][0] == {"label": "Prediction page for Fukrey Returns", "href": "#/storm/fukrey-returns"}
 
 
 def test_whats_heading_to_a_country_routes_to_the_country_answer(ctx):

@@ -561,3 +561,9 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .tour-points span { color: var(--ink-soft); font-size: 0.9rem; line-height: 1.4; }
 .tour-intro .tour-name { font-size: 0.82rem; margin-bottom: 16px; max-width: 46ch; }
 @media (max-height: 760px) { .tour-intro .tour-seismo { height: 48px; } .tour-points li { padding: 8px 10px; } }
+.glossary { margin: 6px 0 22px; }
+.glossary-list { margin: 0 18px 16px; display: grid; gap: 8px; }
+.glossary-list div { display: grid; grid-template-columns: minmax(150px, 230px) 1fr; gap: 14px; }
+.glossary-list dt { font-weight: 600; }
+.glossary-list dd { margin: 0; color: var(--ink-soft); }
+@media (max-width: 600px) { .glossary-list div { grid-template-columns: 1fr; gap: 2px; } }
