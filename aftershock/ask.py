@@ -453,7 +453,7 @@ def _links(a):
     if kind == "scout":
         return [{"label": "Sync Scout page", "href": "#/scout"}]
     if kind == "country":
-        return [{"label": "This week's storms", "href": "#/"}]
+        return [{"label": "This week's trending shows", "href": "#/"}]
     return []
 
 
@@ -718,6 +718,16 @@ def _try(ctx):
     return f' Try asking "{a}", "{b}" or "{c}"'
 
 
+def plain_why(why):
+    """The stored reason in the site's words: "Norway joined 12 of 67 past breakouts that started in Denmark" reads
+    "12 of 67 shows popular first in Denmark later reached Norway's Top 10 too". Other shapes pass through."""
+    m = re.match(r"^(.+?) joined (\d+) of (\d+) past breakouts that started in (.+)$", why or "")
+    if not m:
+        return why
+    owner = f"{m[1]}'" if m[1].endswith("s") else f"{m[1]}'s"
+    return f"{m[2]} of {m[3]} shows popular first in {m[4]} later reached {owner} Top 10 too"
+
+
 def _guide(intent, steps, msg, links, **extra):
     """A plain-text answer (kind "help", which the page already renders) with its own links."""
     done = _done(intent, steps, {"kind": "help", "message": msg, **extra})
@@ -852,16 +862,16 @@ def _release_answer(raw, steps, names):
     kind, guessed = _release_kind(raw.replace(name, " ")) if name else (None, False)  # a word in the title is not a signal
     about = f" about {name}" if name else ""
     steps.append(_step("understand", name, True, f"Release question{about}: this is not a trending Netflix show, so it goes to Plan my release."))
-    steps.append(_step("route", "#/release", True, "Plan a release asks Qloo which countries and cities have the most audience affinity."))
+    steps.append(_step("route", "#/release", True, "Plan my release asks Qloo which countries and cities match this audience best."))
     href = "#/release" + (f"?name={quote(name, safe='')}" if name else "") + (f"&kind={kind}" if kind else "")
     if not name:
-        fill = " Type your title on that page."
+        fill = " Type its name on that page."
     elif kind:
         fill = f" I have filled in {name} as {kind}." + (" That is a guess, so switch the type on that page if it is a comedy act, film or series." if guessed else "")
     else:
         fill = f" I have filled in {name} for you."
-    msg = ("Plan a release is built for this. For an upcoming film, series, album, comedy special or tour, Qloo ranks countries "
-           "and cities by audience affinity, then suggests venues and local taste." + fill)
+    msg = ("Plan my release is built for this. For an upcoming film, series, album, comedy special or tour, Qloo ranks countries "
+           "and cities by how well their taste matches the audience, then suggests venues and local taste." + fill)
     return _guide("release_plan", steps, msg, [{"label": "Plan my release" + (f" for {name}" if name else ""), "href": href}],
                   name=name)
 
@@ -892,10 +902,10 @@ def _missing_answer(ctx, x, steps):
         last = max(w for _, w in rec["countries"])
         steps.append(_step("title_lookup", x, True, f"Found {rec['title']} in Netflix's Top 10 history since {_since(ctx)}, but not among this week's breakouts."))
         close = "" if _norm(x) in (_norm(rec["title"]), _norm(rec["show"])) else f"The closest title is {rec['title']}. "
-        msg = (f"{close}{rec['title']} is in Netflix's Top 10 history (first charted {rec['first_week']}, last added a country "
-               f"{last}, {len(places)} {'country' if len(places) == 1 else 'countries'} so far) but it is not one of this week's breakouts. "
-               "A breakout has to start in one country while charting nowhere else; titles that launch worldwide chart everywhere "
-               "at once, so there is nothing to forecast.")
+        msg = (f"{close}{rec['title']} is in Netflix's Top 10 history (first in a Top 10 on {rec['first_week']}, last added a country "
+               f"{last}, {len(places)} {'country' if len(places) == 1 else 'countries'} so far) but it is not one of this week's trending shows. "
+               "AFTERSHOCK looks for shows that get popular in one country while almost nowhere else; shows that launch worldwide "
+               "are in the Top 10 everywhere at once, so there is nothing to predict.")
         links = [{"label": f"Prediction page for {rec['title']}", "href": f"#/storm/{rec['storm_id']}"}] if rec.get("storm_id") else []
         return _guide("why_missing", steps, msg, links + [{"label": "This week's storms", "href": "#/"}])
     steps.append(_step("title_lookup", x, False, f"{x} is not in Netflix's Top 10 in any country since {_since(ctx)}."))
@@ -953,10 +963,10 @@ def _why_title_answer(found, country, steps, names):
         return _guide("why_forecast", steps, msg, links)
     rank = rows.index(row) + 1
     steps.append(_step("forecast", title, True, f"Read the forecast row for {row['name']}: {pct(row['probability'])}, number {rank} of {len(rows)}."))
-    reason = _stop(f"Why: {row['why']}") if row["why"] else "No written reason is stored for this country."
+    reason = _stop(f"Why: {plain_why(row['why'])}") if row["why"] else "No written reason is stored for this country."
     window = f" within {horizon} weeks" if horizon else ""
     msg = (f"{title} started in {origin} (week of {week}). {row['name']} is {launch_brief.rank_phrase(rank, len(rows))}: "
-           f"a {pct(row['probability'])} chance of charting{window}. {reason}")
+           f"a {pct(row['probability'])} chance of reaching the Top 10 there{window}. {reason}")
     if rank == 1 and len(rows) > 1:
         after = ", ".join(f"{r['name']} ({pct(r['probability'])})" for r in rows[1:3])
         msg += f" After that: {after}."
@@ -977,7 +987,7 @@ def _why_country_answer(ctx, country, steps):
     for t in entry.get("top", [])[:2]:
         storm = next((i for i in ctx["storms"] if i["summary"]["id"] == t["id"]), None)
         row = next((f for f in storm["detail"]["spillover"]["forecasts"] if f["code"] == country[0]), None) if storm else None
-        reason = f": {_stop(row['why'])}" if row and row.get("why") else "."
+        reason = f": {_stop(plain_why(row['why']))}" if row and row.get("why") else "."
         parts.append(f"{t['title']} ({pct(t['p'])}){reason}")
         links.append({"label": f"Full prediction for {t['title']}", "href": f"#/storm/{t['id']}"})
     msg = f"{country[1]} has a {pct(entry['chance'])} chance of getting at least one new breakout this week." + (
@@ -1077,7 +1087,7 @@ def _fans_like(ctx, raw, names):
     if found["storm"]:
         return _done("launch_kit", steps, _kit_answer(found["storm"], country, steps))
     steps.append(_step("title_lookup", title, True, f"Found {title} in Netflix's Top 10 history, but it is not one of this week's breakouts."))
-    note = f"{title} is not one of this week's breakouts, so there is no launch kit for it. Here is its Netflix history and forecast instead."
+    note = f"{title} is not one of this week's trending shows, so there is no launch plan for it. Here is its Netflix history and prediction instead."
     return _done("launch_kit", steps, _title_answer(found["history"], country, steps, note=note))
 
 
@@ -1196,7 +1206,7 @@ def answer(question, ctx):
         if found["storm"]:
             return _done("launch_kit", steps, _kit_answer(found["storm"], country, steps))
         steps.append(_step("title_lookup", title, True, f"Found {title} in Netflix's Top 10 history, but it is not one of this week's breakouts."))
-        note = f"{title} is not one of this week's breakouts, so there is no launch kit for it. Here is its Netflix history and forecast instead."
+        note = f"{title} is not one of this week's trending shows, so there is no launch plan for it. Here is its Netflix history and prediction instead."
         return _done("launch_kit", steps, _title_answer(found["history"], country, steps, note=note))
 
     # A pairing question naming a place we do not know ("in Narnia") would otherwise be answered as if the

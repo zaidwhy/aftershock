@@ -85,7 +85,7 @@ def test_launch_kit_for_a_storm_without_kit_rows(ctx):
 def test_launch_kit_for_a_title_that_is_not_a_storm(ctx):
     r = ask.answer("What should Squid Game pair with in Brazil?", ctx)
     assert r["intent"] == "launch_kit" and r["answer"]["kind"] == "title"
-    assert "not one of this week's breakouts" in r["answer"]["note"]
+    assert "not one of this week's trending shows" in r["answer"]["note"]
     assert "already charted in Brazil" in r["answer"]["focus"]
 
 

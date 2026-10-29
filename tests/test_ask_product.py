@@ -62,8 +62,8 @@ def test_why_a_title_is_not_here_when_it_charted_but_is_not_a_breakout(ctx):
         r = ask.answer(q, ctx)
         msg = r["answer"]["message"]
         assert r["intent"] == "why_missing"
-        assert "Squid Game: Season 3 is in Netflix's Top 10 history (first charted 2025-06-23, last added a country 2025-07-03" in msg
-        assert "has to start in one country" in msg and "worldwide" in msg and "nothing to forecast" in msg
+        assert "Squid Game: Season 3 is in Netflix's Top 10 history (first in a Top 10 on 2025-06-23, last added a country 2025-07-03" in msg
+        assert "popular in one country while almost nowhere else" in msg and "worldwide" in msg and "nothing to predict" in msg
 
 
 def test_why_missing_repairs_a_misspelling_and_says_so(ctx):
@@ -136,7 +136,7 @@ def test_where_should_i_release_x_links_plan_a_release_with_the_name(ctx):
                     ("plan a release for The Long Walk", "The%20Long%20Walk"),
                     ("where will my album Blue Hour work", "Blue%20Hour&kind=music")):
         r = ask.answer(q, ctx)
-        assert r["intent"] == "release_plan" and "Qloo ranks countries and cities by audience affinity" in r["answer"]["message"]
+        assert r["intent"] == "release_plan" and "Qloo ranks countries and cities by how well their taste matches the audience" in r["answer"]["message"]
         assert r["links"][0]["href"] == f"#/release?name={name}", q
 
 
@@ -144,7 +144,7 @@ def test_a_release_question_without_a_title_links_the_bare_page(ctx):
     for q in ("where will my comedy special work", "Where should I release my comedy tour in Brazil?", "where should I tour"):
         r = ask.answer(q, ctx)
         assert r["intent"] == "release_plan" and r["links"] == [{"label": "Plan my release", "href": "#/release"}], q
-        assert "Type your title on that page" in r["answer"]["message"]
+        assert "Type its name on that page" in r["answer"]["message"]
 
 
 def test_a_release_title_is_url_encoded(ctx):
