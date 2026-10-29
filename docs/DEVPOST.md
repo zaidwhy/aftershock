@@ -2,7 +2,7 @@
 
 **Project name:** AFTERSHOCK
 
-**Tagline:** An AI's launch plan sounds right. Qloo checks it. AFTERSHOCK forecasts which country a Netflix breakout reaches next, plans the launch there, and keeps only the names Qloo confirms for that audience.
+**Tagline:** Shows travel. See where next. When a Netflix show gets popular in one country, AFTERSHOCK predicts which country is next and plans the launch there, keeping only the partners Qloo's audience data supports.
 
 ### Results at a glance
 
@@ -10,32 +10,32 @@
 
 | Question | Result |
 |---|---|
-| Qloo alone, an LLM alone, an LLM checked by Qloo | How specific to the title the picks are (0 to 1, same 81 title-country pairs): Qloo alone 0.62, LLM alone 0.81, LLM checked by Qloo 0.86 (exploratory, not pre-registered). Of 1,615 names an AI proposed, Qloo could back 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not backed, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not place with that audience. Only confirmed names ship in a plan. |
-| Forecast backtest (829 held-out breakouts) | Counting all 829: its top 3 named a next country for 9.8% of breakouts against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. For scale, a typical country charts a given breakout about 1% of the time (758 of 76,760 held-out pairs), so the featured 14% for Sweden is about 14 times that. Of the three held-out breakouts it was most sure about (a fixed rule), one hit: an Arabic series broke out in Kuwait in April 2026, and its top two forecasts, Saudi Arabia (30%) and Oman (19%), both charted one week later. The other two did not spread. |
-| Forecasts locked in public | 3,240, each locked before Netflix published the week it is graded on; grading is paused until Netflix permits reading its newer files. |
+| Qloo alone, an AI alone, an AI checked by Qloo | How specific to the show the picks are (0 to 1, same 81 show-and-country pairs): Qloo alone 0.62, AI alone 0.81, AI checked by Qloo 0.86 (exploratory, not pre-registered). Of 1,615 names an AI proposed, Qloo's data supported 29% (462): it links them to that audience in that country. 66% are names Qloo knows; 71% are not supported, of which 34% (548) Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% (605) Qloo knows but does not link to that audience. Only supported names go into a plan. |
+| Next-country prediction, tested on 829 past cases it never saw | Counting all 829: its top 3 named a next country for 9.8% of cases against 4.1% for the three busiest countries, 2.4 times the baseline. Of the 113 that spread at all: 72% against 30%. For scale, a typical country charts a given show about 1% of the time (758 of 76,760 held-out pairs), so the featured 14% for Sweden is about 14 times that. Of the three held-out cases it was most sure about (a fixed rule), one hit: an Arabic series got popular in Kuwait in April 2026, and its top two predictions, Saudi Arabia (30%) and Oman (19%), both reached the Top 10 one week later. The other two did not spread. |
+| Predictions recorded in advance | 3,240, each recorded before Netflix published the week it is graded on; grading is paused until Netflix permits reading its newer files. |
 
 ## Why it needs Qloo
 
-An AI asked what a title's audience in a country loves answers fluently, and most of it cannot be told apart from a guess. Qloo is the check. It does three things a language model cannot:
+An AI asked what a show's audience in a country loves answers fluently, and most of it cannot be told apart from a guess. Qloo is the check. It does three things a language model cannot:
 
-- **It checks each name for one audience in one country.** Is this artist, brand, show or film linked to the viewers of this title in Sweden? Qloo confirms or does not, name by name, and only confirmed names reach the plan.
-- **It maps where that audience lives.** Qloo's heatmap gives the cities where a title's audience concentrates, and the same call gives them for each artist.
-- **It overlaps two audiences.** Where an artist's heatmap and the title's heatmap meet gives a city for a quick activation that no list of names can give.
+- **It checks each name for one audience in one country.** Is this artist, brand, show or film linked to the viewers of this show in Sweden? Qloo confirms or does not, name by name, and only confirmed names reach the plan.
+- **It maps where that audience lives.** Qloo's audience map gives the cities where a show's audience concentrates, and the same call gives them for each artist.
+- **It overlaps two audiences.** Where an artist's audience map and the show's audience map meet gives a city for a quick event that no list of names can give.
 
 ## Inspiration: two kinds of aftershock
 
-A breakout travels country by country: that is what we forecast from Netflix history. The culture around it travels too: that is what Qloo maps. When Stranger Things 4 Volume 1 came out on 27 May 2022, English Wikipedia's article on Kate Bush's "Running Up That Hill" went from 349 views on 26 May to 43,521 on 31 May (Wikimedia Pageviews REST API, en.wikipedia, user agents, daily). The people who could act on that, a label, an artist, a brand, usually find out after the peak. Netflix itself now reports that its placements send songs back up the charts ([Music on Netflix: New and Nostalgic Songs Storm the Charts](https://about.netflix.com/news/music-on-netflix-new-and-nostalgic-songs-storm-the-charts)).
+A trending show travels country by country: that is what we predict from Netflix history. The culture around it travels too: that is what Qloo maps. When Stranger Things 4 Volume 1 came out on 27 May 2022, English Wikipedia's article on Kate Bush's "Running Up That Hill" went from 349 views on 26 May to 43,521 on 31 May (Wikimedia Pageviews REST API, en.wikipedia, user agents, daily). The people who could act on that, a label, an artist, a brand, usually find out after the peak. Netflix itself now reports that its placements send songs back up the charts ([Music on Netflix: New and Nostalgic Songs Storm the Charts](https://about.netflix.com/news/music-on-netflix-new-and-nostalgic-songs-storm-the-charts)).
 
 ## What it does
 
-- **Plan a launch (start here).** Pick a breakout and a country. The agent works through visible steps, each with what it found and the rule it applied: forecast, ask Qloo what the audience likes, ask an AI for more names, check every AI name against Qloo, find the cities, match artists to cities, write the Launch Brief. When Qloo's own kit is clearly specific to the title (at least 60% different from the country's general taste), the partners lead with Qloo's kit and the AI names Qloo confirmed follow, labelled as such; platform brands such as Spotify are left out. The brief names partners to approach (artists and brands), what the audience also watches (for creative and ad targeting), quick-turn activation ideas, and what the evidence does not support. Download, print or share it.
+- **Launch plans (start here).** Pick a trending show and a country. The agent works through visible steps, each with what it found and the rule it applied: prediction, ask Qloo what the audience likes, ask an AI for more names, check every AI name against Qloo, find the cities, match artists to cities, write the launch plan. When Qloo's own picks are clearly specific to the show (at least 60% different from the country's general taste), the partners lead with Qloo's picks and the AI names Qloo confirmed follow, labelled as such; platform brands such as Spotify are left out. The plan names partners to approach (artists and brands), what the audience also watches (for creative and ad targeting), quick-turn event ideas, and what the evidence does not support. Download, print or share it.
 - **Live check box.** Type any artist, brand, show or film on the plan page; Qloo confirms or rejects it for that audience, now. Names Qloo has no data on are listed separately, never struck through.
-- **For artists.** Every artist Qloo links to a breakout's audience has a page: which titles' viewers over-index on their music, where, and the cities where both audiences concentrate. Artists that appear only in countrywide kits are tagged.
-- **The globe.** The home page is a 3D globe of this week's breakouts: each origin pulses, arcs carry each title to its likeliest next countries, and clicking any country gives its chance and the reason in one line from Netflix history ("Norway joined 12 of 67 past breakouts that started in Denmark"). Follow one title and Qloo's city heatmap rises out of the surface where that audience lives. Small countries (Malta, Singapore, Bahrain) get clickable markers.
-- **Plan a release (new).** For something that has not launched yet, a film, series, album or comedy special, or an artist or comedian going on tour: Qloo ranks 24 countries (or every country in a region you pick) by audience affinity, maps the cities in the top three, finds venues there (comedy clubs, live music venues or cinemas, by Qloo place tag) and names the local shows, films and artists this audience also loves. If Qloo does not know the title yet, up to three comparables stand in for it. It asks what the release is, its goal (tour, premiere or digital only), a region to look deeper in, a home market to leave out, and the release month, which turns the plan into a dated schedule. The result is a world heatmap of every country checked with a ranked list, city maps with each city's numbers, venues filtered to real performance spaces, and a "Why this ranking" panel that walks through each number. Every Qloo call the plan made is listed with its parameters. Names in other scripts work ("오징어 게임" finds Squid Game). Worked examples: Zakir Khan, Kevin Hart, Dua Lipa, and two unreleased titles planned from comparables.
-- **Ask AFTERSHOCK.** A chat on every page answers from the site's own tools, no language model: where a title goes next, why it is breaking in a country, why a title is not here, where a release could work, what any feature does. Every answer shows the steps it took.
-- **Guided tour.** A 60-second tour highlights each feature in turn; it runs on a first visit and from the Tour button.
-- **Public ledger.** Each week's forecasts were locked in a hash-chained ledger before Netflix published the weeks they are graded on; grading waits for Netflix's permission. An MCP server exposes the same tools to any agent.
+- **For artists.** Every artist Qloo links to a trending show's audience has a page: whose viewers like their music far more than average, where, and the cities where both audiences concentrate. Artists that appear only in whole-country picks are tagged.
+- **The globe.** The home page is a 3D globe of this week's trending shows: each country where a show just got popular pulses, arcs carry each show to its likeliest next countries, and clicking any country gives its chance and the reason in one line from Netflix history ("12 of 67 shows popular first in Denmark later reached Norway's Top 10 too"). Follow one show and Qloo's map of where its fans live rises out of the surface where that audience lives. Small countries (Malta, Singapore, Bahrain) get clickable markers.
+- **Plan my release (new).** For something that has not launched yet, a film, series, album or comedy special, or an artist or comedian going on tour: Qloo ranks 24 countries (or every country in a region you pick) by Qloo's match score, maps the cities in the top three, finds venues there (comedy clubs, live music venues or cinemas, by Qloo place tag) and names the local shows, films and artists this audience also loves. If Qloo does not know the show yet, up to three comparables stand in for it. It asks what the release is, its goal (tour, premiere or digital only), a region to look deeper in, a home market to leave out, and the release month, which turns the plan into a dated schedule. The result is a world audience map of every country checked with a ranked list, city maps with each city's numbers, venues filtered to real performance spaces, and a "Why this ranking" panel that walks through each number. Every Qloo call the plan made is listed with its parameters. Names in other scripts work ("오징어 게임" finds Squid Game). Worked examples: Zakir Khan, Kevin Hart, Dua Lipa, and two unreleased shows planned from comparables.
+- **Ask AFTERSHOCK.** A chat on every page answers from the site's own tools, no language model: where a show goes next, why it is heading to a country, why a show is not here, where a release could work, what any feature does. Every answer shows the steps it took.
+- **Guided tour.** A 60-second tour that first says what AFTERSHOCK is, then highlights each feature; it runs on a first visit and from the Tour button.
+- **Prediction history.** Each week's predictions were locked in a hash-chained prediction history before Netflix published the weeks they are graded on; grading waits for Netflix's permission. An MCP server exposes the same tools to any agent.
 
 ## Qloo calls we make
 
@@ -54,23 +54,23 @@ A breakout travels country by country: that is what we forecast from Netflix his
 
 ## Who would pay
 
-Each buyer has one move that fits in the week between a breakout and its peak:
+Each buyer has one move that fits in the week between a trending show and its peak:
 
-- **Labels:** push an artist's catalogue and a playlist to listeners in the cities where Qloo links that artist to the title's viewers.
-- **Artists:** a post, a DJ set or a playlist push aimed at those cities while the title is charting.
-- **Brand marketers:** local ads in the title's hotspot cities, only for brands Qloo confirms for that audience.
+- **Brand marketers:** moment marketing on a show before it trends in their country (a meme, a scene, a line), and local ads in the show's fan cities, only for brands Qloo supports for that audience. The Head of Marketing at Nobero, a fashion brand, seeing it for the first time: *"Seeing in one glance what's trending."* What would make him trust it with budget: *"Previous success rate."* He said yes to trying one plan on a real campaign later (interest, not a pilot).
+- **Labels:** push an artist's catalogue and a playlist to listeners in the cities where Qloo links that artist to the show's viewers.
+- **Artists:** a post, a DJ set or a playlist push aimed at those cities while the show is in the Top 10.
 
-Local media and creators can act fastest, on the same cities. Promoters use Plan a release to choose which cities to research for a tour.
+Local media and creators can act fastest, on the same cities. Promoters use Plan my release to choose which cities to research for a tour.
 
-What each output does not prove is written next to it: the Launch Brief has an "Evidence behind each claim" table (the claim, what supports it, what is still missing), and opens with the decision it supports. Every output is a shortlist for further research, a predicted opportunity, not a confirmed business one: we have not shown that any recommendation lifts streams, tickets or sales. We have no customers or pilots. **Pricing hypothesis (untested):** a weekly per-territory brief for labels and agencies, artist pages free. We have not tested it with anyone.
+What each output does not prove is written next to it: the launch plan has an "Evidence behind each claim" table (the claim, what supports it, what is still missing), and opens with the decision it supports. Every output is a shortlist for further research, a predicted opportunity, not a confirmed business one: we have not shown that any recommendation lifts streams, tickets or sales. We have no customers or pilots. **Pricing hypothesis (untested):** a weekly per-territory brief for labels and agencies, artist pages free. We have not tested it with anyone.
 
 ## What it can't do
 
-- Titles that launch worldwide on day one are not breakouts, so it would not have flagged Stranger Things 4 or Wednesday.
-- The warning is about a week. That suits short activations, playlist pushes and local ads, not tours, which are booked months ahead.
-- The country forecast uses Netflix history only. Qloo added no lift to it in our test.
-- It watches Netflix only, because Netflix is the one major streamer we found that publishes a weekly Top 10 for each of 94 countries, back to 2021; we found no comparable per-country charts from other streamers, and third-party chart scrapers carry terms risk. That history is also what makes the forecast testable: it is how we backtested on 829 held-out breakouts and how every new forecast gets graded in public. The Qloo half (kits, city maps, artist overlap, the live check) works for any title Qloo knows, from any platform.
-- Launch kits and activation ideas are not yet validated against outcomes, and grading of the locked forecasts is paused until Netflix permits reading its newer files.
+- Shows that launch worldwide on day one are not what it looks for (it needs a show popular in one country first), so it would not have flagged Stranger Things 4 or Wednesday.
+- The warning is about a week. That suits short campaigns, memes, playlist pushes and local ads, not tours, which are booked months ahead.
+- The country prediction uses Netflix history only. Qloo added no lift to it in our test.
+- It watches Netflix only, because Netflix is the one major streamer we found that publishes a weekly Top 10 for each of 94 countries, back to 2021; we found no comparable per-country charts from other streamers, and third-party chart scrapers carry terms risk. That history is also what makes the prediction testable: it is how we backtested on 829 past cases and how every new prediction gets graded in public. The Qloo half (Qloo's picks, city maps, artist overlap, the live check) works for any show Qloo knows, from any platform.
+- Qloo's picks and event ideas are not yet validated against outcomes, and grading of the locked predictions is paused until Netflix permits reading its newer files.
 
 ## What we measured, including what did not work
 
@@ -87,14 +87,14 @@ Netflix publishes its weekly Top 10 lists on its Top 10 site, with download link
 
 No login, nothing to install. About eight minutes on https://aftershock-qloo.vercel.app:
 
-1. **Home, the globe:** take the 60-second tour (it starts on a first visit), then pick a title in the "Follow a breakout" row and click a country.
-2. **Plan a release:** https://aftershock-qloo.vercel.app/#/release opens a worked example; type your own title (and comparables if Qloo does not know it yet). A live plan makes about 40 Qloo calls and takes 10 to 30 seconds.
-3. **Ask AFTERSHOCK** (bottom right): try "why isn't Squid Game here?" or "why is Nightwatch breaking in Norway?".
-4. **Plan a launch:** open https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (Nightwatch: Demons Are Forever in Sweden). Watch the steps replay, then read, download or print the Launch Brief.
+1. **Home, the globe:** take the 60-second tour (it starts on a first visit), then pick a show in the "Follow one show" row and click a country.
+2. **Plan my release:** https://aftershock-qloo.vercel.app/#/release opens a worked example; type your own show (and comparables if Qloo does not know it yet). A live plan makes about 40 Qloo calls and takes 10 to 30 seconds.
+3. **Ask AFTERSHOCK** (bottom right): try "why isn't Squid Game here?" or "why is Nightwatch heading to Norway?".
+4. **Launch plans:** open https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/SE (Nightwatch: Demons Are Forever in Sweden). Watch the steps replay, then read, download or print the launch plan.
 5. **Check a name live:** in the box under step 4, type any artist, brand, show or film; Qloo confirms or rejects it for this audience, now. Live lookups are capped per visitor.
-6. **Any storm page:** the launch kit per country and "AI plan, checked by Qloo".
-7. **For artists:** https://aftershock-qloo.vercel.app/#/artist/veronica-maggio.
-8. **Scorecard (top menu) and Ledger (under More):** what we measured, including what went against us, and every locked forecast.
+6. **Any show's page:** Qloo's picks per country and "AI plan, checked by Qloo".
+7. **For music artists:** https://aftershock-qloo.vercel.app/#/artist/veronica-maggio.
+8. **Prediction results (top menu) and Prediction history (under More):** what we measured, including what went against us, and every recorded prediction.
 
 From an AI agent: the MCP server (`python -m aftershock.mcp_server`, README section 5).
 
@@ -104,4 +104,4 @@ From an AI agent: the MCP server (`python -m aftershock.mcp_server`, README sect
 - Code: https://github.com/zaidwhy/aftershock (MIT)
 - Demo video: (YouTube link to be added)  <!-- PLACEHOLDER for Zaid: paste the unlisted YouTube link before submitting -->
 
-**Built with:** a fixed plan of tool calls with visible decision rules; the LLM (Gemini `gemini-3.5-flash`) only proposes names and drafts a validated summary. python, fastapi, httpx, three.js (globe.gl), d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel
+**Built with:** a fixed plan of tool calls with visible decision rules; the AI (Gemini `gemini-3.5-flash`) only proposes names and drafts a validated summary. python, fastapi, httpx, three.js (globe.gl), d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel
