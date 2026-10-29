@@ -194,7 +194,10 @@ export function renderHome(root, isCurrent, followId = null) {
     requestAnimationFrame(() => mountGlobe(globeHost, week, (sel) => showPanel(sel, week)).then((g) => {
       if (!isCurrent()) { g.destroy(); return; }
       globe = g;
-      const stop = () => { if (!isCurrent()) { g.destroy(); window.removeEventListener("hashchange", stop); } };
+      // The tour follows a breakout to show the globe at work; when it ends, the globe goes back to the whole week.
+      const reset = () => { if (isCurrent()) pick(null); };
+      window.addEventListener("aftershock:globe-reset", reset);
+      const stop = () => { if (!isCurrent()) { g.destroy(); window.removeEventListener("hashchange", stop); window.removeEventListener("aftershock:globe-reset", reset); } };
       window.addEventListener("hashchange", stop);
       if (followId) pick(followId);
     }).catch(() => {

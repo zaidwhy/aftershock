@@ -33,7 +33,8 @@ const STEPS = [
     act: async (cursor) => {
       const chip = [...document.querySelectorAll(".rail-chip")].find((c) => /nightwatch/i.test(c.textContent))
         || document.querySelectorAll(".rail-chip")[1];
-      press(chip, cursor);
+      // Follow it without sending the cursor down to the row of titles: the eye stays on the globe.
+      chip?.click();
       return 2400;
     } },
   { sel: '[data-tour="plan"]', title: "Plan the launch",
@@ -214,6 +215,10 @@ function run() {
     removeEventListener("keydown", keys);
     active = null;
     remember();
+    // Leave the page as the visitor found it: the whole week on the globe, at the top.
+    // Jump, then let the globe ease back on the next frame: a smooth scroll while the globe re-renders stalls weak GPUs.
+    window.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("aftershock:globe-reset")));
   };
   next.onclick = () => { if (i === steps.length - 1) end(); else show(i + 1); };
   back.onclick = () => show(i - 1);
