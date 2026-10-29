@@ -356,3 +356,34 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .tour-click { position: fixed; z-index: 94; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid var(--amber); pointer-events: none; animation: tour-ring .7s ease-out forwards; }
 @keyframes tour-ring { from { transform: scale(.6); opacity: 1; } to { transform: scale(3.2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tour-click { animation: none; } }
+
+/* Tour, minimal: a small card, one line of text, dots; an intro that draws a seismograph. */
+.tour-card { width: min(320px, calc(100vw - 24px)); padding: 16px 18px 14px; border-radius: 14px; background: var(--paper-2); border: 1px solid var(--rule); box-shadow: 0 20px 50px var(--shadow); transition: top .4s cubic-bezier(.2,.8,.2,1), left .4s cubic-bezier(.2,.8,.2,1); }
+.tour-card h3 { margin: 4px 28px 4px 0; font-size: 1.08rem; }
+.tour-card p { margin: 0 0 12px; font-size: 0.9rem; line-height: 1.45; color: var(--ink-soft); }
+.tour-count { font-size: 0.7rem; letter-spacing: .14em; color: var(--accent); }
+.tour-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: var(--ink-soft); font-size: 1.15rem; cursor: pointer; }
+.tour-x:hover { background: var(--tint-2); color: var(--ink); }
+.tour-foot { display: flex; align-items: center; gap: 6px; }
+.tour-foot .btn-small { padding: 6px 12px; min-height: 32px; font-size: 0.82rem; }
+.tour-foot .btn:disabled { opacity: .35; cursor: default; transform: none; }
+.tour-dots { display: flex; gap: 5px; }
+.tour-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: var(--rule); cursor: pointer; transition: width .25s, background .25s; }
+.tour-dots button.on { width: 18px; border-radius: 4px; background: var(--accent); }
+.tour-in { animation: tour-in .32s cubic-bezier(.2,.8,.2,1); }
+@keyframes tour-in { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+.tour-hole { border-radius: 16px; outline: 1.5px solid var(--amber); outline-offset: 3px; }
+.tour-cursor { width: 24px; height: 24px; }
+
+.tour-veil { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; padding: 16px; background: rgba(4, 6, 10, .62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fade .3s ease-out; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.tour-intro { width: min(520px, 100%); text-align: center; padding: 30px 28px 26px; border-radius: 20px; background: var(--paper-2); border: 1px solid var(--rule); box-shadow: 0 30px 80px var(--shadow); animation: tour-in .45s cubic-bezier(.2,.8,.2,1); }
+.tour-intro h2 { margin: 6px 0 10px; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.tour-intro h2 em { font-style: normal; background: linear-gradient(90deg, var(--amber), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.tour-intro p { color: var(--ink-soft); margin: 0 auto 18px; max-width: 38ch; }
+.tour-intro .tour-step { color: var(--amber); margin: 0; }
+.tour-intro-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.tour-seismo { width: 100%; height: 72px; margin-bottom: 8px; overflow: visible; }
+.tour-seismo path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-trace 1.8s .2s cubic-bezier(.4,0,.2,1) forwards; filter: drop-shadow(0 0 6px rgba(255, 90, 54, .45)); }
+@keyframes draw-trace { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .tour-in, .tour-intro, .tour-veil { animation: none; } .tour-seismo path { animation: none; stroke-dashoffset: 0; } }
