@@ -2,6 +2,16 @@
 
 Deadline: Devpost, 30 Oct 2026 11:45pm EDT = 31 Oct 09:15 IST. Judges: 2-5 Nov (Discord says keys live to 16 Nov); top 3 present on air 5 Nov.
 
+## Latest (30 Oct, overnight): plain-language rewrite, NOT YET DEPLOYED
+
+After Mubaid (Head of Marketing, Nobero) said a first-time visitor cannot tell what the site is, the whole site was rewritten in plain words. Decisions: slogan "Shows travel. See where next." (no "hit"/"breakout" in visible copy); vocabulary trending show, show or film, prediction, launch plan, Qloo's picks, match score, prediction results, prediction history; nav Trending shows / Launch plans / Plan my release / For music artists / Prediction results / More (Prediction history, The automatic run, How it is built, About us). His quote is used exactly as he asked: "Seeing in one glance what's trending." - Head of Marketing, Nobero (site home + Devpost). He also said yes to trying one plan on a real campaign later: interest, not a pilot.
+- Home: hero says what it is, one main button, three steps, a real example card (this week's featured show's top country, from data), the quote, trending list, plain proof, roadmap, More detail.
+- Tour: an intro with three points (what it is, what makes it special, why try it) before the steps; steps rewritten; card docks at the bottom on phones.
+- Backend text reworded (launch_brief.py, release_plan.py, ask.py) with tests updated; static data re-exported and release examples rebuilt from cache (0 live Qloo calls).
+- Results page keeps exact terms with a glossary; How it is built stays technical.
+- Devpost texts rewritten (docs/DEVPOST_STORY.md, docs/DEVPOST.md); video brief and VOICE_SCRIPT_SHRAVNI.md in projects/aftershock-team rewritten for the new site.
+- 436 tests pass. Deploy: `vercel deploy --prod --yes --scope syzayds-projects` (Zaid runs it).
+
 ## Latest (29 Oct, 23:05 IST): see HANDOFF-2026-10-29-2305.md
 
 Refinement, globe lag fix, tour fixes and click shield, splash, top-down content, teammate audit v2, and the Netflix pause (watcher killed, forecast.yml disabled, all texts say runs and grading are paused until Netflix permits). All deployed and verified live; 436 tests. Left for Zaid: Devpost paste, video link, roles, submit.
