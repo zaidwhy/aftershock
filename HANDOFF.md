@@ -10,6 +10,9 @@ After Mubaid (Head of Marketing, Nobero) said a first-time visitor cannot tell w
 - Backend text reworded (launch_brief.py, release_plan.py, ask.py) with tests updated; static data re-exported and release examples rebuilt from cache (0 live Qloo calls).
 - Results page keeps exact terms with a glossary; How it is built stays technical.
 - Devpost texts rewritten (docs/DEVPOST_STORY.md, docs/DEVPOST.md); video brief and VOICE_SCRIPT_SHRAVNI.md in projects/aftershock-team rewritten for the new site.
+- Later passes: chat panel and answers in the same words (ask.plain_why mirrors format.js plainWhy); tour card docks at the bottom on phones and tall sections scroll under the header; in-page jumps stop below the sticky header; README opening and glossary aligned.
+- New Devpost gallery (18 images + thumbnail + CAPTIONS.md) in projects/aftershock-team/gallery/plain-v2; the old set is untouched. FINALS_QA_AND_TEAM_ACTIONS.md has the new wording for the final.
+- Not done: the shared team brief artifact still has the old wording (republish only if Zaid asks).
 - 436 tests pass. Deploy: `vercel deploy --prod --yes --scope syzayds-projects` (Zaid runs it).
 
 ## Latest (29 Oct, 23:05 IST): see HANDOFF-2026-10-29-2305.md
