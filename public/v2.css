@@ -451,7 +451,7 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 
 /* Splash: covers the first paint while the app loads. Script lifts it once the first view has rendered; if script
    never runs, it fades on its own after 4 s so the page is never trapped behind it. */
-.splash { position: fixed; inset: 0; z-index: 200; display: grid; place-content: center; justify-items: center; gap: 6px; background: var(--paper); animation: splash-gone .4s 4s forwards; transition: opacity .45s ease, visibility .45s; }
+.splash { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; grid-template: 1fr / 1fr; background: var(--paper); animation: splash-gone .4s 4s forwards; transition: opacity .45s ease, visibility .45s; }
 .splash-trace { width: min(320px, 70vw); height: auto; overflow: visible; }
 .splash-trace path { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(255, 90, 54, .45)); animation: draw-trace 1.1s .1s cubic-bezier(.4,0,.2,1) forwards; }
 .splash-name { margin: 10px 0 0; font: 600 0.95rem var(--mono); letter-spacing: .5em; padding-left: .5em; color: var(--ink); opacity: 0; animation: splash-rise .5s .55s ease-out forwards; }
@@ -570,3 +570,44 @@ table.use-table, table.ev-table { max-width: none; width: 100%; }
 .agent-line { font-family: var(--sans); font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 4px; }
 /* In-page jumps (the main button, the tour) stop below the sticky header instead of under it. */
 main h2[id], main section[id] { scroll-margin-top: 96px; }
+
+/* The splash has two frames in one grid cell: the brand (every visit) and, on a first visit, the story before it. */
+.splash > .splash-story, .splash > .splash-brand { grid-area: 1 / 1; }
+.splash-brand { display: grid; justify-items: center; gap: 6px; }
+.splash-line em { font-style: normal; color: var(--accent); }
+.splash-story, .splash-skip { display: none; }
+
+/* First visit: a five-second story. A show is popular in Denmark (0.3 s), the arcs reach Norway and Sweden (1.5 to
+   2.5 s), then the story folds away and the slogan lands (3.3 s). app.js lifts the splash at about 5.2 s. */
+.intro-story .splash { animation: splash-gone .4s 7s forwards; cursor: pointer; }
+.intro-story .splash-story { display: grid; justify-items: center; gap: 10px; width: min(520px, 92vw); animation: story-fold .5s 3.3s ease-in forwards; }
+.story-map { width: 100%; height: auto; overflow: visible; }
+.story-grid { opacity: 0; animation: story-fade .6s .05s ease-out forwards; }
+#story-dots circle { fill: var(--ink-soft); }
+.story-arc { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 5px rgba(255, 90, 54, .55)); }
+.arc-no { animation: draw-trace .7s 1.5s cubic-bezier(.4,0,.2,1) forwards; }
+.arc-se { animation: draw-trace .7s 1.75s cubic-bezier(.4,0,.2,1) forwards; }
+.story-pin { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.story-pin .dot { fill: var(--amber); }
+.pin-dk .dot { fill: var(--accent); }
+.story-pin .ring { fill: none; stroke: var(--accent); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: story-ring 1.4s ease-out infinite; }
+.story-pin .ring.r2 { animation-delay: .7s; }
+.story-pin text { font: 600 9px var(--mono); letter-spacing: .2em; fill: var(--ink-soft); text-anchor: middle; }
+.pin-dk { animation: story-pop .45s .25s cubic-bezier(.2,1.6,.4,1) forwards; }
+.pin-no { animation: story-pop .45s 2.1s cubic-bezier(.2,1.6,.4,1) forwards; }
+.pin-se { animation: story-pop .45s 2.4s cubic-bezier(.2,1.6,.4,1) forwards; }
+.story-line { grid-area: 2 / 1; margin: 0; text-align: center; font: 600 clamp(1.05rem, 2.6vw, 1.4rem)/1.35 var(--sans); color: var(--ink); opacity: 0; }
+.story-line.line-1 { animation: story-line 1.55s .35s ease-out forwards; }
+.story-line.line-2 { animation: story-line 1.45s 1.95s ease-out forwards; }
+.intro-story .splash-trace path { animation-delay: 3.35s; }
+.intro-story .splash-name { animation-delay: 3.65s; }
+.intro-story .splash-line { animation-delay: 3.85s; margin-top: 8px; font: 700 clamp(1.8rem, 5.2vw, 3.2rem)/1.05 var(--serif); letter-spacing: -0.02em; color: var(--ink); text-align: center; }
+.intro-story .splash-skip { display: block; position: fixed; right: 20px; bottom: 20px; padding: 8px 14px; border: 1px solid var(--rule); border-radius: 999px; background: var(--tint); color: var(--ink-soft); font: 500 0.85rem var(--sans); cursor: pointer; opacity: 0; animation: story-show .4s .8s ease-out forwards; }
+.intro-story .splash-skip:hover { color: var(--ink); border-color: var(--ink-soft); }
+@keyframes story-fade { to { opacity: .5; } }
+@keyframes story-show { to { opacity: 1; } }
+@keyframes story-pop { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+@keyframes story-ring { from { transform: scale(1); opacity: .7; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes story-line { 0% { opacity: 0; transform: translateY(8px); } 16% { opacity: 1; transform: none; } 84% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-6px); } }
+@keyframes story-fold { to { opacity: 0; transform: scale(.94); visibility: hidden; } }
+@media (max-width: 600px) { .intro-story .splash-line em { display: block; } }

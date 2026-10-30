@@ -275,5 +275,6 @@ export function maybeAutoTour() {
   let seen = false;
   try { seen = localStorage.getItem(SEEN_KEY) === "1"; } catch { seen = false; }
   if (seen || navigator.webdriver) return;
-  setTimeout(() => { if (/^#\/?$/.test(location.hash || "#/")) startTour(); }, 2600);
+  // Called once the splash has lifted; a short pause lets the globe settle before the welcome card.
+  setTimeout(() => { if (/^#\/?$/.test(location.hash || "#/")) startTour(); }, 900);
 }

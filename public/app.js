@@ -82,9 +82,23 @@ themeBtn?.addEventListener("click", () => {
 });
 showTheme();
 route();
-// The splash stays at least long enough to read, then lifts once the first view is on screen.
+// The splash stays at least long enough to read, then lifts once the first view is on screen. A first visit's story
+// runs about five seconds and can be skipped with a click or a key; the guide only opens once the splash is gone.
 const splash = document.querySelector(".splash");
-if (splash) setTimeout(() => { splash.classList.add("is-out"); setTimeout(() => splash.remove(), 500); }, Math.max(0, 1300 - performance.now()));
+const story = document.documentElement.classList.contains("intro-story");
+let lifted = false;
+const skipKeys = (e) => { if (["Escape", "Enter", " "].includes(e.key)) { e.preventDefault(); liftSplash(); } };
+function liftSplash() {
+  if (lifted || !splash) return;
+  lifted = true;
+  removeEventListener("keydown", skipKeys);
+  splash.classList.add("is-out");
+  try { localStorage.setItem("aftershock-intro-seen", "1"); } catch { /* storage blocked: the story plays again next visit */ }
+  setTimeout(() => { splash.remove(); maybeAutoTour(); }, 500);
+}
+if (splash) {
+  setTimeout(liftSplash, Math.max(0, (story ? 5200 : 1300) - performance.now()));
+  if (story) { splash.addEventListener("click", liftSplash); addEventListener("keydown", skipKeys); }
+} else maybeAutoTour();
 mountChat();
 startMotion(app);
-maybeAutoTour();

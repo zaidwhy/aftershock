@@ -16,6 +16,13 @@
 <meta name="twitter:image" content="https://aftershock-qloo.vercel.app/og.png">
 <meta name="color-scheme" content="dark light">
 <script>try { if (localStorage.getItem("aftershock-theme") === "light") document.documentElement.dataset.theme = "light"; } catch (e) { /* storage blocked: stay dark */ }</script>
+<script>
+  // First visit only, and never for automation or reduced motion: the splash tells the idea as a 5-second story.
+  try {
+    if (!localStorage.getItem("aftershock-intro-seen") && !localStorage.getItem("aftershock-tour-seen")
+        && !navigator.webdriver && !matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("intro-story");
+  } catch (e) { /* storage blocked: the short splash */ }
+</script>
 <meta name="theme-color" content="#07090D">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,11 +55,30 @@
 <script type="module" src="app.js"></script>
 </head>
 <body>
-<!-- Shown from the first paint, before any script: a tremor is drawn while the app loads, then lifts away. -->
+<!-- Shown from the first paint, before any script. A returning visitor sees a tremor drawn while the app loads; a first
+     visitor sees the idea as a short story (a show popular in Denmark travels to Norway and Sweden), then the slogan. -->
 <div class="splash" aria-hidden="true">
-  <svg class="splash-trace" viewBox="0 0 240 48"><path d="M0,24.0 L3,23.3 L6,23.4 L9,24.3 L12,24.8 L15,24.3 L18,23.4 L21,23.3 L24,24.0 L27,24.8 L30,24.5 L33,23.7 L36,23.2 L39,23.7 L42,24.6 L45,24.7 L48,23.9 L51,23.2 L54,23.5 L57,24.4 L60,24.9 L63,24.3 L66,22.9 L69,22.2 L72,24.4 L75,29.0 L78,28.7 L81,18.4 L84,9.6 L87,19.7 L90,39.7 L93,40.8 L96,21.0 L99,8.8 L102,17.0 L105,28.8 L108,29.8 L111,24.8 L114,22.0 L117,22.7 L120,24.2 L123,24.9 L126,24.5 L129,23.5 L132,22.9 L135,23.7 L138,26.5 L141,27.9 L144,22.3 L147,15.1 L150,19.0 L153,29.5 L156,30.8 L159,24.6 L162,21.4 L165,22.6 L168,24.3 L171,24.9 L174,24.4 L177,23.4 L180,22.8 L183,23.8 L186,27.0 L189,27.6 L192,22.3 L195,19.3 L198,22.5 L201,25.4 L204,25.2 L207,24.0 L210,23.2 L213,23.4 L216,24.3 L219,24.8 L222,24.3 L225,23.4 L228,23.3 L231,24.0 L234,24.7 L237,24.6 L240,23.7" pathLength="1"/></svg>
-  <p class="splash-name">AFTERSHOCK</p>
-  <p class="splash-line">Shows travel. See where next.</p>
+  <div class="splash-story">
+    <svg class="story-map" viewBox="0 0 400 260">
+      <defs><pattern id="story-dots" width="11" height="11" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1"/></pattern>
+        <radialGradient id="story-fade"><stop offset="0.35" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <mask id="story-mask"><rect width="400" height="260" fill="url(#story-fade)"/></mask></defs>
+      <rect class="story-grid" width="400" height="260" fill="url(#story-dots)" mask="url(#story-mask)"/>
+      <path class="story-arc arc-no" d="M205 196 Q150 168 146 98" pathLength="1"/>
+      <path class="story-arc arc-se" d="M205 196 Q262 162 258 104" pathLength="1"/>
+      <g class="story-pin pin-dk"><circle class="ring" cx="205" cy="196" r="9"/><circle class="ring r2" cx="205" cy="196" r="9"/><circle class="dot" cx="205" cy="196" r="6"/><text x="205" y="226">DENMARK</text></g>
+      <g class="story-pin pin-no"><circle class="ring" cx="146" cy="98" r="9"/><circle class="ring r2" cx="146" cy="98" r="9"/><circle class="dot" cx="146" cy="98" r="6"/><text x="146" y="76">NORWAY</text></g>
+      <g class="story-pin pin-se"><circle class="ring" cx="258" cy="104" r="9"/><circle class="ring r2" cx="258" cy="104" r="9"/><circle class="dot" cx="258" cy="104" r="6"/><text x="258" y="82">SWEDEN</text></g>
+    </svg>
+    <p class="story-line line-1">A Netflix show gets popular in one country.</p>
+    <p class="story-line line-2">A week later, it turns up in the next one.</p>
+  </div>
+  <div class="splash-brand">
+    <svg class="splash-trace" viewBox="0 0 240 48"><path d="M0,24.0 L3,23.3 L6,23.4 L9,24.3 L12,24.8 L15,24.3 L18,23.4 L21,23.3 L24,24.0 L27,24.8 L30,24.5 L33,23.7 L36,23.2 L39,23.7 L42,24.6 L45,24.7 L48,23.9 L51,23.2 L54,23.5 L57,24.4 L60,24.9 L63,24.3 L66,22.9 L69,22.2 L72,24.4 L75,29.0 L78,28.7 L81,18.4 L84,9.6 L87,19.7 L90,39.7 L93,40.8 L96,21.0 L99,8.8 L102,17.0 L105,28.8 L108,29.8 L111,24.8 L114,22.0 L117,22.7 L120,24.2 L123,24.9 L126,24.5 L129,23.5 L132,22.9 L135,23.7 L138,26.5 L141,27.9 L144,22.3 L147,15.1 L150,19.0 L153,29.5 L156,30.8 L159,24.6 L162,21.4 L165,22.6 L168,24.3 L171,24.9 L174,24.4 L177,23.4 L180,22.8 L183,23.8 L186,27.0 L189,27.6 L192,22.3 L195,19.3 L198,22.5 L201,25.4 L204,25.2 L207,24.0 L210,23.2 L213,23.4 L216,24.3 L219,24.8 L222,24.3 L225,23.4 L228,23.3 L231,24.0 L234,24.7 L237,24.6 L240,23.7" pathLength="1"/></svg>
+    <p class="splash-name">AFTERSHOCK</p>
+    <p class="splash-line">Shows travel. <em>See where next.</em></p>
+  </div>
+  <button type="button" class="splash-skip">Skip intro</button>
 </div>
 <a class="skip" href="#app">Skip to content</a>
 <header class="site-head">
