@@ -106,6 +106,6 @@ From an AI agent: the MCP server (`python -m aftershock.mcp_server`, README sect
 
 - Demo: https://aftershock-qloo.vercel.app
 - Code: https://github.com/zaidwhy/aftershock (MIT)
-- Demo video: (YouTube link to be added)  <!-- PLACEHOLDER for Zaid: paste the unlisted YouTube link before submitting -->
+- Demo video: https://youtu.be/99EfYU-mKl0
 
 **Built with:** a fixed plan of tool calls with visible decision rules; the AI (Gemini `gemini-3.5-flash`) only proposes names and drafts a validated summary. python, fastapi, httpx, three.js (globe.gl), d3, mcp, qloo, gemini, musicbrainz, openstreetmap, netflix-top-10, wikimedia-pageviews, github-actions, vercel

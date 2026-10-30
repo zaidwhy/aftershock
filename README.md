@@ -8,6 +8,7 @@
 
 | | |
 |---|---|
+| Watch | [The 2-minute demo video](https://youtu.be/99EfYU-mKl0) |
 | Try it | [Live site](https://aftershock-qloo.vercel.app) (no login) · [a real launch plan](https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/NO) · [Find my audience](https://aftershock-qloo.vercel.app/#/release) (live Qloo calls) · [Prediction results](https://aftershock-qloo.vercel.app/#/scorecard) |
 | Why Qloo | Of 1,615 launch partners an AI suggested alone, Qloo's audience data supported 29%; in AFTERSHOCK the AI suggests and Qloo decides |
 | Does it work | Tested on 829 past cases it never saw: its top 3 named the next country 2.4 times as often as the obvious guess (9.8% against 4.1%) |

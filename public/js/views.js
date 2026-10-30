@@ -108,6 +108,25 @@ const stepIcon = (k) => s("svg", { class: "flow-ico", viewBox: "0 0 24 24", "ari
   STEP_ICONS[k].map((d) => s("path", { d })));
 // Said by a first-time user, a marketer, after seeing the trending list; quoted as he asked to be named.
 const USER_VOICE = { quote: "Seeing in one glance what's trending.", who: "Head of Marketing, Nobero" };
+// The demo video lives on YouTube. Until a visitor presses play it is only a poster, so the home page loads no
+// YouTube code; an empty id hides the section.
+const DEMO_VIDEO_ID = "99EfYU-mKl0";
+
+function demoVideo() {
+  if (!DEMO_VIDEO_ID) return null;
+  const play = h("button", { type: "button", class: "demo-play", "aria-label": "Play the 2-minute demo video" },
+    h("img", { src: "img/demo-poster.jpg", alt: "", width: 1280, height: 720, loading: "lazy", decoding: "async" }),
+    h("span", { class: "demo-btn", "aria-hidden": "true" }));
+  play.addEventListener("click", () => {
+    play.replaceWith(h("iframe", {
+      class: "demo-frame", title: "AFTERSHOCK demo video",
+      src: `https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`,
+      allow: "autoplay; encrypted-media; picture-in-picture; fullscreen", allowfullscreen: true }));
+  });
+  return h("section", { class: "demo-band", id: "demo", "aria-labelledby": "demo-h" },
+    h("h2", { id: "demo-h" }, "Watch it in 2 minutes"),
+    h("div", { class: "demo-box" }, play));
+}
 // Recent releases before catalog titles, then titles whose Qloo kit was made for that title's own audience before
 // countrywide ones (Qloo's picks for the whole country, which say less about the title), then forecast chance.
 const kitRank = (s) => (s.has_kit ? (s.kit_specific === false ? 1 : 0) : 2);
@@ -193,12 +212,15 @@ export function renderHome(root, isCurrent, followId = null) {
           h("button", { type: "button", class: "btn btn-primary", onclick: toList }, "See this week's predictions"),
           planCta,
           h("button", { type: "button", class: "tour-link", "data-tour": "replay-inline", onclick: () => window.dispatchEvent(new CustomEvent("aftershock:tour")) },
-            h("span", { class: "tour-link-dot", "aria-hidden": "true" }), "How it works, in 60 s")),
+            h("span", { class: "tour-link-dot", "aria-hidden": "true" }), "How it works, in 60 s"),
+          DEMO_VIDEO_ID ? h("a", { class: "tour-link", href: "#demo", onclick: (e) => { e.preventDefault(); document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" }); } },
+            h("span", { class: "tour-link-dot", "aria-hidden": "true" }), "Watch the 2-min video") : null),
         h("p", { class: "stats-q" }, "AI can suggest anything. Does the audience actually want it?"),
         stats),
       h("div", { class: "stage-globe", "data-tour": "globe" }, globeHost, panel, legend),
       rail),
     mockNote(),
+    demoVideo(),
     h("section", { class: "how", "aria-labelledby": "how-h", "data-tour": "how" },
       h("h2", { id: "how-h" }, "From popular in one country to a launch plan"),
       h("ol", { class: "flow flow-3" }, STEPS3.map(([name, line], k) =>
