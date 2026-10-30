@@ -376,14 +376,15 @@ export function renderHome(root, isCurrent, followId = null) {
     const maxP = Math.max(0.0001, ...ranked.map((s) => s.top_forecast?.probability ?? 0));
     const stormRow = (s) => h("li", null,
         h("a", { href: `#/storm/${encodeURIComponent(s.id)}`, class: "storm-link" },
-          s.meta?.image ? h("img", { class: "storm-poster", src: s.meta.image, alt: "", loading: "lazy", width: 42, height: 60 }) : h("span", { class: "storm-poster" }),
+          s.meta?.image ? h("img", { class: "storm-poster", src: s.meta.image, alt: "", loading: "lazy", width: 56, height: 80 }) : h("span", { class: "storm-poster" }),
           h("span", { class: "storm-main" },
             h("span", { class: "storm-title" }, s.title, s.season ? h("span", { class: "muted" }, ` ${s.season}`) : null),
             h("span", { class: "storm-meta" }, s.meta && (s.meta.year || s.meta.genres?.length) ? h("span", { class: "storm-facts" }, yearGenres(s.meta.year, s.meta.genres)) : null,
               `Popular in ${origins(s.origin_countries)}`, catalog(s) ? h("span", { class: "tag tag-quiet" }, "older show") : null, s.has_kit ? h("span", { class: "tag tag-kit" }, s.kit_specific === false ? "Plan ready (general picks)" : "Plan ready") : null)),
           h("span", { class: "storm-next" }, s.top_forecast
-            ? [h("span", null, "Next: ", h("strong", null, s.top_forecast.name), " ", h("span", { class: "mono" }, pct(s.top_forecast.probability))),
-               h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the top storm this week` },
+            ? [h("span", { class: "sn-pct" }, pct(s.top_forecast.probability)),
+               h("span", { class: "sn-to" }, h("span", { class: "sn-arrow", "aria-hidden": "true" }), "Next: ", h("strong", null, s.top_forecast.name)),
+               h("span", { class: "pbar", role: "img", "aria-label": `${pct(s.top_forecast.probability)} chance, scaled to the likeliest show this week` },
                  h("span", { style: `width:${Math.max(2, (s.top_forecast.probability / maxP) * 100)}%` }))]
             : "No forecast yet")));
     add(stormBox,

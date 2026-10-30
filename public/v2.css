@@ -656,3 +656,18 @@ main h2[id], main section[id] { scroll-margin-top: 96px; }
 .ex-when { font-size: 0.78rem; color: var(--ink-soft); }
 :root[data-theme="light"] .ex-pct { color: var(--accent-ink); }
 @media (max-width: 700px) { .ex-head { grid-template-columns: auto minmax(0, 1fr); } .ex-route { grid-column: 1 / -1; justify-items: start; } }
+
+/* Trending rows: the prediction is the hero of each row: a large chance, the next country, the bar. */
+.storm-poster { width: 56px; height: 80px; border-radius: 8px; box-shadow: 0 6px 18px var(--shadow); }
+@media (min-width: 720px) { .storm-link { grid-template-columns: 56px minmax(0, 1.6fr) minmax(220px, 1fr); padding: 14px 12px; } }
+@media (max-width: 719px) { .storm-link { grid-template-columns: 56px minmax(0, 1fr); } }
+.storm-next { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "pct to" "pct bar"; gap: 4px 14px; align-items: center; }
+.sn-pct { grid-area: pct; font: 700 clamp(1.5rem, 2.4vw, 1.9rem)/1 var(--serif); color: var(--accent); letter-spacing: -0.02em; min-width: 2.9ch; text-align: right; font-variant-numeric: tabular-nums; }
+:root[data-theme="light"] .sn-pct { color: var(--accent-ink); }
+.sn-to { grid-area: to; display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.sn-to strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sn-arrow { width: 16px; height: 2px; background: linear-gradient(90deg, var(--amber), var(--accent)); position: relative; flex: none; }
+.sn-arrow::after { content: ""; position: absolute; right: -1px; top: -3px; border-left: 5px solid var(--accent); border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+.storm-next .pbar { grid-area: bar; width: 100%; max-width: 180px; height: 5px; border-radius: 3px; overflow: hidden; }
+.storm-next .pbar span { border-radius: 3px; }
+.storm-list li + li .storm-link { border-top: 1px solid transparent; }
