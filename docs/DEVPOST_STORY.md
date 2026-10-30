@@ -1,3 +1,5 @@
+**Watch the 2-minute demo:** https://youtu.be/99EfYU-mKl0
+
 **In three lines.** When a Netflix show gets popular in one country, it often spreads to the next. AFTERSHOCK predicts which country is next, from Netflix's own history. Then an AI suggests launch partners for that audience, Qloo's taste data decides which ones stay, and you get a launch plan you can act on inside the one-week window.
 
 **Shows travel. See where next.**
