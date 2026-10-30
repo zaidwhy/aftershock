@@ -8,6 +8,7 @@ const TEAM = {
   members: ["Zaid Ali Syed", "Hasnat Shaikh", "Shravni Gorde", "Farhan Khan"],
   email: "sidzaid72@gmail.com",
   repo: "https://github.com/zaidwhy/aftershock",
+  video: "https://youtu.be/99EfYU-mKl0",
 };
 
 const card = (title, ...body) => h("div", { class: "card" }, h("h3", null, title), ...body);
@@ -48,5 +49,5 @@ export function renderAbout(root) {
         h("h3", null, `Team ${TEAM.name}`),
         h("p", { class: "team-line" }, TEAM.members.join("  ·  ")),
         h("p", null, "Contact: ", h("span", { class: "mono", style: "user-select:all" }, TEAM.email)),
-        h("p", null, h("a", { href: TEAM.repo }, "Code, method and every test on GitHub")))));
+        h("p", null, h("a", { href: TEAM.video }, "The 2-minute demo video"), "  ·  ", h("a", { href: TEAM.repo }, "Code, method and every test on GitHub")))));
 }

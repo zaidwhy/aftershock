@@ -16,6 +16,8 @@ nav a:hover, nav a[aria-current="page"] { color: var(--ink); }
 .icon-btn:hover { border-color: var(--ink-soft); }
 .site-head nav { margin-left: auto; }
 .head-tools { display: flex; align-items: center; gap: 8px; }
+.link-ico { width: 36px; padding: 0; display: inline-grid; place-items: center; text-decoration: none; }
+.link-ico svg { width: 16px; height: 16px; fill: var(--ink); }
 main { max-width: 1180px; }
 /* Inner pages start their title a breath below the sticky header; the home stage sets its own spacing. */
 main:not(:has(> .stage)) { padding-top: clamp(32px, 5vw, 56px); }
