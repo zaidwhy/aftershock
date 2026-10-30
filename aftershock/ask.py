@@ -710,7 +710,7 @@ def _examples(ctx):
     title, country = _lead(ctx) or ("", "Sweden")
     return ["Where will " + (title or "Squid Game") + " go next?",
             "What should " + (title or "Nightwatch: Demons Are Forever") + " pair with in " + country + "?",
-            "What does Plan a launch do?"]
+            "What does Find my audience do?"]
 
 
 def _try(ctx):
@@ -914,7 +914,7 @@ def _missing_answer(ctx, x, steps):
         steps.append(_step("did_you_mean", x, True, f"The closest title is {mean['title']}."))
     msg = (f"{x} has not been in Netflix's Top 10 in any country since {_since(ctx)}, so AFTERSHOCK has nothing on it."
            + (f" Did you mean {mean['title']}?" if mean else "")
-           + " For a title on any platform, use Plan a release.")
+           + " For your own film, album, comedy show or tour, use Find my audience.")
     links = ([{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else [])
     return _guide("why_missing", steps, msg, links + [{"label": "Find my audience", "href": f"#/release?name={quote(x, safe='')}"}],
                   did_you_mean=mean)
@@ -1048,12 +1048,12 @@ def _unknown_name_answer(ctx, name, steps):
     mean = _did_you_mean(ctx, name)
     if mean:
         steps.append(_step("did_you_mean", name, True, f"The closest title is {mean['title']}."))
-    msg = (f"AFTERSHOCK tracks Netflix breakouts, and {name} is not one this week."
+    msg = (f"AFTERSHOCK follows Netflix shows that are trending in one country, and {name} is not one this week."
            + (f" Did you mean {mean['title']}?" if mean else "")
-           + f" If {name} has a film, series, album, comedy special or tour coming up, Plan a release ranks countries and cities by "
-             "Qloo audience affinity. I have filled in the name as music; switch the type on that page if it is a comedy act, film or series.")
+           + f" If {name} has a film, series, album, comedy special or tour coming up, Find my audience ranks countries and cities by "
+             "how well their taste matches the audience. I have filled in the name as music; switch the type on that page if it is a comedy act, film or series.")
     links = [{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else []
-    links.append({"label": f"Plan a release for {name}", "href": f"#/release?name={quote(name, safe='')}&kind=music"})
+    links.append({"label": f"Find the audience for {name}", "href": f"#/release?name={quote(name, safe='')}&kind=music"})
     return _guide("unknown_name", steps, msg, links, name=name, did_you_mean=mean)
 
 

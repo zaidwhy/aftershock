@@ -75,7 +75,7 @@ def test_why_missing_for_a_title_netflix_never_charted_points_to_plan_a_release(
     for q in ("why isn't Zebra Planet here", "WHY CANT I FIND zebra planet"):
         r = ask.answer(q, ctx)
         assert "has not been in Netflix's Top 10 in any country since 2024" in r["answer"]["message"]
-        assert "Plan a release" in r["answer"]["message"]
+        assert "Find my audience" in r["answer"]["message"]
         assert r["links"][-1]["href"] == "#/release?name=" + ("Zebra%20Planet" if "Zebra" in q else "zebra%20planet")
         assert [x["ok"] for x in r["steps"]] == [True, False]
 
@@ -241,7 +241,7 @@ def test_the_word_tour_alone_is_not_the_site_tour(ctx):
 def test_a_bare_name_is_not_called_a_netflix_title(ctx, question, name):
     r = ask.answer(question, ctx)
     msg = r["answer"]["message"]
-    assert r["intent"] == "unknown_name" and f"AFTERSHOCK tracks Netflix breakouts, and {name} is not one this week" in msg
+    assert r["intent"] == "unknown_name" and f"AFTERSHOCK follows Netflix shows that are trending in one country, and {name} is not one this week" in msg
     assert "has not been in Netflix's Top 10" not in msg and "switch the type on that page" in msg
     assert r["links"][-1]["href"] == f"#/release?name={ask.quote(name, safe='')}&kind=music"
     assert [s["ok"] for s in r["steps"]] == [True, False]

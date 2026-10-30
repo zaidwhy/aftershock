@@ -47,9 +47,9 @@ A trending show travels country by country: that is what we predict from Netflix
 | The same with `filter.results.entities` = the ids of the AI's names | Confirms or rejects each AI name for this audience in this country. Also what the live check box asks. |
 | `filter.type=urn:heatmap` with `signal.interests.entities` = the title and `filter.location.query` = the country | The cities where the title's audience concentrates (hotspots). |
 | The same with an artist as the signal | Each partner artist's cities; a title city within 30 km of one of the artist's 5 strongest cells becomes an activation idea. |
-| `filter.type=urn:entity:destination` with `signal.interests.entities` = the release (or its comparables) and `filter.geocode.country_code`, once per candidate country | Plan a release: ranks 24 countries by their best city's affinity for this audience. |
+| `filter.type=urn:entity:destination` with `signal.interests.entities` = the release (or its comparables) and `filter.geocode.country_code`, once per candidate country | Find my audience: ranks 24 countries by their best city's affinity for this audience. |
 | `filter.type=urn:entity:destination` with `filter.geocode.country_code` and no signal | Names hotspot cells by the most popular Qloo destination within 35 km (popularity at least 0.5), so a brief says Stockholm, not the suburb Lidingö. |
-| `filter.type=urn:entity:place` with `filter.tags` (comedy club, live music venue, concert hall or movie theater) near a city | Plan a release: venues that fit the kind of release in the top cities. |
+| `filter.type=urn:entity:place` with `filter.tags` (comedy club, live music venue, concert hall or movie theater) near a city | Find my audience: venues that fit the kind of release in the top cities. |
 | `filter.type=urn:demographics` with a show or artist as the signal | Age bands for Song check; with `urn:entity:artist` candidates, the ranking in Sync Scout. |
 
 ## Who would pay

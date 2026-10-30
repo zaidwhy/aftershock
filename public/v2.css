@@ -734,3 +734,12 @@ main h2[id], main section[id] { scroll-margin-top: 96px; }
   .intro-story .splash-brand { display: none; }
   .intro-story .splash-skip { opacity: 1; animation: none; }
 }
+.fa-how li, .ma-how li { align-content: start; }
+@media (max-width: 760px) {
+  /* On a phone the steps shrink to three titles in a row, so the search box is on the first screen. */
+  .fa-how { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+  .fa-how li { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 10px 6px; gap: 6px; }
+  .fa-how li .fa-n { grid-row: auto; }
+  .fa-how strong { font-size: 0.8rem; line-height: 1.25; }
+  .fa-how span:not(.fa-n) { display: none; }
+}

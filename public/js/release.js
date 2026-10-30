@@ -1,4 +1,4 @@
-// Plan a release: for a film, series, album or comedy special that has not launched yet (or a tour), Qloo ranks
+// Find my audience (route #/release): for a film, series, album or comedy special that has not launched yet (or a tour), Qloo ranks
 // countries by audience affinity, maps the cities, suggests venues and names the local taste to pair with. Worked
 // examples load from static files; a typed title runs live (GET /api/release) and shows every Qloo call it made.
 import { h, s, add, loading } from "./dom.js";
@@ -222,7 +222,7 @@ export function renderRelease(root, isCurrent, preset = {}) {
   document.title = "Find my audience - AFTERSHOCK";
   const state = { kind: KINDS.some(([k]) => k === preset.kind) ? preset.kind : "film", goal: GOALS.some(([g]) => g === preset.goal) ? preset.goal : null };
   const out = h("div", { "aria-live": "polite" });
-  const name = h("input", { id: "rel-name", type: "text", maxlength: "120", required: true, value: preset.name || "", placeholder: "Its name, e.g. Zakir Khan, BTS or your own film", "aria-label": "What are you bringing out?" });
+  const name = h("input", { id: "rel-name", type: "text", maxlength: "120", required: true, value: preset.name || "", placeholder: "e.g. Zakir Khan, BTS, your film", "aria-label": "What are you bringing out?" });
   const like = h("input", { id: "rel-like", type: "text", maxlength: "600", value: preset.like || "", placeholder: "e.g. Squid Game, Alice in Borderland", "aria-label": "Similar shows, films or artists" });
   const region = h("select", { id: "rel-region", "aria-label": "Region" }, REGIONS.map(([v, l]) => h("option", { value: v }, l)));
   const home = h("select", { id: "rel-home", "aria-label": "Home market to leave out" }, h("option", { value: "" }, "Home market: none, include every market"),
@@ -274,8 +274,8 @@ export function renderRelease(root, isCurrent, preset = {}) {
         h("label", { class: "fa-label", for: "rel-name" }, "What are you bringing out?"),
         h("div", { class: "fa-search" }, name, go),
         h("div", { class: "fa-kind" }, h("span", { class: "fa-kind-l" }, "It is a"), segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),
-        h("details", { class: "rel-more", open: !!preset.like }, h("summary", null, "Not out yet? Add two or three similar titles"),
-          field("", "Similar shows, films or artists", "Qloo may not know a new title yet; similar ones tell it who the audience is.", like)),
+        h("details", { class: "rel-more", open: !!preset.like }, h("summary", null, "Not out yet? Add two or three similar films, shows or artists"),
+          field("", "Similar shows, films or artists", "Qloo may not know something new yet; similar ones tell it who the audience is.", like)),
         // Everything below has a sensible default, so it waits behind one click instead of lengthening the form.
         h("details", { class: "rel-more", open: !!(preset.goal || preset.region || preset.home) }, h("summary", null, "More options: goal, region, release month"),
           field("", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),

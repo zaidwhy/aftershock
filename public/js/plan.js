@@ -1,4 +1,4 @@
-// "Plan a launch": the agent's steps for one title in one country appear one by one, then the Launch Brief.
+// Launch plans: the agent's steps for one title in one country appear one by one, then the Launch Brief.
 // The steps and the brief are built by aftershock/launch_brief.py and ride on each launch_kit row as `brief`.
 import { h, loading, errorBox, add } from "./dom.js";
 import { getStorms, getStorm } from "./api.js";
