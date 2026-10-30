@@ -9,7 +9,7 @@ const TYPE_MS = 34;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // The hero copy sits over the globe's box; a spotlight on the globe starts where the copy ends.
-const HERO_COPY = [".stage-copy h1", ".stage-copy .lede", ".stage-copy .cta-row", ".stage-copy .tour-link", ".stage-copy .stats-q", ".stage-stats"];
+const HERO_COPY = [".stage-copy h1", ".stage-copy .hook", ".stage-copy .lede", ".stage-copy .cta-row", ".stage-copy .stats-q", ".stage-stats"];
 
 function press(el, cursor) {
   if (!el) return;

@@ -96,6 +96,16 @@ const USES = [
   ["An artist's team", "Where to post, play a DJ set or announce a show next", "Shows whose viewers love the artist, and where both audiences live", "That fans will buy tickets"],
   ["A promoter", "Which cities to look at for a tour or a one-off show", "Plan my release: countries, cities and the right kind of venues", "Ticket demand or open dates"],
 ];
+// One small drawing per step, in the site's line style: a tremor, an arc between two places, a check.
+const STEP_ICONS = [
+  ["M2 13h4l2.2-6 3.2 12 3-9 1.8 3H22"],
+  ["M6.6 16.4C7.5 9 11 6.3 16.6 6.5", "M14.2 4.2l2.6 2.3-2.4 2.5"],
+  ["M7.5 12.4l3.1 3.1 6-6.4"],
+];
+const stepIcon = (k) => s("svg", { class: "flow-ico", viewBox: "0 0 24 24", "aria-hidden": "true" },
+  k === 1 ? [s("circle", { cx: 5, cy: 18, r: 2.4 }), s("circle", { cx: 19, cy: 6, r: 2.4 })] : null,
+  k === 2 ? s("circle", { cx: 12, cy: 12, r: 9 }) : null,
+  STEP_ICONS[k].map((d) => s("path", { d })));
 // Said by a first-time user, a marketer, after seeing the trending list; quoted as he asked to be named.
 const USER_VOICE = { quote: "Seeing in one glance what's trending.", who: "Head of Marketing, Nobero" };
 // Recent releases before catalog titles, then titles whose Qloo kit was made for that title's own audience before
@@ -130,7 +140,11 @@ function fillExample(box, week, isCurrent) {
         h("div", null,
           h("p", { class: "ex-tag mono" }, "A real prediction from this week"),
           h("h3", null, st.title),
-          h("p", { class: "ex-sub" }, `A ${genre ? `${genre} ` : ""}${kind}, popular in ${origin} this week. Where does it go next?`))),
+          h("p", { class: "ex-sub" }, `A ${genre ? `${genre} ` : ""}${kind}, popular in ${origin} this week. Where does it go next?`)),
+        h("div", { class: "ex-route" },
+          h("span", { class: "ex-pct" }, pct(next.probability)),
+          h("span", { class: "ex-path" }, h("span", null, (st.origin_countries || [])[0]?.name || origin), h("span", { class: "ex-arrow", "aria-hidden": "true" }), h("strong", null, next.name)),
+          h("span", { class: "ex-when" }, `chance within ${st.spillover.horizon_weeks} weeks`))),
       h("dl", { class: "ex-facts" },
         fact("Predicted next country", h("span", null, h("strong", null, next.name), `, a ${pct(next.probability)} chance within ${st.spillover.horizon_weeks} weeks: the most likely of ${all.length}`)),
         next.why ? fact("Why", plainWhy(next.why)) : null,
@@ -152,6 +166,7 @@ export function renderHome(root, isCurrent, followId = null) {
   const testDetail = h("details", { hidden: true });
   const qlooDetail = h("details", { hidden: true });
   const exampleBox = h("div", { class: "example-card", hidden: true });
+  const hook = h("button", { type: "button", class: "hook", hidden: true });
   const planCta = h("a", { class: "btn", href: "#/plan", "data-tour": "plan" }, "Explore a launch plan");
   const globeHost = h("div", { class: "globe-host", role: "img", "aria-label": "Globe of the Netflix shows trending this week and where each is predicted to go next" });
   const panel = h("aside", { class: "globe-panel", "aria-live": "polite", hidden: true });
@@ -171,13 +186,14 @@ export function renderHome(root, isCurrent, followId = null) {
       h("div", { class: "stage-copy" },
         h("p", { class: "eyebrow mono" }, "Netflix trend predictor, powered by Qloo"),
         h("h1", null, "Shows travel. ", h("em", null, "See where next.")),
-        h("p", { class: "lede" }, "When a Netflix show gets popular in one country, it often spreads to the next. AFTERSHOCK predicts which one, then plans the launch there with ",
-          h("strong", { class: "qloo-word" }, "Qloo"), "'s data on what those viewers love: the cities, artists and brands."),
+        hook,
+        h("p", { class: "lede" }, "When a Netflix show gets popular in one country, AFTERSHOCK predicts the next country, and ",
+          h("strong", { class: "qloo-word" }, "Qloo"), "'s taste data plans the launch there: the cities, artists and brands."),
         h("div", { class: "cta-row" },
           h("button", { type: "button", class: "btn btn-primary", onclick: toList }, "See this week's predictions"),
-          planCta),
-        h("button", { type: "button", class: "tour-link", "data-tour": "replay-inline", onclick: () => window.dispatchEvent(new CustomEvent("aftershock:tour")) },
-          h("span", { class: "tour-link-dot", "aria-hidden": "true" }), "New here? See how it works in 60 seconds"),
+          planCta,
+          h("button", { type: "button", class: "tour-link", "data-tour": "replay-inline", onclick: () => window.dispatchEvent(new CustomEvent("aftershock:tour")) },
+            h("span", { class: "tour-link-dot", "aria-hidden": "true" }), "How it works, in 60 s")),
         h("p", { class: "stats-q" }, "AI can suggest anything. Does the audience actually want it?"),
         stats),
       h("div", { class: "stage-globe", "data-tour": "globe" }, globeHost, panel, legend),
@@ -186,7 +202,9 @@ export function renderHome(root, isCurrent, followId = null) {
     h("section", { class: "how", "aria-labelledby": "how-h", "data-tour": "how" },
       h("h2", { id: "how-h" }, "From popular in one country to a launch plan"),
       h("ol", { class: "flow flow-3" }, STEPS3.map(([name, line], k) =>
-        h("li", { class: k === 2 ? "flow-qloo" : null }, h("span", { class: "flow-n mono" }, String(k + 1).padStart(2, "0")), h("strong", null, name), h("span", null, line))))),
+        h("li", { class: k === 2 ? "flow-qloo" : null },
+          h("span", { class: "flow-top" }, stepIcon(k), h("span", { class: "flow-n mono" }, String(k + 1).padStart(2, "0"))),
+          h("strong", null, name), h("span", null, line))))),
     h("section", { class: "example-band", "aria-labelledby": "ex-h" },
       h("h2", { id: "ex-h" }, "See it in action"),
       exampleBox,
@@ -229,9 +247,9 @@ export function renderHome(root, isCurrent, followId = null) {
     const n = gc ? gc.confirmed + gc.not_placed + gc.not_in_qloo : 0;
     const p = (x) => `${Math.round((x / n) * 100)}%`;
     const tiles = [
-      gc ? [p(gc.not_placed + gc.not_in_qloo), `of an AI's ${whole(n)} suggested partners had no support in Qloo's audience data`] : null,
-      lift ? [`${lift.toFixed(1)}x`, `better than the obvious guess at naming the next country, tested on ${whole(sc.lead_time.model.breakouts)} past cases`] : null,
-      locked ? [whole(locked), "predictions recorded in advance, before Netflix published the results"] : null,
+      gc ? [p(gc.not_placed + gc.not_in_qloo), "of an AI's partner ideas had no backing in Qloo's audience data"] : null,
+      lift ? [`${lift.toFixed(1)}x`, `better than the obvious guess at naming the next country (${whole(sc.lead_time.model.breakouts)} past cases)`] : null,
+      locked ? [whole(locked), "predictions recorded before Netflix published the results"] : null,
     ].filter(Boolean);
     stats.replaceChildren(...tiles.map(([v, k]) => h("div", { class: "stat" }, h("span", { class: "stat-v" }, v), h("span", { class: "stat-k" }, k))),
       h("a", { class: "stats-how", href: "#/scorecard" }, "See how we tested it"));
@@ -308,6 +326,29 @@ export function renderHome(root, isCurrent, followId = null) {
       s.meta?.image ? h("img", { src: s.meta.image, alt: "", loading: "lazy", width: 28, height: 40 }) : null,
       h("span", null, h("span", { class: "rc-t" }, s.title), h("span", { class: "rc-n" }, `Next: ${s.top_forecast.name} ${pct(s.top_forecast.probability)}`))));
     rail.replaceChildren(h("span", { class: "rail-h mono" }, "Follow one show"), ...chips);
+    const live = ranked.slice(0, 5);
+    let turn = 0;
+    const paintHook = () => {
+      const x = live[turn % live.length];
+      const from = x.origin_countries?.[0]?.name || "one country";
+      hook.replaceChildren(h("span", { class: "hook-live mono" }, h("span", { class: "hook-dot", "aria-hidden": "true" }), "Live this week"),
+        h("span", { class: "hook-text" }, h("strong", { class: "hook-title" }, x.title), h("span", { class: "hook-from" }, ` in ${from}`),
+          h("span", { class: "hook-arrow", "aria-hidden": "true" }), h("span", { class: "hook-next" }, `${x.top_forecast.name} ${pct(x.top_forecast.probability)}`)));
+      hook.setAttribute("aria-label", `${x.title} is popular in ${from}; predicted next: ${x.top_forecast.name}, ${pct(x.top_forecast.probability)}. Show it on the globe.`);
+      hook.onclick = () => pick(x.id);
+    };
+    if (live.length) {
+      paintHook();
+      hook.hidden = false;
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        const cycle = setInterval(() => {
+          if (!isCurrent()) { clearInterval(cycle); return; }
+          if (hook.matches(":hover, :focus-visible")) return;
+          turn += 1;
+          paintHook();
+        }, 3600);
+      }
+    }
     // Paint first, then pull in the 2 MB WebGL library.
     requestAnimationFrame(() => mountGlobe(globeHost, week, (sel) => showPanel(sel, week)).then((g) => {
       if (!isCurrent()) { g.destroy(); return; }
