@@ -17,10 +17,10 @@
 <meta name="color-scheme" content="dark light">
 <script>try { if (localStorage.getItem("aftershock-theme") === "light") document.documentElement.dataset.theme = "light"; } catch (e) { /* storage blocked: stay dark */ }</script>
 <script>
-  // First visit only, and never for automation or reduced motion: the splash tells the idea as a 5-second story.
+  // First visit only, and never for automation: the splash tells the idea as a 5-second story (a still picture when
+  // motion is reduced).
   try {
-    if (!localStorage.getItem("aftershock-intro-seen") && !localStorage.getItem("aftershock-tour-seen")
-        && !navigator.webdriver && !matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("intro-story");
+    if (!localStorage.getItem("aftershock-intro-seen") && !navigator.webdriver) document.documentElement.classList.add("intro-story");
   } catch (e) { /* storage blocked: the short splash */ }
 </script>
 <meta name="theme-color" content="#07090D">
@@ -83,10 +83,10 @@
 <a class="skip" href="#app">Skip to content</a>
 <header class="site-head">
   <a class="brand" href="#/" aria-label="AFTERSHOCK home"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text">AFTERSHOCK</span></a>
-  <nav aria-label="Primary">
+  <nav aria-label="Primary" data-tour="menu">
     <a href="#/" data-nav="home">Trending shows</a>
     <a href="#/plan" data-nav="plan">Launch plans</a>
-    <a href="#/release" data-nav="release" data-tour="release">Plan my release</a>
+    <a href="#/release" data-nav="release" data-tour="release">Find my audience</a>
     <a href="#/artists" data-nav="artists">For music artists</a>
     <a href="#/scorecard" data-nav="scorecard">Prediction results</a>
     <details class="nav-more">

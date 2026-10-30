@@ -94,7 +94,7 @@ const USES = [
   ["A brand's marketing team", "Which show to build this week's moment marketing on (a meme, a scene, a line) before it trends in their country, and where to run local ads", "The shows predicted to arrive next, and the brands Qloo links to that audience", "That the post or ad converts"],
   ["A music label", "Where to push a song this week, when a show linked to it is heading to a new country", "The next likely country, the artists Qloo links to that audience there, and the cities", "That the push lifts streams"],
   ["An artist's team", "Where to post, play a DJ set or announce a show next", "Shows whose viewers love the artist, and where both audiences live", "That fans will buy tickets"],
-  ["A promoter", "Which cities to look at for a tour or a one-off show", "Plan my release: countries, cities and the right kind of venues", "Ticket demand or open dates"],
+  ["A promoter", "Which cities to look at for a tour or a one-off show", "Find my audience: countries, cities and the right kind of venues", "Ticket demand or open dates"],
 ];
 // One small drawing per step, in the site's line style: a tremor, an arc between two places, a check.
 const STEP_ICONS = [

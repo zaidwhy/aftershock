@@ -15,7 +15,7 @@ import { renderArtists, renderArtist } from "./js/artists.js";
 import { renderRelease } from "./js/release.js";
 import { renderAbout } from "./js/about.js";
 import { mountChat } from "./js/chat.js";
-import { startTour, maybeAutoTour } from "./js/tour.js";
+import { startTour, maybeAutoTour, runSplash } from "./js/tour.js";
 import { startMotion } from "./js/motion.js";
 
 setConfig(CONFIG);
@@ -82,23 +82,9 @@ themeBtn?.addEventListener("click", () => {
 });
 showTheme();
 route();
-// The splash stays at least long enough to read, then lifts once the first view is on screen. A first visit's story
-// runs about five seconds and can be skipped with a click or a key; the guide only opens once the splash is gone.
-const splash = document.querySelector(".splash");
-const story = document.documentElement.classList.contains("intro-story");
-let lifted = false;
-const skipKeys = (e) => { if (["Escape", "Enter", " "].includes(e.key)) { e.preventDefault(); liftSplash(); } };
-function liftSplash() {
-  if (lifted || !splash) return;
-  lifted = true;
-  removeEventListener("keydown", skipKeys);
-  splash.classList.add("is-out");
-  try { localStorage.setItem("aftershock-intro-seen", "1"); } catch { /* storage blocked: the story plays again next visit */ }
-  setTimeout(() => { splash.remove(); maybeAutoTour(); }, 500);
-}
-if (splash) {
-  setTimeout(liftSplash, Math.max(0, (story ? 5200 : 1300) - performance.now()));
-  if (story) { splash.addEventListener("click", liftSplash); addEventListener("keydown", skipKeys); }
-} else maybeAutoTour();
+// The splash stays at least long enough to read, then lifts; a first visit's story can be skipped. The guide opens
+// only once the splash is gone.
+if (document.querySelector(".splash")) runSplash(document.documentElement.classList.contains("intro-story"), maybeAutoTour, performance.now());
+else maybeAutoTour();
 mountChat();
 startMotion(app);

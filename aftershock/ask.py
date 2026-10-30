@@ -500,11 +500,11 @@ FEATURES = {
         ("plan a launch", "plan launch", "launch plan", "launch plans", "launch planner", "launch brief", "plan page"),
         "brief proposals planner download pdf", "plan launch partner partners brand brands kit step steps cities artists seven"),
     "release": _feature(
-        "Plan my release", "#/release",
-        "Plan my release is for something that is not on Netflix: an upcoming film, series, album, comedy special or "
+        "Find my audience", "#/release",
+        "Find my audience is for something that is not on Netflix: an upcoming film, series, album, comedy special or "
         "tour. Qloo ranks countries and cities by how well their taste matches the audience (Qloo's match score), "
         "then suggests venues and local taste.",
-        ("plan a release", "plan my release", "plan release", "release plan", "release planner"),
+        ("plan a release", "plan my release", "find my audience", "find audience", "plan release", "release plan", "release planner"),
         "venue venues album comedy special podcast documentary concert gig festival",
         "release film series tour music upcoming premiere audience affinity taste local cities"),
     "artists": _feature(
@@ -548,7 +548,7 @@ FEATURES = {
     "tour": _feature(
         "Guided tour", "#/",
         "The tour button replays the guided tour. Otherwise: the map on the home page shows this week's trending shows, "
-        "Launch plans builds the plan for one of them, and Plan my release does the same for your own film, "
+        "Launch plans builds the plan for one of them, and Find my audience does the same for your own film, "
         "series, album or comedy special.",
         ("guided tour", "take the tour", "take a tour", "give me a tour", "show me around", "walk me through",
          "walkthrough", "tutorial", "onboarding", "how do i use", "how to use", "getting started", "get started",
@@ -581,7 +581,7 @@ FEATURES = {
         "What I can answer", "#/",
         "I answer questions about this week's trending Netflix shows and where they go next, what to pair a show with "
         "in a country, artists for a show, whether a song reaches a new crowd, and what each page of the site does. "
-        "For your own film, series, album or comedy special, ask where to release it and I will point you to Plan my release.",
+        "For your own film, series, album or comedy special, ask where to release it and I will point you to Find my audience.",
         ("what can you do", "what do you do", "what can i ask", "what can i ask you", "what can this do",
          "what can aftershock do", "what can u do", "what are you", "who are you", "what can i do here", "help",
          "options", "example questions", "examples"),
@@ -861,8 +861,8 @@ def _release_answer(raw, steps, names):
     name = _release_name(raw, names)
     kind, guessed = _release_kind(raw.replace(name, " ")) if name else (None, False)  # a word in the title is not a signal
     about = f" about {name}" if name else ""
-    steps.append(_step("understand", name, True, f"Release question{about}: this is not a trending Netflix show, so it goes to Plan my release."))
-    steps.append(_step("route", "#/release", True, "Plan my release asks Qloo which countries and cities match this audience best."))
+    steps.append(_step("understand", name, True, f"Release question{about}: this is not a trending Netflix show, so it goes to Find my audience."))
+    steps.append(_step("route", "#/release", True, "Find my audience asks Qloo which countries and cities match this audience best."))
     href = "#/release" + (f"?name={quote(name, safe='')}" if name else "") + (f"&kind={kind}" if kind else "")
     if not name:
         fill = " Type its name on that page."
@@ -870,9 +870,9 @@ def _release_answer(raw, steps, names):
         fill = f" I have filled in {name} as {kind}." + (" That is a guess, so switch the type on that page if it is a comedy act, film or series." if guessed else "")
     else:
         fill = f" I have filled in {name} for you."
-    msg = ("Plan my release is built for this. For an upcoming film, series, album, comedy special or tour, Qloo ranks countries "
+    msg = ("Find my audience is built for this. For an upcoming film, series, album, comedy special or tour, Qloo ranks countries "
            "and cities by how well their taste matches the audience, then suggests venues and local taste." + fill)
-    return _guide("release_plan", steps, msg, [{"label": "Plan my release" + (f" for {name}" if name else ""), "href": href}],
+    return _guide("release_plan", steps, msg, [{"label": "Find my audience" + (f" for {name}" if name else ""), "href": href}],
                   name=name)
 
 
@@ -916,7 +916,7 @@ def _missing_answer(ctx, x, steps):
            + (f" Did you mean {mean['title']}?" if mean else "")
            + " For a title on any platform, use Plan a release.")
     links = ([{"label": f"Prediction page for {mean['title']}", "href": mean["href"]}] if mean and mean["href"] else [])
-    return _guide("why_missing", steps, msg, links + [{"label": "Plan my release", "href": f"#/release?name={quote(x, safe='')}"}],
+    return _guide("why_missing", steps, msg, links + [{"label": "Find my audience", "href": f"#/release?name={quote(x, safe='')}"}],
                   did_you_mean=mean)
 
 

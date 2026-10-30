@@ -29,7 +29,7 @@ FEATURE_CASES = [
     ("explain the weekly job", "feature_help", "automatic weekly job", "#/agent"),
     ("how accurate is the forecast", "feature_help", "(ROC AUC 0.82)", "#/scorecard"),
     ("how do I use this", "tour", "tour button replays the guided tour", "#/"),
-    ("give me a tour", "tour", "Plan my release does the same", "#/plan"),
+    ("give me a tour", "tour", "Find my audience does the same", "#/plan"),
     ("what can you do", "capabilities", "what each page of the site does", "#/release"),
     ("what is qloo's role", "qloo_role", "71% of the time", "#/plan"),
     ("how does it use Qloo?", "qloo_role", "the AI proposes and Qloo decides", "#/plan"),
@@ -143,7 +143,7 @@ def test_where_should_i_release_x_links_plan_a_release_with_the_name(ctx):
 def test_a_release_question_without_a_title_links_the_bare_page(ctx):
     for q in ("where will my comedy special work", "Where should I release my comedy tour in Brazil?", "where should I tour"):
         r = ask.answer(q, ctx)
-        assert r["intent"] == "release_plan" and r["links"] == [{"label": "Plan my release", "href": "#/release"}], q
+        assert r["intent"] == "release_plan" and r["links"] == [{"label": "Find my audience", "href": "#/release"}], q
         assert "Type its name on that page" in r["answer"]["message"]
 
 

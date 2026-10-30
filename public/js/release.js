@@ -219,16 +219,16 @@ function segmented(label, options, value, onChange) {
 }
 
 export function renderRelease(root, isCurrent, preset = {}) {
-  document.title = "Plan a release - AFTERSHOCK";
+  document.title = "Find my audience - AFTERSHOCK";
   const state = { kind: KINDS.some(([k]) => k === preset.kind) ? preset.kind : "film", goal: GOALS.some(([g]) => g === preset.goal) ? preset.goal : null };
   const out = h("div", { "aria-live": "polite" });
-  const name = h("input", { id: "rel-name", type: "text", maxlength: "120", required: true, value: preset.name || "", placeholder: "e.g. Squid Game, BTS, Zakir Khan, or your own title" });
-  const like = h("input", { id: "rel-like", type: "text", maxlength: "600", value: preset.like || "", placeholder: "e.g. Squid Game, Alice in Borderland" });
+  const name = h("input", { id: "rel-name", type: "text", maxlength: "120", required: true, value: preset.name || "", placeholder: "Its name, e.g. Zakir Khan, BTS or your own film", "aria-label": "What are you bringing out?" });
+  const like = h("input", { id: "rel-like", type: "text", maxlength: "600", value: preset.like || "", placeholder: "e.g. Squid Game, Alice in Borderland", "aria-label": "Similar shows, films or artists" });
   const region = h("select", { id: "rel-region", "aria-label": "Region" }, REGIONS.map(([v, l]) => h("option", { value: v }, l)));
   const home = h("select", { id: "rel-home", "aria-label": "Home market to leave out" }, h("option", { value: "" }, "Home market: none, include every market"),
     Object.entries(ISO).sort((a, b) => a[1][1].localeCompare(b[1][1])).map(([code, [, n]]) => h("option", { value: code }, `Leave out ${n}`)));
   const date = h("input", { id: "rel-date", type: "month", "aria-label": "Release month" });
-  const go = h("button", { type: "submit", class: "btn btn-primary" }, "Plan it with Qloo");
+  const go = h("button", { type: "submit", class: "btn btn-primary fa-go" }, "Find its audience");
   const examples = h("div", { class: "rel-examples" });
   const goalBox = h("div", null);
   const drawGoal = () => goalBox.replaceChildren(segmented("Goal", GOALS, state.goal || defaultGoal(state.kind), (v) => { state.goal = v; }));
@@ -258,25 +258,30 @@ export function renderRelease(root, isCurrent, preset = {}) {
       .catch((err) => { if (isCurrent()) out.replaceChildren(failBox(err, "the release planner")); })
       .finally(() => { clearInterval(tick); go.disabled = false; });
   };
-  const field = (n, label, hint, ...control) => h("div", { class: "rel-field" }, h("span", { class: "rel-step mono" }, n),
+  const field = (n, label, hint, ...control) => h("div", { class: "rel-field" }, n ? h("span", { class: "rel-step mono" }, n) : null,
     h("div", { class: "rel-field-body" }, h("p", { class: "rel-label" }, label), hint ? h("p", { class: "rel-hint" }, hint) : null, ...control));
 
+  const how = [["Type it in", "Its name, and what kind it is."], ["Qloo finds its audience", "The people whose taste matches it, worldwide."],
+    ["Get your plan", "The countries, the cities, the venues, and what those fans also love."]];
   add(root,
-    h("section", { class: "rel-hero" },
-      h("p", { class: "eyebrow mono" }, "Plan my release"),
-      h("h1", null, "Releasing something new? ", h("em", null, "Find its audience first.")),
-      h("p", { class: "lede" }, "A film, series, album, special or tour. Qloo finds the countries, cities and venues where its audience lives, and what to pair it with."),
-      h("form", { class: "rel-form card", onsubmit: (e) => { e.preventDefault(); runLive(); } },
-        field("01", "What are you releasing?", "A film, a series, an album, an artist or a comedian, spelled the way Netflix, Spotify or Wikipedia spells it.", name),
-        field("02", "What kind?", null, segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),
-        field("03", "Similar shows, films or artists", "Only if it is not out yet: two or three that share its audience.", like),
+    h("section", { class: "rel-hero fa-hero" },
+      h("p", { class: "eyebrow mono" }, "Find my audience"),
+      h("h1", null, "Bringing something out? ", h("em", null, "Find where its fans are.")),
+      h("p", { class: "lede" }, "For your own project: a film, a series, an album, a comedy show or a tour, out now or coming soon. Type its name and Qloo shows the countries, cities and venues where the people who would love it already live."),
+      h("p", { class: "fa-other" }, "Looking at Netflix shows trending this week instead? ", h("a", { href: "#/plan" }, "That is in Launch plans"), "."),
+      h("ol", { class: "fa-how" }, how.map(([t, d], k) => h("li", null, h("span", { class: "fa-n mono" }, String(k + 1)), h("strong", null, t), h("span", null, d)))),
+      h("form", { class: "rel-form card fa-form", onsubmit: (e) => { e.preventDefault(); runLive(); } },
+        h("label", { class: "fa-label", for: "rel-name" }, "What are you bringing out?"),
+        h("div", { class: "fa-search" }, name, go),
+        h("div", { class: "fa-kind" }, h("span", { class: "fa-kind-l" }, "It is a"), segmented("Kind", KINDS, state.kind, (v) => { state.kind = v; if (!state.goal) drawGoal(); })),
+        h("details", { class: "rel-more", open: !!preset.like }, h("summary", null, "Not out yet? Add two or three similar titles"),
+          field("", "Similar shows, films or artists", "Qloo may not know a new title yet; similar ones tell it who the audience is.", like)),
         // Everything below has a sensible default, so it waits behind one click instead of lengthening the form.
         h("details", { class: "rel-more", open: !!(preset.goal || preset.region || preset.home) }, h("summary", null, "More options: goal, region, release month"),
-          field("04", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),
-          field("05", "Where?", "Pick a region to look deeper there, and leave out your home market to see where to expand.", h("div", { class: "rel-two" }, region, home)),
-          field("06", "When?", "Your release month turns the plan into a schedule.", date)),
-        go),
-      h("p", { class: "rail-h mono" }, "Or open a worked example"), examples),
+          field("", "What's the goal?", "Tours and premieres get venues; a digital launch skips them.", goalBox),
+          field("", "Where?", "Pick a region to look deeper there, and leave out your home market to see where to expand.", h("div", { class: "rel-two" }, region, home)),
+          field("", "When?", "Your release month turns the plan into a schedule.", date))),
+      h("p", { class: "rail-h mono" }, "Or try one of these"), examples),
     out);
 
   if (preset.region && REGIONS.some(([v]) => v === preset.region)) region.value = preset.region;

@@ -39,8 +39,13 @@ const STEPS = [
     } },
   { sel: '[data-tour="plan"]', title: "Get the launch plan",
     text: "For the next country: the cities where fans live, and the local artists and brands Qloo's data supports." },
-  { sel: '[data-tour="release"]', title: "Planning your own release?",
-    text: "A film, an album, a comedy show or a tour: see which countries, cities and venues would love it." },
+  { sel: '[data-tour="menu"]', title: "What each page is for", wide: true,
+    text: "Five places to go from here:",
+    list: [["Trending shows", "Netflix shows that just got popular in one country, and where each goes next."],
+      ["Launch plans", "For one of those shows: the next country, its cities, and the artists and brands to work with."],
+      ["Find my audience", "Your own film, album, comedy show or tour: where its fans already are."],
+      ["For music artists", "Musicians: which trending shows' viewers love your music, and where."],
+      ["Prediction results", "How well the predictions did on past data, misses included."]] },
   { sel: '[data-tour="qloo"]', title: "Why Qloo matters",
     text: "An AI alone suggests partners with confidence, but Qloo's audience data supported only 29% of them. So here the AI suggests, and Qloo decides." },
   { sel: '[data-tour="chat"]', title: "Ask in plain words",
@@ -98,12 +103,51 @@ function remember() {
   try { localStorage.setItem(SEEN_KEY, "1"); } catch { /* storage blocked: the tour simply shows again next visit */ }
 }
 
+// The splash in index.html: on a first visit it tells the idea as a five-second story; the guide replays it.
+const STORY_MS = 5200;
+let splashOpen = false;
+
+/** Show the splash, as the story or as the short tremor, then lift it and call `done`. A click, Esc, Enter or Space
+ *  skips. `waited` is how long the page has already shown it (the first paint), so the first lift is not late. */
+export function runSplash(story, done, waited = 0) {
+  const splash = document.querySelector(".splash");
+  if (!splash) { done?.(); return; }
+  splashOpen = true;
+  let lifted = false;
+  const keys = (e) => { if (["Escape", "Enter", " "].includes(e.key)) { e.preventDefault(); lift(); } };
+  function lift() {
+    if (lifted) return;
+    lifted = true;
+    clearTimeout(timer);
+    removeEventListener("keydown", keys);
+    splash.removeEventListener("click", lift);
+    splash.classList.add("is-out");
+    if (story) { try { localStorage.setItem("aftershock-intro-seen", "1"); } catch { /* storage blocked: the story plays again next visit */ } }
+    setTimeout(() => { splash.hidden = true; splashOpen = false; done?.(); }, 500);
+  }
+  const timer = setTimeout(lift, Math.max(0, (story ? STORY_MS : 1300) - waited));
+  if (story) { splash.addEventListener("click", lift); addEventListener("keydown", keys); }
+}
+
+/** The guide: the story intro first (a still picture when motion is reduced), then the welcome card and the steps. */
 export function startTour() {
+  if (active || splashOpen) return;
+  const splash = document.querySelector(".splash");
+  if (!splash) { openTour(); return; }
+  document.documentElement.classList.add("intro-story");
+  splash.classList.remove("is-out");
+  splash.hidden = false;
+  // Replay every CSS animation in the splash from its first frame.
+  splash.getAnimations({ subtree: true }).forEach((a) => { a.cancel(); a.play(); });
+  runSplash(true, openTour);
+}
+
+function openTour() {
   if (active) return;
   if (!document.querySelector(STEPS[0].sel)) {
     // The steps live on the home page.
     location.hash = "#/";
-    setTimeout(startTour, 900);
+    setTimeout(openTour, 900);
     return;
   }
   const veil = h("div", { class: "tour-veil" });
@@ -137,12 +181,13 @@ function run() {
   const count = h("span", { class: "tour-count mono" });
   const title = h("h3", null);
   const text = h("p", null);
+  const list = h("ul", { class: "tour-list", hidden: true });
   const dots = h("div", { class: "tour-dots", role: "tablist", "aria-label": "Tour steps" });
   const back = h("button", { type: "button", class: "btn btn-ghost btn-small" }, "Back");
   const next = h("button", { type: "button", class: "btn btn-primary btn-small" }, "Next");
   const close = h("button", { type: "button", class: "tour-x", "aria-label": "Close the tour" }, "×");
   const card = h("div", { class: "tour-card", role: "dialog", "aria-modal": "true", "aria-label": "Guided tour" },
-    close, count, title, text, h("div", { class: "tour-foot" }, dots, h("span", { class: "tour-gap" }), back, next));
+    close, count, title, text, list, h("div", { class: "tour-foot" }, dots, h("span", { class: "tour-gap" }), back, next));
   document.body.append(blur, hole, shield, cursor, card);
   cursor.style.left = `${innerWidth / 2}px`;
   cursor.style.top = `${innerHeight / 2}px`;
@@ -215,6 +260,9 @@ function run() {
     count.textContent = String(i + 1).padStart(2, "0");
     title.textContent = st.title;
     text.textContent = st.text;
+    list.replaceChildren(...(st.list || []).map(([k, v]) => h("li", null, h("strong", null, k), h("span", null, v))));
+    list.hidden = !st.list;
+    card.classList.toggle("tour-card-wide", !!st.wide);
     [...dots.children].forEach((d, k) => { d.classList.toggle("on", k === i); d.setAttribute("aria-selected", String(k === i)); });
     back.disabled = i === 0;
     next.textContent = i === steps.length - 1 ? "Done" : "Next";
@@ -276,5 +324,5 @@ export function maybeAutoTour() {
   try { seen = localStorage.getItem(SEEN_KEY) === "1"; } catch { seen = false; }
   if (seen || navigator.webdriver) return;
   // Called once the splash has lifted; a short pause lets the globe settle before the welcome card.
-  setTimeout(() => { if (/^#\/?$/.test(location.hash || "#/")) startTour(); }, 900);
+  setTimeout(() => { if (/^#\/?$/.test(location.hash || "#/")) openTour(); }, 900);
 }

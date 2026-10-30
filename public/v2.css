@@ -671,3 +671,66 @@ main h2[id], main section[id] { scroll-margin-top: 96px; }
 .storm-next .pbar { grid-area: bar; width: 100%; max-width: 180px; height: 5px; border-radius: 3px; overflow: hidden; }
 .storm-next .pbar span { border-radius: 3px; }
 .storm-list li + li .storm-link { border-top: 1px solid transparent; }
+.tour-card.tour-card-wide { width: min(440px, calc(100vw - 24px)); }
+.tour-list { list-style: none; margin: -4px 0 12px; padding: 0; display: grid; gap: 7px; }
+.tour-list li { display: grid; gap: 1px; padding: 7px 10px; border-radius: 10px; background: var(--tint); border: 1px solid var(--rule); }
+.tour-list strong { font-size: 0.88rem; }
+.tour-list span { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.35; }
+
+/* Find my audience: one purpose, three steps, one big search row. */
+.fa-hero h1 { max-width: 16ch; }
+.fa-other { margin: 4px 0 20px; color: var(--ink-soft); font-size: 0.92rem; }
+.fa-how { list-style: none; margin: 0 0 22px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 860px; }
+.fa-how li { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 2px; align-items: start; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 14px; background: var(--tint); }
+.fa-n { grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 600; color: var(--on-accent); background: linear-gradient(135deg, var(--amber), var(--accent)); }
+.fa-how strong { font-size: 0.95rem; }
+.fa-how span:not(.fa-n) { color: var(--ink-soft); font-size: 0.85rem; line-height: 1.4; }
+@media (max-width: 760px) { .fa-how { grid-template-columns: 1fr; } }
+.fa-form { max-width: 860px; display: grid; gap: 14px; padding: 22px; }
+.fa-label { font-weight: 600; font-size: 1.05rem; }
+.fa-search { display: flex; gap: 10px; }
+.fa-search input { flex: 1; min-width: 0; min-height: 54px; font-size: 1.1rem; padding: 12px 16px; border-radius: 14px; }
+.fa-search .fa-go { flex: none; min-height: 54px; padding: 0 22px; border-radius: 14px; }
+@media (max-width: 600px) { .fa-search { flex-direction: column; } }
+.fa-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.fa-kind-l { color: var(--ink-soft); font-size: 0.9rem; }
+.fa-form .rel-more { border-top: 1px solid var(--rule); }
+.fa-form .rel-field { grid-template-columns: 1fr; padding-left: 0; }
+
+/* For music artists: an explainer, a big search, artist cards. */
+.ma-how { list-style: none; margin: 18px 0 24px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ma-how li { padding: 14px; border: 1px solid var(--rule); border-radius: 14px; background: var(--tint); display: grid; gap: 4px; }
+.ma-how strong { font-size: 0.98rem; }
+.ma-how span { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.4; }
+@media (max-width: 760px) { .ma-how { grid-template-columns: 1fr; } }
+.ma-search { display: grid; gap: 6px; max-width: 560px; margin-bottom: 8px; }
+.ma-search label { font-weight: 600; }
+.ma-search input { min-height: 50px; font-size: 1.05rem; padding: 10px 14px; border-radius: 14px; }
+.ma-grid { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.ma-card { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2); color: var(--ink); text-decoration: none; transition: border-color .2s, transform .2s; }
+.ma-card:hover { border-color: rgba(255, 90, 54, .5); transform: translateY(-2px); }
+.ma-avatar { grid-row: span 2; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font: 700 1.05rem var(--serif); color: var(--on-accent); background: linear-gradient(135deg, var(--amber), var(--accent)); }
+.ma-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ma-meta { font-size: 0.82rem; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ma-meta b { color: var(--accent-ink, var(--accent)); font-weight: 600; }
+:root:not([data-theme="light"]) .ma-meta b { color: var(--accent); }
+.ma-feature { margin: 0 0 22px; padding: 18px 20px; border-radius: 18px; border: 1px solid rgba(255, 90, 54, .3); background: radial-gradient(500px 200px at 100% 0%, rgba(255, 90, 54, .1), transparent 70%), var(--paper-2); display: grid; gap: 6px; }
+.ma-feature-tag { margin: 0; font-size: 0.75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink, var(--accent)); }
+.ma-feature h2 { margin: 0; font-size: clamp(1.3rem, 3vw, 1.7rem); }
+.ma-feature p { margin: 0; color: var(--ink-soft); }
+.ma-feature .btn { justify-self: start; margin-top: 6px; }
+.ma-week-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.ma-week-head strong { font-size: 1.2rem; margin-right: 6px; }
+.ma-week-pct { font: 700 1.8rem/1 var(--serif); color: var(--accent); letter-spacing: -0.02em; }
+:root[data-theme="light"] .ma-week-pct { color: var(--accent-ink); }
+/* Reduced motion: the story as one still picture (both arcs drawn, the second line shown), then the guide. */
+@media (prefers-reduced-motion: reduce) {
+  .intro-story .splash-story, .intro-story .story-grid, .intro-story .story-pin, .intro-story .story-arc, .intro-story .story-line, .intro-story .story-pin .ring { animation: none !important; }
+  .intro-story .story-grid { opacity: .5; }
+  .intro-story .story-pin { opacity: 1; }
+  .intro-story .story-arc { stroke-dashoffset: 0; }
+  .intro-story .story-line.line-1 { display: none; }
+  .intro-story .story-line.line-2 { opacity: 1; }
+  .intro-story .splash-brand { display: none; }
+  .intro-story .splash-skip { opacity: 1; animation: none; }
+}
