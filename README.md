@@ -4,6 +4,17 @@
 
 **Shows travel. See where next.** When a Netflix show gets popular in one country, it often spreads to the next. AFTERSHOCK predicts which country is next, plans the launch there with Qloo's audience data, and throws out every AI suggestion Qloo cannot support.
 
+**At a glance**
+
+| | |
+|---|---|
+| Try it | [Live site](https://aftershock-qloo.vercel.app) (no login) · [a real launch plan](https://aftershock-qloo.vercel.app/#/plan/nightwatch-demons-are-forever/NO) · [Find my audience](https://aftershock-qloo.vercel.app/#/release) (live Qloo calls) · [Prediction results](https://aftershock-qloo.vercel.app/#/scorecard) |
+| Why Qloo | Of 1,615 launch partners an AI suggested alone, Qloo's audience data supported 29%; in AFTERSHOCK the AI suggests and Qloo decides |
+| Does it work | Tested on 829 past cases it never saw: its top 3 named the next country 2.4 times as often as the obvious guess (9.8% against 4.1%) |
+| On the record | 3,240 predictions recorded in a hash-chained file before Netflix published the results |
+| Qloo endpoints | `/search` (strict name match) · `/v2/insights` with `urn:entity:artist`, `tv_show`, `movie`, `brand` (picks and the per-name check via `filter.results.entities`) · `urn:heatmap` (where fans live) · `urn:entity:destination` (country ranking, city names) · `urn:entity:place` with venue tags |
+| Stack | Python, FastAPI on Vercel, vanilla JS with a three.js globe, an MCP server with ten tools, 436 tests |
+
 An LLM alone, asked what a title's audience in a country loves, answers fluently and specifically. Of the 1,615 names an LLM proposed on 81 title-country pairs, 66% are names Qloo knows and 29% are ones Qloo links to that audience in that country; the other 71% are not backed: 34% are names Qloo has no data on (a gap in Qloo's coverage, not proof the name is wrong) and 37% are names Qloo knows but does not place with that audience (section 3). On title-specificity (section 3, 0 to 1) Qloo alone scores 0.62, the LLM alone 0.81 and the LLM checked by Qloo 0.86 (exploratory, not pre-registered). So in AFTERSHOCK the LLM proposes and Qloo decides: every name is checked for that title's audience in that country, and only confirmed names reach the plan.
 
 Each week it ran, the agent read Netflix's public per-country Top 10 (the weekly runs are paused until Netflix permits them; see Data and terms), finds titles that just broke out in one to three countries, and forecasts where each charts next from Netflix history. For the top countries it asks Qloo what that title's audience over-indexes on (the launch kit, checked against the country's general taste), asks Gemini for more ideas and checks each one against Qloo, finds the cities where the audience concentrates (Hotspots), and writes a **Launch Brief** per country: where, which cities, which partners, and what the evidence does not support. **Launch plans** on the site replays those steps one by one (they are precomputed by the weekly run, not run live), lists the AI names Qloo rejected struck through with the reason, and ends in the brief; **Follow one title** recolours the world map by one title's chances. Every forecast is locked in a hash-chained ledger before its outcome exists and graded against Netflix's later charts.

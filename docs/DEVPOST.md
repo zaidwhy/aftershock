@@ -85,7 +85,11 @@ Netflix publishes its weekly Top 10 lists on its Top 10 site, with download link
 
 ## Testing instructions for judges
 
-No login, nothing to install. About eight minutes on https://aftershock-qloo.vercel.app:
+**In a hurry? 30 seconds:** open https://aftershock-qloo.vercel.app in a private window. A five-second intro tells the idea; press "I'll explore", scroll to **See it in action** (a real prediction from this week: Nightwatch, popular in Denmark, 17% likely next in Norway, with the reason and the partners Qloo supports), then click **Open the full launch plan for Norway**.
+
+**Try it on your own name, 1 minute:** open https://aftershock-qloo.vercel.app/#/release (Find my audience), type a comedian, artist or film and press Find its audience. It calls Qloo live (10 to 30 seconds; 10 live lookups per visitor per hour). Cedric the Entertainer, for example, comes back with the United States first (Atlanta, Memphis), then Nigeria and Mexico.
+
+**The full tour, about eight minutes, no login, nothing to install:**
 
 1. **Home:** the intro says what AFTERSHOCK is in three points, then a 60-second tour (both start on a first visit). Read the real prediction under "See it in action", then pick a show in the "Follow one show" row and click a country on the globe.
 2. **Find my audience:** https://aftershock-qloo.vercel.app/#/release opens a worked example; type your own show (and comparables if Qloo does not know it yet). A live plan makes about 40 Qloo calls and takes 10 to 30 seconds.
