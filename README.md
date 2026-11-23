@@ -1,5 +1,7 @@
 # AFTERSHOCK
 
+<img src=".github/hero.webp" alt="A seismograph drum unrolls a long paper strip with one red burst in the trace." width="100%">
+
 [![tests](https://github.com/zaidwhy/aftershock/actions/workflows/tests.yml/badge.svg)](https://github.com/zaidwhy/aftershock/actions/workflows/tests.yml)
 
 An AI's launch plan sounds specific and cannot be audited. AFTERSHOCK forecasts which country a
